@@ -14,6 +14,8 @@ from contextlib import asynccontextmanager
 from jinja2 import Environment, BaseLoader, StrictUndefined
 import markdown as md
 from app.email_provider import get_email_provider
+from app.scheduler import init_scheduler
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from app.email_templates import (
     load_markdown_template,
     discover_missing_vars,
@@ -26,6 +28,8 @@ from app.email_templates import (
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
     task = asyncio.create_task(_dead_letter_worker())
+    scheduler = init_scheduler()
+    scheduler.start()
     try:
         yield
     finally:
@@ -33,6 +37,10 @@ async def app_lifespan(app: FastAPI):
             task.cancel()
             await task
         except asyncio.CancelledError:
+            pass
+        try:
+            scheduler.shutdown(wait=False)
+        except Exception:
             pass
 
 app = FastAPI(title="DueSpark – Backend MVP", version="0.2.0", lifespan=app_lifespan)
@@ -67,6 +75,24 @@ metrics = {
     'imports_updated': 0,
     'dlq_count': 0,
 }
+
+# Prometheus counters
+PROM_SCHEDULER_RUNS = Counter("duespark_scheduler_runs_total", "Scheduler job runs", ["job"])
+PROM_SCHEDULER_ERRORS = Counter("duespark_scheduler_errors_total", "Scheduler job errors", ["job"])
+PROM_REMINDERS_SENT = Counter("duespark_reminders_sent_total", "Reminders sent")
+PROM_REMINDERS_SCHEDULED = Counter("duespark_reminders_scheduled_total", "Reminders scheduled")
+
+# AC-compatible aliases
+SCHEDULER_REMINDERS_ENQUEUED_TOTAL = Counter("scheduler_reminders_enqueued_total", "Reminders enqueued for sending")
+SCHEDULER_REMINDERS_SENT_TOTAL = Counter("scheduler_reminders_sent_total", "Reminders sent")
+SCHEDULER_REMINDERS_FAILED_TOTAL = Counter("scheduler_reminders_failed_total", "Reminder sends failed")
+SCHEDULER_ADAPTIVE_RUNS_TOTAL = Counter("scheduler_adaptive_runs_total", "Adaptive scheduler runs")
+DLQ_ITEMS_TOTAL = Counter("dlq_items_total", "DLQ items", ["topic"])
+
+# Histograms & Gauges
+EMAIL_SEND_DURATION_SECONDS = Histogram("email_send_duration_seconds", "Email send duration (seconds)")
+SCHEDULE_COMPUTE_DURATION_SECONDS = Histogram("schedule_compute_duration_seconds", "Adaptive scheduling compute duration (seconds)")
+REMINDERS_PENDING = Gauge("reminders_pending", "Reminders pending in next lookahead window (minutes)")
 
 TONE_PRESETS: dict[str, dict[str, str]] = {
     "friendly": {
@@ -107,10 +133,25 @@ def metrics_json():
         # update dlq count live
         db = SessionLocal()
         metrics['dlq_count'] = db.query(models.DeadLetter).count()
+        # update pending gauge for next lookahead window (5 mins default)
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        lookahead = int(os.getenv('SCHEDULER_LOOKAHEAD_MIN', '5'))
+        pending = db.query(models.Reminder).filter(models.Reminder.status == models.ReminderStatus.scheduled, models.Reminder.send_at <= now + timedelta(minutes=lookahead)).count()
+        try:
+            REMINDERS_PENDING.set(pending)
+        except Exception:
+            pass
         db.close()
     except Exception:
         pass
     return metrics
+
+@app.get('/metrics_prom', include_in_schema=False)
+def metrics_prometheus():
+    data = generate_latest()  # type: ignore
+    from fastapi import Response
+    return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
 def _envelope(data, meta=None):
     return {"data": data, "meta": (meta or {})}
@@ -904,16 +945,17 @@ def stripe_import_invoices(since: str | None = None, db: Session = Depends(get_d
 # ---- Admin: Dead Letters ----
 @app.get('/admin/dead_letters', tags=['admin'])
 def list_dead_letters(limit: int = 50, offset: int = 0, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    # Optional: restrict to admins
+    # Enforce admin role
     if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
-        # For MVP allow all; comment next line to bypass
-        pass
+        raise HTTPException(status_code=403, detail='Forbidden')
     q = db.query(models.DeadLetter).order_by(models.DeadLetter.created_at.desc())
     total = q.count(); items = q.offset(offset).limit(limit).all()
     return _envelope([schemas.DeadLetterOut.model_validate(d).model_dump() for d in items], {"limit": limit, "offset": offset, "total": total})
 
 @app.post('/admin/dead_letters/{dl_id}/retry', tags=['admin'])
 def retry_dead_letter(dl_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
     dl = db.query(models.DeadLetter).filter(models.DeadLetter.id == dl_id).first()
     if not dl:
         raise HTTPException(status_code=404, detail='Not found')
@@ -924,8 +966,75 @@ def retry_dead_letter(dl_id: int, db: Session = Depends(get_db), user: models.Us
 
 @app.delete('/admin/dead_letters/{dl_id}', tags=['admin'])
 def delete_dead_letter(dl_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
     dl = db.query(models.DeadLetter).filter(models.DeadLetter.id == dl_id).first()
     if not dl:
         raise HTTPException(status_code=404, detail='Not found')
     db.delete(dl); db.commit()
     return _envelope({"id": dl_id})
+
+# ---- Admin: Requeue Failed Reminders ----
+@app.post('/admin/reminders/requeue-failed', tags=['admin'])
+def requeue_failed_reminders(limit: int = 50, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
+    q = db.query(models.Reminder).filter(models.Reminder.status == models.ReminderStatus.failed).order_by(models.Reminder.updated_at.asc())
+    items = q.limit(limit).all()
+    n = 0
+    now_utc = datetime.now(timezone.utc)
+    for r in items:
+        r.status = models.ReminderStatus.scheduled
+        # set next attempt soon
+        r.send_at = now_utc + timedelta(minutes=1)
+        db.add(r)
+        n += 1
+    db.commit()
+    return _envelope({"requeued": n})
+
+# ---- Admin: Scheduler Controls ----
+class RequeueRequest(schemas.BaseModel):
+    dlq_id: int
+
+@app.post('/admin/scheduler/requeue', tags=['admin'])
+def admin_requeue_scheduler(payload: dict, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
+    dl_id = int(payload.get('dlq_id', 0))
+    dl = db.query(models.DeadLetter).filter(models.DeadLetter.id == dl_id).first()
+    if not dl:
+        raise HTTPException(status_code=404, detail='DLQ not found')
+    kind = dl.kind or ''
+    try:
+        if kind.startswith('reminder.send'):
+            rid = (dl.payload or {}).get('reminder_id')
+            if not rid:
+                raise ValueError('Missing reminder_id')
+            # Re-schedule immediate retry by resetting status and send_at
+            r = db.query(models.Reminder).filter(models.Reminder.id == int(rid)).first()
+            if not r:
+                raise ValueError('Reminder not found')
+            r.status = models.ReminderStatus.scheduled
+            from datetime import datetime, timezone, timedelta
+            r.send_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+            db.commit()
+        elif kind.startswith('adaptive.compute'):
+            # Trigger adaptive compute now (for the whole tenant if client_id unknown)
+            from app.scheduler import job_compute_adaptive_schedules
+            job_compute_adaptive_schedules()
+        else:
+            raise ValueError('Unsupported DLQ kind')
+        # On success, delete DLQ entry
+        db.delete(dl); db.commit()
+        return _envelope({"requeued": True})
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Requeue failed: {e}")
+
+@app.post('/admin/scheduler/run-adaptive', tags=['admin'])
+def admin_run_adaptive(payload: dict | None = None, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
+    # For MVP, run global adaptive. Optionally filter by user_id in future.
+    from app.scheduler import job_compute_adaptive_schedules
+    job_compute_adaptive_schedules()
+    return _envelope({"triggered": True})

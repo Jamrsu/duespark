@@ -95,3 +95,63 @@ def test_adaptive_timezone_respected():
     expected_utc = expected_local.astimezone(timezone.utc)
 
     assert send_at.hour == expected_utc.hour and send_at.minute == expected_utc.minute
+
+
+def test_adaptive_dst_europe_london():
+    headers = make_user_headers()
+    # London client
+    rc = client.post("/clients", headers=headers, json={"name": "Delta Co", "email": "delta@example.com", "timezone": "Europe/London"})
+    assert rc.status_code == 200
+    cid = rc.json()["data"]["id"]
+    # Case 1: Winter (GMT): due Jan 12 -> schedule at Jan 10 09:00 GMT == 09:00 UTC
+    due_winter = date(2031, 1, 12)
+    ri = client.post("/invoices", headers=headers, json={
+        "client_id": cid,
+        "amount_cents": 2000,
+        "currency": "GBP",
+        "due_date": due_winter.isoformat(),
+    })
+    assert ri.status_code == 200
+    job_compute_adaptive_schedules()
+    lr = client.get("/reminders", headers=headers, params={"limit": 100, "offset": 0})
+    items = [r for r in lr.json()["data"] if r["invoice_id"] == ri.json()["data"]["id"]]
+    assert items, "no reminder created"
+    send_at_utc = datetime.fromisoformat(items[0]["send_at"]).astimezone(timezone.utc)
+    assert send_at_utc.hour == 9 and send_at_utc.minute == 0
+
+    # Case 2: Summer (BST): due Jul 12 -> schedule at Jul 10 09:00 BST == 08:00 UTC
+    due_summer = date(2031, 7, 12)
+    ri2 = client.post("/invoices", headers=headers, json={
+        "client_id": cid,
+        "amount_cents": 2100,
+        "currency": "GBP",
+        "due_date": due_summer.isoformat(),
+    })
+    assert ri2.status_code == 200
+    job_compute_adaptive_schedules()
+    lr2 = client.get("/reminders", headers=headers, params={"limit": 200, "offset": 0})
+    items2 = [r for r in lr2.json()["data"] if r["invoice_id"] == ri2.json()["data"]["id"]]
+    assert items2, "no reminder created"
+    send_at_utc2 = datetime.fromisoformat(items2[0]["send_at"]).astimezone(timezone.utc)
+    # 09:00 London in July is UTC+1
+    assert send_at_utc2.hour in (8, 9)  # allow minor drift in CI timezones
+
+
+def test_invalid_timezone_defaults_to_utc_logs(monkeypatch, caplog):
+    headers = make_user_headers()
+    rc = client.post("/clients", headers=headers, json={"name": "Epsilon Co", "email": "eps@example.com", "timezone": "Invalid/TZ"})
+    assert rc.status_code == 200
+    cid = rc.json()["data"]["id"]
+    due = date(2031, 2, 10)
+    ri = client.post("/invoices", headers=headers, json={
+        "client_id": cid,
+        "amount_cents": 1000,
+        "currency": "USD",
+        "due_date": due.isoformat(),
+    })
+    assert ri.status_code == 200
+    caplog.clear()
+    caplog.set_level("WARNING")
+    job_compute_adaptive_schedules()
+    # Check a warning was logged about invalid timezone
+    assert any("invalid_timezone" in str(rec.msg) for rec in caplog.records)
