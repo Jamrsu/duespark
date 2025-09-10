@@ -298,7 +298,22 @@ Notes:
     - `duespark_scheduler_errors_total{job}`
     - `duespark_reminders_sent_total`
     - `duespark_reminders_scheduled_total`
+    - AC aliases:
+      - `scheduler_reminders_enqueued_total`, `scheduler_reminders_sent_total`, `scheduler_reminders_failed_total`
+      - `scheduler_adaptive_runs_total`, `dlq_items_total{topic}`
+    - Histograms/Gauges:
+      - `email_send_duration_seconds`, `schedule_compute_duration_seconds`, `reminders_pending`
   - JSON (legacy quick view): `/metrics`
 - Notes:
   - The nightly adaptive job is intended to run on a single instance. For multi-instance schedulers, promote to a distributed queue (Celery/RQ) and/or add uniqueness guards on scheduled reminders.
   - Email provider rate limits apply; batch/space sends if needed.
+
+### Configuration
+- Env vars:
+  - `REDIS_URL` (or `CELERY_BROKER_URL`): enables Redis SETNX locks for enqueue and processing. If unset, DB advisory locks are used.
+  - `SCHEDULER_BATCH_SIZE` (default 200): max reminders scanned per minute.
+  - `SCHEDULER_LOOKAHEAD_MIN` (default 5): minimum minutes in future when normalizing past-due computed times.
+  - `ADAPTIVE_N_DAYS` (reserved): future use for limiting historical window.
+
+### APScheduler vs Celery
+- We currently use APScheduler for MVP simplicity. See `docs/SCHEDULER_JUSTIFICATION.md` for tradeoffs and the migration path to Celery + Redis (preferred at scale).

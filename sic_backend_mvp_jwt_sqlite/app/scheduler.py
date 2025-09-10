@@ -238,6 +238,10 @@ def job_compute_adaptive_schedules():
                             from zoneinfo import ZoneInfo
                             tz = ZoneInfo(c.timezone or 'UTC')
                         except Exception:
+                            try:
+                                logger.warning({"event": "invalid_timezone", "tz": c.timezone})
+                            except Exception:
+                                pass
                             tz = ZoneInfo('UTC')
                         local_dt = inv.paid_at.astimezone(tz)
                         key = (local_dt.strftime('%a'), local_dt.hour)
@@ -286,6 +290,10 @@ def job_compute_adaptive_schedules():
                         try:
                             tz = ZoneInfo(c.timezone or 'UTC')
                         except Exception:
+                            try:
+                                logger.warning({"event": "invalid_timezone", "tz": c.timezone})
+                            except Exception:
+                                pass
                             tz = ZoneInfo('UTC')
                         local_dt = target.astimezone(tz)
                         # Align to Friday for overdue windows if Friday is modal
