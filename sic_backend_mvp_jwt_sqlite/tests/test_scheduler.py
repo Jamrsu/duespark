@@ -1,0 +1,97 @@
+from datetime import datetime, timedelta, timezone, date, time as dtime
+from fastapi.testclient import TestClient
+from app.main import app
+from app.scheduler import job_enqueue_due_reminders, job_compute_adaptive_schedules
+
+client = TestClient(app)
+
+
+def make_user_headers():
+    import uuid
+    email = f"sched_{uuid.uuid4().hex[:8]}@example.com"
+    password = "secret123"
+    r = client.post("/auth/register", json={"email": email, "password": password})
+    assert r.status_code in (200, 409)
+    r = client.post("/auth/login", data={"username": email, "password": password})
+    assert r.status_code == 200
+    token = r.json()["data"]["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_enqueue_due_reminders_idempotent(monkeypatch):
+    headers = make_user_headers()
+    # Create client/invoice/reminder due now
+    rc = client.post("/clients", headers=headers, json={"name": "Beta Co", "email": "beta@example.com", "timezone": "UTC"})
+    assert rc.status_code == 200
+    cid = rc.json()["data"]["id"]
+    ri = client.post("/invoices", headers=headers, json={
+        "client_id": cid,
+        "amount_cents": 1000,
+        "currency": "USD",
+        "due_date": (date.today() + timedelta(days=1)).isoformat(),
+    })
+    assert ri.status_code == 200
+    inv_id = ri.json()["data"]["id"]
+    send_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    rr = client.post("/reminders", headers=headers, json={
+        "invoice_id": inv_id,
+        "send_at": send_at.isoformat(),
+        "channel": "email",
+    })
+    assert rr.status_code == 200
+
+    # Fake provider
+    class FakeProvider:
+        def __init__(self):
+            self.n = 0
+        def send(self, **kwargs):
+            self.n += 1
+            return {"message_id": f"mock-{self.n}", "provider": "postmark"}
+
+    import app.email_provider as ep
+    fp = FakeProvider()
+    # Patch the provider used by the scheduler module
+    monkeypatch.setattr(ep, "get_email_provider", lambda: fp)
+
+    # Run job twice; should send only once
+    job_enqueue_due_reminders()
+    job_enqueue_due_reminders()
+    assert fp.n == 1
+
+
+def test_adaptive_timezone_respected():
+    headers = make_user_headers()
+    # Client in Asia/Kolkata
+    rc = client.post("/clients", headers=headers, json={"name": "Gamma Co", "email": "gamma@example.com", "timezone": "Asia/Kolkata"})
+    assert rc.status_code == 200
+    cid = rc.json()["data"]["id"]
+    # Due date far in future to avoid race
+    due = date(2031, 1, 10)
+    ri = client.post("/invoices", headers=headers, json={
+        "client_id": cid,
+        "amount_cents": 2000,
+        "currency": "USD",
+        "due_date": due.isoformat(),
+    })
+    assert ri.status_code == 200
+    inv_id = ri.json()["data"]["id"]
+
+    # Compute schedules
+    job_compute_adaptive_schedules()
+
+    # Fetch reminders via API and locate for invoice
+    lr = client.get("/reminders", headers=headers, params={"limit": 100, "offset": 0})
+    assert lr.status_code == 200
+    items = [r for r in lr.json()["data"] if r["invoice_id"] == inv_id]
+    assert len(items) >= 1
+    r0 = items[0]
+    send_at = datetime.fromisoformat(r0["send_at"]).astimezone(timezone.utc)
+
+    # Expected: 1 day before due date at 09:00 local (Asia/Kolkata)
+    from zoneinfo import ZoneInfo
+    local_tz = ZoneInfo("Asia/Kolkata")
+    target_local_date = (due - timedelta(days=1))
+    expected_local = datetime.combine(target_local_date, dtime(9, 0, tzinfo=local_tz))
+    expected_utc = expected_local.astimezone(timezone.utc)
+
+    assert send_at.hour == expected_utc.hour and send_at.minute == expected_utc.minute
