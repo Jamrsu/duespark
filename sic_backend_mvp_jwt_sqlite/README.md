@@ -282,3 +282,23 @@ Notes:
   - `tone` is injected for template expressions (e.g., conditional subject).
   - If a repo template’s frontmatter subject cannot be parsed, the API falls back to a tone preset subject.
   - Lightweight logs: `preview_missing_vars` and `preview_render_error` in application logs to aid debugging.
+
+## Scheduler & Adaptive Logic
+
+- Engine: APScheduler (in-process) started via FastAPI lifespan.
+- Jobs:
+  - `enqueue_due_reminders` (every minute): sends reminders whose `status = scheduled` and `send_at <= now`.
+  - `compute_adaptive_schedules` (nightly 02:00 UTC): for each client, computes `avg_lateness = avg(paid_at - due_date)` and schedules one future reminder per pending/draft invoice at 09:00 in the client’s timezone.
+- Timezone: Uses IANA names in `clients.timezone` (e.g., `Europe/London`, `Asia/Kolkata`) and schedules for 09:00 local time. Requires `tzdata` (already in requirements).
+- Exactly-once: Uses Postgres advisory locks (`pg_try_advisory_lock`) keyed per reminder id to avoid duplicate sends across overlapping runs. Idempotent send skips reminders already `sent`.
+- Admin endpoint: `POST /admin/reminders/requeue-failed?limit=50` sets failed reminders back to `scheduled` with `send_at = now + 1m`.
+- Metrics:
+  - Prometheus: `/metrics_prom` exposes counters
+    - `duespark_scheduler_runs_total{job}`
+    - `duespark_scheduler_errors_total{job}`
+    - `duespark_reminders_sent_total`
+    - `duespark_reminders_scheduled_total`
+  - JSON (legacy quick view): `/metrics`
+- Notes:
+  - The nightly adaptive job is intended to run on a single instance. For multi-instance schedulers, promote to a distributed queue (Celery/RQ) and/or add uniqueness guards on scheduled reminders.
+  - Email provider rate limits apply; batch/space sends if needed.
