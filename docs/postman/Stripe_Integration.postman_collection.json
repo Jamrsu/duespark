@@ -1,0 +1,49 @@
+{
+  "info": {
+    "name": "DueSpark Stripe Integration",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Start Connect",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "http://localhost:8000/integrations/stripe/connect", "host": ["http://localhost:8000"], "path": ["integrations","stripe","connect"] }
+      }
+    },
+    {
+      "name": "Disconnect",
+      "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "http://localhost:8000/integrations/stripe/disconnect", "host": ["http://localhost:8000"], "path": ["integrations","stripe","disconnect"] } }
+    },
+    {
+      "name": "Import Invoices Since",
+      "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "http://localhost:8000/integrations/stripe/import-invoices?since={{since}}", "host": ["http://localhost:8000"], "path": ["integrations","stripe","import-invoices"], "query": [ {"key":"since","value":"{{since}}"} ] } }
+    },
+    {
+      "name": "DLQ List",
+      "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "http://localhost:8000/admin/dead_letters", "host": ["http://localhost:8000"], "path": ["admin","dead_letters"] } }
+    },
+    {
+      "name": "DLQ Retry",
+      "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "http://localhost:8000/admin/dead_letters/{{id}}/retry", "host": ["http://localhost:8000"], "path": ["admin","dead_letters","{{id}}","retry"] } }
+    }
+    {
+      "name": "Create Payment Link",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "http://localhost:8000/integrations/stripe/payment_link?invoice_id={{invoice_id}}", "host": ["http://localhost:8000"], "path": ["integrations","stripe","payment_link"], "query": [ {"key":"invoice_id","value":"{{invoice_id}}"} ] }
+      }
+    },
+    {
+      "name": "Webhook (simulate)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "http://localhost:8000/webhooks/stripe", "host": ["http://localhost:8000"], "path": ["webhooks","stripe"] },
+        "body": { "mode": "raw", "raw": "{\n  \"type\": \"invoice.created\",\n  \"data\": { \"object\": { \"id\": \"in_123\", \"status\": \"open\", \"amount_due\": 1000, \"currency\": \"usd\", \"customer_email\": \"buyer@example.com\" } },\n  \"account\": \"{{stripe_account_id}}\"\n}" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,881 @@
+
+openapi: 3.0.3
+info:
+  title: DueSpark API (MVP with JWT + SQLite)
+  version: "0.2.0"
+servers:
+  - url: http://localhost:8000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    EnvelopeMeta:
+      type: object
+      properties:
+        limit: { type: integer, nullable: true }
+        offset: { type: integer, nullable: true }
+        total: { type: integer, nullable: true }
+    EnvelopeToken:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Token'
+        meta:
+          type: object
+    EnvelopeClient:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Client'
+        meta:
+          type: object
+    EnvelopeClients:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Client' }
+        meta:
+          $ref: '#/components/schemas/EnvelopeMeta'
+    EnvelopeInvoice:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Invoice'
+        meta:
+          type: object
+    EnvelopeInvoices:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Invoice' }
+        meta:
+          $ref: '#/components/schemas/EnvelopeMeta'
+    EnvelopeReminder:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Reminder'
+        meta:
+          type: object
+    EnvelopeReminders:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Reminder' }
+        meta:
+          $ref: '#/components/schemas/EnvelopeMeta'
+    Template:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        name: { type: string }
+        tone: { type: string, enum: [friendly, neutral, firm] }
+        subject: { type: string }
+        body_markdown: { type: string }
+        created_at: { type: string, format: date-time }
+    EnvelopeTemplate:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/Template' }
+        meta: { type: object }
+    EnvelopeTemplates:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Template' }
+        meta: { $ref: '#/components/schemas/EnvelopeMeta' }
+    Event:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        entity_type: { type: string }
+        entity_id: { type: integer }
+        event_type: { type: string }
+        payload: { type: object }
+        created_at: { type: string, format: date-time }
+    EnvelopeEvents:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Event' }
+        meta: { $ref: '#/components/schemas/EnvelopeMeta' }
+    ReminderPreview:
+      type: object
+      properties:
+        subject: { type: string }
+        body: { type: string }
+    EnvelopeReminderPreview:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/ReminderPreview' }
+        meta: { type: object }
+    Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+    Client:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        timezone: { type: string }
+        notes: { type: string, nullable: true }
+    Invoice:
+      type: object
+      properties:
+        id: { type: integer }
+        client_id: { type: integer }
+        amount_cents: { type: integer }
+        currency: { type: string }
+        due_date: { type: string, format: date }
+        status: { type: string, enum: [draft, pending, paid, overdue, cancelled] }
+        external_id: { type: string, nullable: true }
+        source: { type: string }
+        created_at: { type: string, format: date-time }
+    Reminder:
+      type: object
+      properties:
+        id: { type: integer }
+        invoice_id: { type: integer }
+        send_at: { type: string, format: date-time }
+        channel: { type: string, enum: [email, sms, whatsapp] }
+        status: { type: string, enum: [scheduled, sent, failed, cancelled] }
+        subject: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+              required: [email, password]
+      responses:
+        "200":
+          description: JWT token (enveloped)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeToken'
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+              required: [username, password]
+      responses:
+        "200":
+          description: JWT token (enveloped)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeToken'
+  /clients:
+    get:
+      tags: [clients]
+      security: [ { bearerAuth: [] } ]
+      summary: List clients for current user (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeClients'
+    post:
+      tags: [clients]
+      security: [ { bearerAuth: [] } ]
+      summary: Create new client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                timezone: { type: string }
+                notes: { type: string }
+              required: [name, email]
+      responses:
+        "200":
+          description: Created client (enveloped)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeClient'
+  /clients/{id}:
+    get:
+      tags: [clients]
+      security: [ { bearerAuth: [] } ]
+      summary: Get client by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeClient'
+    put:
+      tags: [clients]
+      security: [ { bearerAuth: [] } ]
+      summary: Update client
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                timezone: { type: string }
+                notes: { type: string }
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeClient'
+    delete:
+      tags: [clients]
+      security: [ { bearerAuth: [] } ]
+      summary: Delete client
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                  meta: { type: object }
+  /invoices:
+    get:
+      tags: [invoices]
+      security: [ { bearerAuth: [] } ]
+      summary: List invoices for current user (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeInvoices'
+    post:
+      tags: [invoices]
+      security: [ { bearerAuth: [] } ]
+      summary: Create invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client_id: { type: integer }
+                amount_cents: { type: integer }
+                currency: { type: string }
+                due_date: { type: string, format: date }
+                status: { type: string }
+                external_id: { type: string }
+                source: { type: string }
+              required: [client_id, amount_cents, due_date]
+      responses:
+        "200":
+          description: Created invoice (enveloped)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeInvoice'
+  /invoices/{id}:
+    get:
+      tags: [invoices]
+      security: [ { bearerAuth: [] } ]
+      summary: Get invoice by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeInvoice'
+    put:
+      tags: [invoices]
+      security: [ { bearerAuth: [] } ]
+      summary: Update invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client_id: { type: integer }
+                amount_cents: { type: integer }
+                currency: { type: string }
+                due_date: { type: string, format: date }
+                status: { type: string }
+                external_id: { type: string }
+                source: { type: string }
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeInvoice'
+    delete:
+      tags: [invoices]
+      security: [ { bearerAuth: [] } ]
+      summary: Delete invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                  meta: { type: object }
+  /reminders:
+    get:
+      tags: [reminders]
+      security: [ { bearerAuth: [] } ]
+      summary: List reminders for current user (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReminders'
+    post:
+      tags: [reminders]
+      security: [ { bearerAuth: [] } ]
+      summary: Create reminder for invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invoice_id: { type: integer }
+                send_at: { type: string, format: date-time }
+                channel: { type: string }
+                subject: { type: string }
+                body: { type: string }
+              required: [invoice_id, send_at]
+      responses:
+        "200":
+          description: Created reminder (enveloped)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReminder'
+  /reminders/{id}:
+    get:
+      tags: [reminders]
+      security: [ { bearerAuth: [] } ]
+      summary: Get reminder by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReminder'
+    put:
+      tags: [reminders]
+      security: [ { bearerAuth: [] } ]
+      summary: Update reminder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                send_at: { type: string, format: date-time }
+                channel: { type: string }
+                status: { type: string }
+                subject: { type: string }
+                body: { type: string }
+      responses:
+        "200":
+          description: Updated reminder
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReminder'
+    delete:
+      tags: [reminders]
+      security: [ { bearerAuth: [] } ]
+      summary: Delete reminder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                  meta: { type: object }
+  /analytics/summary:
+    get:
+      tags: [analytics]
+      security: [ { bearerAuth: [] } ]
+      summary: Analytics summary for current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object }
+                  meta: { type: object }
+  /reminders/preview:
+    post:
+      tags: [reminders]
+      security: [ { bearerAuth: [] } ]
+      summary: Render reminder preview using template_id or tone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invoice_id: { type: integer }
+                template_id: { type: integer, nullable: true }
+                tone: { type: string, enum: [friendly, neutral, firm] }
+              required: [invoice_id]
+      responses:
+        "200":
+          description: Preview content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReminderPreview'
+  /templates:
+    get:
+      tags: [templates]
+      security: [ { bearerAuth: [] } ]
+      summary: List templates (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTemplates'
+    post:
+      tags: [templates]
+      security: [ { bearerAuth: [] } ]
+      summary: Create template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                tone: { type: string, enum: [friendly, neutral, firm] }
+                subject: { type: string }
+                body_markdown: { type: string }
+              required: [name, tone, subject, body_markdown]
+      responses:
+        "200":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTemplate'
+  /templates/{id}:
+    get:
+      tags: [templates]
+      security: [ { bearerAuth: [] } ]
+      summary: Get template by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTemplate'
+    put:
+      tags: [templates]
+      security: [ { bearerAuth: [] } ]
+      summary: Update template
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                tone: { type: string, enum: [friendly, neutral, firm] }
+                subject: { type: string }
+                body_markdown: { type: string }
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTemplate'
+    delete:
+      tags: [templates]
+      security: [ { bearerAuth: [] } ]
+      summary: Delete template
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                  meta: { type: object }
+  /events:
+    get:
+      tags: [events]
+      security: [ { bearerAuth: [] } ]
+      summary: List events (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEvents'
+    StripeConnectUrl:
+      type: object
+      properties:
+        url: { type: string }
+    EnvelopeStripeConnectUrl:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/StripeConnectUrl' }
+        meta: { type: object }
+    PaymentLinkResponse:
+      type: object
+      properties:
+        payment_link_url: { type: string }
+    EnvelopePaymentLinkResponse:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/PaymentLinkResponse' }
+        meta: { type: object }
+  /integrations/stripe/connect:
+    get:
+      tags: [integrations]
+      security: [ { bearerAuth: [] } ]
+      summary: Start Stripe OAuth connect (Standard)
+      responses:
+        "200":
+          description: Redirect URL to Stripe connect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeStripeConnectUrl'
+  /integrations/stripe/callback:
+    get:
+      tags: [integrations]
+      security: [ { bearerAuth: [] } ]
+      summary: Stripe OAuth callback
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema: { type: string }
+        - in: query
+          name: state
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object }
+                  meta: { type: object }
+  /webhooks/stripe:
+    post:
+      tags: [integrations]
+      summary: Stripe webhook endpoint
+      responses:
+        "200":
+          description: Acknowledge receipt
+  /integrations/stripe/payment_link:
+    post:
+      tags: [integrations]
+      security: [ { bearerAuth: [] } ]
+      summary: Create Stripe Payment Link for an invoice
+      parameters:
+        - in: query
+          name: invoice_id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Payment link URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopePaymentLinkResponse'
+  /integrations/stripe/status:
+    get:
+      tags: [integrations]
+      security: [ { bearerAuth: [] } ]
+      summary: Stripe connection status for current user
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      connected: { type: boolean }
+                      account_id: { type: string, nullable: true }
+                  meta: { type: object }
+  /admin/dead_letters:
+    get:
+      tags: [admin]
+      security: [ { bearerAuth: [] } ]
+      summary: List dead letters (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta: { $ref: '#/components/schemas/EnvelopeMeta' }
+  /admin/dead_letters/{id}/retry:
+    post:
+      tags: [admin]
+      security: [ { bearerAuth: [] } ]
+      summary: Mark a dead letter for retry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Marked for retry
+  /admin/dead_letters/{id}:
+    delete:
+      tags: [admin]
+      security: [ { bearerAuth: [] } ]
+      summary: Delete a dead letter
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+  /integrations/stripe/disconnect:
+    post:
+      tags: [integrations]
+      security: [ { bearerAuth: [] } ]
+      summary: Disconnect Stripe (mark revoked)
+      responses:
+        "200":
+          description: Disconnected
+  /integrations/stripe/import-invoices:
+    post:
+      tags: [integrations]
+      security: [ { bearerAuth: [] } ]
+      summary: On-demand import of Stripe invoices
+      parameters:
+        - in: query
+          name: since
+          required: false
+          description: ISO 8601 timestamp to import invoices created since
+          schema: { type: string }
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      imported: { type: integer }
+                  meta: { type: object }
