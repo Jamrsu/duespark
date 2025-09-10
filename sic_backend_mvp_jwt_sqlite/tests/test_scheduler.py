@@ -48,10 +48,10 @@ def test_enqueue_due_reminders_idempotent(monkeypatch):
             self.n += 1
             return {"message_id": f"mock-{self.n}", "provider": "postmark"}
 
-    import app.email_provider as ep
+    import app.scheduler as sched
     fp = FakeProvider()
-    # Patch the provider used by the scheduler module
-    monkeypatch.setattr(ep, "get_email_provider", lambda: fp)
+    # Patch the provider used by the scheduler module (local import binding)
+    monkeypatch.setattr(sched, "get_email_provider", lambda: fp)
 
     # Run job twice; should send only once
     job_enqueue_due_reminders()
