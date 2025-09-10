@@ -160,48 +160,51 @@ def job_enqueue_due_reminders():
     db = SessionLocal()
     try:
         from app.main import SCHEDULER_REMINDERS_ENQUEUED_TOTAL, SCHEDULER_REMINDERS_FAILED_TOTAL, DLQ_ITEMS_TOTAL
-        now = datetime.now(timezone.utc)
-        items = (
-            db.query(models.Reminder)
-            .filter(models.Reminder.status == models.ReminderStatus.scheduled)
-            .filter(models.Reminder.send_at <= now)
-            .order_by(models.Reminder.send_at.asc())
-            .limit(_BATCH_SIZE)
-            .all()
-        )
-        for r in items:
-            try:
-                # Optional enqueue de-dupe lock
-                if not _rds_try_lock(f"reminder:{r.id}:locked", ttl=300):
-                    continue
+        while True:
+            now = datetime.now(timezone.utc)
+            items = (
+                db.query(models.Reminder)
+                .filter(models.Reminder.status == models.ReminderStatus.scheduled)
+                .filter(models.Reminder.send_at <= now)
+                .order_by(models.Reminder.send_at.asc())
+                .limit(_BATCH_SIZE)
+                .all()
+            )
+            if not items:
+                break
+            for r in items:
                 try:
-                    SCHEDULER_REMINDERS_ENQUEUED_TOTAL.inc()
-                except Exception:
-                    pass
-                msg = _send_due_reminder(db, r)
-                if msg and 'PROM_REMINDERS_SENT' in globals():
+                    # Optional enqueue de-dupe lock
+                    if not _rds_try_lock(f"reminder:{r.id}:locked", ttl=300):
+                        continue
                     try:
-                        from app.main import PROM_REMINDERS_SENT as _P
-                        _P.inc()
+                        SCHEDULER_REMINDERS_ENQUEUED_TOTAL.inc()
                     except Exception:
                         pass
-            except Exception as e:
-                logger.error({"event": "scheduler_send_error", "id": r.id, "error": str(e)})
-                r.status = models.ReminderStatus.failed
-                meta = r.meta or {}
-                meta.update({"error": str(e)})
-                r.meta = meta
-                db.commit()
-                try:
-                    SCHEDULER_REMINDERS_FAILED_TOTAL.inc()
-                except Exception:
-                    pass
-                try:
-                    db.add(models.DeadLetter(kind='reminder.send', payload={'reminder_id': r.id}, error=str(e)))
+                    msg = _send_due_reminder(db, r)
+                    if msg and 'PROM_REMINDERS_SENT' in globals():
+                        try:
+                            from app.main import PROM_REMINDERS_SENT as _P
+                            _P.inc()
+                        except Exception:
+                            pass
+                except Exception as e:
+                    logger.error({"event": "scheduler_send_error", "id": r.id, "error": str(e)})
+                    r.status = models.ReminderStatus.failed
+                    meta = r.meta or {}
+                    meta.update({"error": str(e)})
+                    r.meta = meta
                     db.commit()
-                    DLQ_ITEMS_TOTAL.labels(topic='reminder.send').inc()
-                except Exception:
-                    pass
+                    try:
+                        SCHEDULER_REMINDERS_FAILED_TOTAL.inc()
+                    except Exception:
+                        pass
+                    try:
+                        db.add(models.DeadLetter(kind='reminder.send', payload={'reminder_id': r.id}, error=str(e)))
+                        db.commit()
+                        DLQ_ITEMS_TOTAL.labels(topic='reminder.send').inc()
+                    except Exception:
+                        pass
     finally:
         db.close()
 

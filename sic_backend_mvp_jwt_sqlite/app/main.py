@@ -1016,7 +1016,8 @@ def admin_requeue_scheduler(payload: dict, db: Session = Depends(get_db), user: 
                 raise ValueError('Reminder not found')
             r.status = models.ReminderStatus.scheduled
             from datetime import datetime, timezone, timedelta
-            r.send_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+            # Set to immediate to allow next poller run to pick it up
+            r.send_at = datetime.now(timezone.utc)
             db.commit()
         elif kind.startswith('adaptive.compute'):
             # Trigger adaptive compute now (for the whole tenant if client_id unknown)

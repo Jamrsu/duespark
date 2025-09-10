@@ -157,7 +157,7 @@ def test_invalid_timezone_defaults_to_utc_logs(monkeypatch, caplog):
     assert any("invalid_timezone" in str(rec.msg) for rec in caplog.records)
 
 
-def test_friday_alignment_and_modal_hour():
+def test_friday_alignment_and_modal_hour(monkeypatch):
     headers = make_user_headers()
     # Europe/London client
     rc = client.post("/clients", headers=headers, json={"name": "Zeta Co", "email": "zeta@example.com", "timezone": "Europe/London"})
