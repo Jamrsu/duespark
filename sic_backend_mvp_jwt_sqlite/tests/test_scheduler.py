@@ -167,7 +167,8 @@ def test_friday_alignment_and_modal_hour():
     tz = ZoneInfo("Europe/London")
     # Create three paid invoices on Friday 11:00 local time
     for d in (1, 8, 15):
-        due_dt = date.today() - timedelta(days=30 + d)
+        # Use a future due_date to satisfy DB check constraints
+        due_dt = date.today() + timedelta(days=30 + d)
         r = client.post("/invoices", headers=headers, json={
             "client_id": cid,
             "amount_cents": 5000,
@@ -192,8 +193,8 @@ def test_friday_alignment_and_modal_hour():
         inv.paid_at = paid_utc
         db.commit(); db.close()
 
-    # Create an overdue invoice to schedule
-    overdue_due = date.today() - timedelta(days=5)
+    # Create an invoice that will be considered overdue by monkeypatching 'now'
+    overdue_due = date.today()
     ri = client.post("/invoices", headers=headers, json={
         "client_id": cid,
         "amount_cents": 2200,
@@ -203,6 +204,15 @@ def test_friday_alignment_and_modal_hour():
     })
     assert ri.status_code == 200
     inv_overdue = ri.json()["data"]["id"]
+
+    # Monkeypatch scheduler datetime.now to simulate a time after due_date
+    import app.scheduler as sched
+    RealDT = sched.datetime
+    class FakeDT(RealDT):
+        @classmethod
+        def now(cls, tz=None):
+            return RealDT.now(tz) + timedelta(days=10)
+    monkeypatch.setattr(sched, "datetime", FakeDT)
 
     # Run adaptive
     job_compute_adaptive_schedules()
@@ -265,11 +275,12 @@ def test_dlq_requeue_flow(monkeypatch):
     # Run job to produce DLQ
     job_enqueue_due_reminders()
 
-    # Confirm DLQ entry exists
+    # Confirm a DLQ entry exists for our reminder id
     db = SessionLocal()
-    dlq = db.query(models.DeadLetter).order_by(models.DeadLetter.id.desc()).first()
-    assert dlq and dlq.kind.startswith('reminder.send') and dlq.payload.get('reminder_id') == rem_id
-    dlq_id = dlq.id
+    dlq = db.query(models.DeadLetter).all()
+    match = next((d for d in dlq if d.kind.startswith('reminder.send') and (d.payload or {}).get('reminder_id') == rem_id), None)
+    assert match is not None, "DLQ for our reminder not found"
+    dlq_id = match.id
     db.close()
 
     # Switch to working provider
