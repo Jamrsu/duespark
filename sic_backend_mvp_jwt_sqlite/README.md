@@ -248,3 +248,37 @@ How it’s used:
 Notes:
 - HTML is sanitized and wrapped with inline styles; avoid inline scripts. Links preserve href, target, rel.
 - Tone presets (`friendly|neutral|firm`) determine wording when a user-level template isn’t specified or when tone is passed with the repo template.
+
+### Reminder Preview (Auth Behavior)
+- Explicit variables path: does not require auth. Use when calling with `template` name and a full `variables` object.
+  - Endpoint: `POST /reminders/preview`
+  - Body example:
+    ```json
+    {
+      "template": "reminder",
+      "tone": "friendly",
+      "variables": {
+        "client_name": "Acme AP",
+        "invoice_number": "INV-1024",
+        "amount_formatted": "£1,250.00",
+        "due_date_iso": "2025-09-15",
+        "pay_link": "https://pay.example/abc123",
+        "from_name": "Your Studio"
+      }
+    }
+    ```
+  - Response envelope: `{ "data": { "subject", "html", "text" }, "meta": {} }`
+
+- Legacy invoice path: requires JWT and derives variables from the stored invoice and optional template.
+  - Endpoint: `POST /reminders/preview`
+  - Body example:
+    ```json
+    { "invoice_id": 123, "template_id": 1, "tone": "neutral" }
+    ```
+  - Authorization: `Authorization: Bearer <TOKEN>`
+
+- Implementation details:
+  - Missing variables are inferred from the active subject/body templates (no rigid list).
+  - `tone` is injected for template expressions (e.g., conditional subject).
+  - If a repo template’s frontmatter subject cannot be parsed, the API falls back to a tone preset subject.
+  - Lightweight logs: `preview_missing_vars` and `preview_render_error` in application logs to aid debugging.
