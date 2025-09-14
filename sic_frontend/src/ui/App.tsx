@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api, request } from "../utils/api";
-import type { Envelope, AnalyticsSummary, Template } from "../types/api";
+import type { Envelope, AnalyticsSummary, AnalyticsTimeseries, Template } from "../types/api";
 
 // Light obfuscation for saved tokens (not real encryption)
 const OBF_KEY = "DueSpark@2025";
@@ -31,10 +31,8 @@ const deobfuscate = (enc: string): string => {
   }
 };
 
-type KPI = { all: number; pending: number; overdue: number; paid: number };
-
 export default function App() {
-  const [kpi, setKpi] = useState<KPI | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [toast, setToast] = useState<{
     msg: string;
     type: "info" | "success" | "error";
@@ -67,14 +65,19 @@ export default function App() {
     window.location.reload();
   }, []);
 
-  const loadKpi = React.useCallback(() => {
+  const loadAnalytics = React.useCallback(() => {
     request<AnalyticsSummary>({ url: "/analytics/summary", method: "GET" })
-      .then((env: Envelope<AnalyticsSummary>) => setKpi(env.data.totals))
-      .catch(() => setKpi({ all: 0, pending: 0, overdue: 0, paid: 0 }));
+      .then((env: Envelope<AnalyticsSummary>) => setAnalytics(env.data))
+      .catch(() => setAnalytics({
+        totals: { all: 0, draft: 0, pending: 0, paid: 0, overdue: 0, cancelled: 0 },
+        expected_payments_next_30d: 0,
+        avg_days_to_pay: null,
+        top_late_clients: []
+      }));
   }, []);
   useEffect(() => {
-    loadKpi();
-  }, [loadKpi]);
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   return (
     <div
@@ -135,26 +138,58 @@ export default function App() {
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
           gap: 12,
           marginTop: 16,
         }}
       >
         <div style={card}>
-          <b>All</b>
-          <div>{kpi?.all ?? "—"}</div>
+          <b>All Invoices</b>
+          <div style={{ fontSize: 20, fontWeight: "bold" }}>{analytics?.totals.all ?? "—"}</div>
+        </div>
+        <div style={card}>
+          <b>Draft</b>
+          <div style={{ fontSize: 20, fontWeight: "bold", color: "#666" }}>{analytics?.totals.draft ?? "—"}</div>
         </div>
         <div style={card}>
           <b>Pending</b>
-          <div>{kpi?.pending ?? "—"}</div>
+          <div style={{ fontSize: 20, fontWeight: "bold", color: "#f59e0b" }}>{analytics?.totals.pending ?? "—"}</div>
         </div>
         <div style={card}>
           <b>Overdue</b>
-          <div>{kpi?.overdue ?? "—"}</div>
+          <div style={{ fontSize: 20, fontWeight: "bold", color: "#dc2626" }}>{analytics?.totals.overdue ?? "—"}</div>
         </div>
         <div style={card}>
           <b>Paid</b>
-          <div>{kpi?.paid ?? "—"}</div>
+          <div style={{ fontSize: 20, fontWeight: "bold", color: "#059669" }}>{analytics?.totals.paid ?? "—"}</div>
+        </div>
+        <div style={card}>
+          <b>Cancelled</b>
+          <div style={{ fontSize: 20, fontWeight: "bold", color: "#6b7280" }}>{analytics?.totals.cancelled ?? "—"}</div>
+        </div>
+      </section>
+
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          marginTop: 16,
+        }}
+      >
+        <div style={card}>
+          <b>Expected Payments</b>
+          <div style={{ fontSize: 18, fontWeight: "bold", color: "#059669" }}>
+            ${((analytics?.expected_payments_next_30d ?? 0) / 100).toLocaleString()}
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.7 }}>Pending + Overdue</div>
+        </div>
+        <div style={card}>
+          <b>Avg Days to Pay</b>
+          <div style={{ fontSize: 18, fontWeight: "bold" }}>
+            {analytics?.avg_days_to_pay ? `${analytics.avg_days_to_pay.toFixed(1)} days` : "—"}
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.7 }}>For paid invoices</div>
         </div>
       </section>
 
@@ -165,7 +200,19 @@ export default function App() {
 
       <section style={{ marginTop: 24 }}>
         <h2 style={{ fontSize: 16 }}>Invoices</h2>
-        <InvoicesList notify={notify} refreshKpi={loadKpi} />
+        <InvoicesList notify={notify} refreshKpi={loadAnalytics} />
+      </section>
+
+      {analytics && analytics.top_late_clients.length > 0 && (
+        <section style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: 16 }}>Top Late Clients</h2>
+          <TopLateClients clients={analytics.top_late_clients} />
+        </section>
+      )}
+
+      <section style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 16 }}>Analytics Charts</h2>
+        <AnalyticsCharts />
       </section>
 
       <section style={{ marginTop: 24 }}>
@@ -186,6 +233,11 @@ export default function App() {
       <section style={{ marginTop: 24 }}>
         <h2 style={{ fontSize: 16 }}>Dead Letters (Admin)</h2>
         <DeadLetters notify={notify} />
+      </section>
+
+      <section style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 16 }}>Outbox (Admin)</h2>
+        <OutboxAdmin notify={notify} />
       </section>
     </div>
   );
@@ -839,7 +891,13 @@ function DeadLetters({ notify }: { notify: (m: string, t?: "info" | "success" | 
       setItems(env.data);
       setTotal(env.meta.total || 0);
     } catch (e: any) {
-      notify(e?.message || "Failed to load dead letters", "error");
+      // Silently handle forbidden errors (user doesn't have admin access)
+      if (e?.message?.includes("Forbidden") || e?.message?.includes("403")) {
+        setItems([]);
+        setTotal(0);
+      } else {
+        notify(e?.message || "Failed to load dead letters", "error");
+      }
     }
   };
   useEffect(() => {
@@ -918,6 +976,91 @@ function DeadLetters({ notify }: { notify: (m: string, t?: "info" | "success" | 
             <button onClick={() => remove(d.id)} style={{ ...input, width: 90, cursor: "pointer" }}>
               Delete
             </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function OutboxAdmin({ notify }: { notify: (m: string, t?: "info" | "success" | "error") => void }) {
+  const [items, setItems] = useState<Array<{ id: number; topic: string; status: string; attempts: number; created_at: string; next_attempt_at?: string; dispatched_at?: string }>>([]);
+  const [limit, setLimit] = useState(10);
+  const [afterId, setAfterId] = useState<number | null>(null);
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const [status, setStatus] = useState<string>("");
+
+  const load = async (cursor: number | null = afterId, l = limit, s = status) => {
+    try {
+      const params: any = { limit: l };
+      if (cursor) params.after_id = cursor;
+      if (s) params.status = s;
+      const resp = await request<typeof items>({ url: "/admin/outbox", method: "GET", params });
+      setItems(resp.data);
+      setNextCursor((resp.meta as any)?.next_cursor ?? null);
+    } catch (e: any) {
+      // Silently handle forbidden errors (user doesn't have admin access)
+      if (e?.message?.includes("Forbidden") || e?.message?.includes("403")) {
+        setItems([]);
+        setNextCursor(null);
+      } else {
+        notify(e?.message || "Failed to load outbox", "error");
+      }
+    }
+  };
+  useEffect(() => {
+    load(null, limit, status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const reset = () => {
+    setAfterId(null);
+    load(null, limit, status);
+  };
+  const next = () => {
+    if (nextCursor) {
+      setAfterId(nextCursor);
+      load(nextCursor, limit, status);
+    }
+  };
+  const applyFilter = () => {
+    setAfterId(null);
+    load(null, limit, status);
+  };
+  const retry = async (id: number) => {
+    try {
+      await request({ url: `/admin/outbox/${id}/retry`, method: "POST" });
+      notify("Marked for retry", "success");
+      load(afterId, limit, status);
+    } catch (e: any) {
+      notify(e?.message || "Retry failed", "error");
+    }
+  };
+
+  return (
+    <div style={{ ...card }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <select value={status} onChange={(e) => setStatus(e.target.value)} style={input}>
+          <option value="">(all statuses)</option>
+          <option value="pending">pending</option>
+          <option value="sent">sent</option>
+        </select>
+        <button onClick={applyFilter} style={{ ...input, width: 120 }}>Apply</button>
+        <div style={{ flex: 1 }} />
+        <button onClick={reset} style={{ ...input, width: 100 }}>Reset</button>
+        <button onClick={next} disabled={!nextCursor} style={{ ...input, width: 100, opacity: nextCursor ? 1 : 0.5 }}>Next</button>
+      </div>
+      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+        {items.map((o) => (
+          <li key={o.id} style={{ padding: "8px 0", borderBottom: "1px solid #eee", display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, alignItems: "center" }}>
+            <div>
+              <b>#{o.id}</b> <span style={{ opacity: 0.7 }}>{o.topic}</span>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>
+                {o.status} · attempts: {o.attempts} · created: {o.created_at}
+              </div>
+            </div>
+            <button onClick={() => retry(o.id)} style={{ ...input, width: 90, cursor: "pointer" }}>Retry</button>
+            <span />
           </li>
         ))}
       </ul>
@@ -1345,11 +1488,19 @@ function InvoicesList({
   const [dueDate, setDueDate] = useState("2030-01-01");
   const [status, setStatus] = useState("pending");
   const [stripeConnected, setStripeConnected] = useState<boolean>(false);
-  const load = async (l = limit, o = offset) => {
+  
+  // Filter state
+  const [filterClientId, setFilterClientId] = useState<number | "">("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const load = async (l = limit, o = offset, fclient = filterClientId, fstatus = filterStatus) => {
+    const params: any = { limit: l, offset: o };
+    if (fclient !== "") params.client_id = fclient;
+    if (fstatus !== "") params.status = fstatus;
+    
     const env = await request<typeof items>({
       url: "/invoices",
       method: "GET",
-      params: { limit: l, offset: o },
+      params,
     });
     setItems(env.data);
     setTotal(env.meta.total || 0);
@@ -1372,18 +1523,40 @@ function InvoicesList({
   const prev = () => {
     const o = Math.max(0, offset - limit);
     setOffset(o);
-    load(limit, o);
+    load(limit, o, filterClientId, filterStatus);
   };
   const next = () => {
     const o = offset + limit;
     setOffset(o);
-    load(limit, o);
+    load(limit, o, filterClientId, filterStatus);
   };
+  
+  // Filter functions - automatic filtering when values change
+  const handleClientFilterChange = (newClientId: number | "") => {
+    setFilterClientId(newClientId);
+    setOffset(0); // Reset to first page when applying filters
+    load(limit, 0, newClientId, filterStatus);
+  };
+  
+  const handleStatusFilterChange = (newStatus: string) => {
+    setFilterStatus(newStatus);
+    setOffset(0); // Reset to first page when applying filters
+    load(limit, 0, filterClientId, newStatus);
+  };
+  
+  const clearFilters = () => {
+    setFilterClientId("");
+    setFilterStatus("");
+    setOffset(0);
+    load(limit, 0, "", "");
+  };
+  
   const [creating, setCreating] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editStatus, setEditStatus] = useState("pending");
+  const [editPaidAt, setEditPaidAt] = useState("");
   const createPayLink = async (id: number) => {
     try {
       const env = await request<{ payment_link_url: string }>({ url: `/integrations/stripe/payment_link`, method: 'POST', params: { invoice_id: id } })
@@ -1436,17 +1609,46 @@ function InvoicesList({
       setCreating(false);
     }
   };
-  const startEdit = (i: { id: number; status: string }) => {
+  // Helper function to format date for datetime-local input in user's timezone
+  const formatDateForInput = (date: Date) => {
+    // Use toISOString and slice to get local format, but adjust for timezone
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60000));
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  const startEdit = (i: { id: number; status: string; paid_at?: string | null }) => {
     setEditingId(i.id);
     setEditStatus(i.status);
+    // Initialize paid_at date only if invoice is already paid or if we're editing a paid invoice
+    if (i.paid_at) {
+      const date = new Date(i.paid_at);
+      setEditPaidAt(formatDateForInput(date));
+    } else if (i.status === "paid") {
+      // If status is paid but no paid_at exists, default to current date/time
+      const now = new Date();
+      setEditPaidAt(formatDateForInput(now));
+    } else {
+      // For non-paid invoices, start with empty paid date
+      setEditPaidAt("");
+    }
   };
   const saveEdit = async (id: number) => {
     setSavingId(id);
     try {
+      const data: any = { status: editStatus };
+      
+      // Include paid_at when status is "paid", or explicitly null for other statuses
+      if (editStatus === "paid") {
+        data.paid_at = editPaidAt ? new Date(editPaidAt).toISOString() : new Date().toISOString();
+      } else {
+        data.paid_at = null;
+      }
+      
       await request({
         url: `/invoices/${id}`,
         method: "PUT",
-        data: { status: editStatus },
+        data,
       });
       notify("Invoice updated", "success");
       load();
@@ -1461,6 +1663,7 @@ function InvoicesList({
     } finally {
       setSavingId(null);
       setEditingId(null);
+      setEditPaidAt("");
     }
   };
   const remove = async (id: number) => {
@@ -1484,6 +1687,65 @@ function InvoicesList({
   };
   return (
     <div style={{ ...card }}>
+      {/* Filter Section */}
+      <div style={{ marginBottom: 16, padding: 12, background: "#f8f9fa", borderRadius: 6 }}>
+        <div style={{ marginBottom: 8, fontWeight: "bold", fontSize: 14 }}>Filters</div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr auto",
+            gap: 8,
+            alignItems: "end",
+          }}
+        >
+          <div>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 12 }}>Client</label>
+            <select
+              value={filterClientId}
+              onChange={(e) =>
+                handleClientFilterChange(e.target.value === "" ? "" : Number(e.target.value))
+              }
+              style={input}
+            >
+              <option value="">All clients</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 12 }}>Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              style={input}
+            >
+              <option value="">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <button
+            onClick={clearFilters}
+            style={{
+              ...input,
+              cursor: "pointer",
+              backgroundColor: "#f3f4f6",
+              color: "#374151",
+              border: "1px solid #d1d5db",
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+      
+      {/* Create Invoice Section */}
       <div
         style={{
           display: "grid",
@@ -1623,7 +1885,12 @@ function InvoicesList({
           >
             <div>
               <b>Invoice #{i.id}</b>{" "}
-              <span style={{ opacity: 0.7 }}>Client {i.client_id}</span>
+              <span style={{ opacity: 0.7 }}>
+                {(() => {
+                  const client = clients.find(c => c.id === i.client_id);
+                  return client ? `${client.name} (${i.client_id})` : `Client ${i.client_id}`;
+                })()}
+              </span>
             </div>
             <div>
               {(i.amount_cents / 100).toFixed(2)} {i.currency}
@@ -1631,17 +1898,36 @@ function InvoicesList({
             <div>
               due {i.due_date}{" "}
               {editingId === i.id ? (
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  style={{ ...input, width: 130 }}
-                >
-                  <option>draft</option>
-                  <option>pending</option>
-                  <option>paid</option>
-                  <option>overdue</option>
-                  <option>cancelled</option>
-                </select>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      setEditStatus(newStatus);
+                      // If changing to "paid" and no paid date set, default to current time in user's timezone
+                      if (newStatus === "paid" && !editPaidAt) {
+                        const now = new Date();
+                        setEditPaidAt(formatDateForInput(now));
+                      }
+                    }}
+                    style={{ ...input, width: 130 }}
+                  >
+                    <option>draft</option>
+                    <option>pending</option>
+                    <option>paid</option>
+                    <option>overdue</option>
+                    <option>cancelled</option>
+                  </select>
+                  {editStatus === "paid" && (
+                    <input
+                      type="datetime-local"
+                      value={editPaidAt}
+                      onChange={(e) => setEditPaidAt(e.target.value)}
+                      style={{ ...input, width: 180 }}
+                      title="Date and time when payment was received"
+                    />
+                  )}
+                </div>
               ) : (
                 <span>
                   {i.status}
@@ -1663,7 +1949,10 @@ function InvoicesList({
                     {savingId === i.id ? "Saving…" : "Save"}
                   </button>{" "}
                   <button
-                    onClick={() => setEditingId(null)}
+                    onClick={() => {
+                      setEditingId(null);
+                      setEditPaidAt("");
+                    }}
                     style={{ ...input, width: 80, cursor: "pointer" }}
                   >
                     Cancel
@@ -2057,6 +2346,228 @@ function RemindersList({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function TopLateClients({ clients }: { clients: AnalyticsTopLateClient[] }) {
+  return (
+    <div style={{ ...card }}>
+      <div style={{ marginBottom: 12 }}>
+        <span style={{ fontSize: 14, opacity: 0.8 }}>
+          Clients with overdue invoices, ranked by average lateness
+        </span>
+      </div>
+      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+        {clients.map((client) => (
+          <li
+            key={client.client_id}
+            style={{
+              padding: "12px 0",
+              borderBottom: "1px solid #eee",
+              display: "grid",
+              gridTemplateColumns: "1fr auto auto auto",
+              gap: 12,
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: "bold" }}>{client.client_name}</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>{client.client_email}</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontWeight: "bold", color: "#dc2626" }}>
+                {client.avg_days_late.toFixed(1)}d
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>avg late</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontWeight: "bold" }}>{client.overdue_count}</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>overdue</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: "bold", color: "#dc2626" }}>
+                ${(client.total_overdue_amount_cents / 100).toLocaleString()}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>total owed</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function AnalyticsCharts() {
+  const [metric, setMetric] = useState("payments");
+  const [interval, setInterval] = useState("week");
+  const [timeseries, setTimeseries] = useState<AnalyticsTimeseries | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadTimeseries = async (m = metric, i = interval) => {
+    setLoading(true);
+    try {
+      const response = await request<AnalyticsTimeseries>({
+        url: `/analytics/timeseries?metric=${m}&interval=${i}`,
+        method: "GET",
+      });
+      setTimeseries(response.data);
+    } catch (error) {
+      console.error("Failed to load timeseries:", error);
+      setTimeseries(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTimeseries();
+  }, []);
+
+  const handleMetricChange = (newMetric: string) => {
+    setMetric(newMetric);
+    loadTimeseries(newMetric, interval);
+  };
+
+  const handleIntervalChange = (newInterval: string) => {
+    setInterval(newInterval);
+    loadTimeseries(metric, newInterval);
+  };
+
+  // Simple chart rendering (bars)
+  const renderChart = () => {
+    if (!timeseries || timeseries.points.length === 0) {
+      return (
+        <div style={{ 
+          height: 200, 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          color: "#666",
+          border: "1px solid #eee",
+          borderRadius: 6
+        }}>
+          No data available
+        </div>
+      );
+    }
+
+    const maxValue = Math.max(...timeseries.points.map(p => p.value));
+    const barWidth = Math.max(20, (600 - timeseries.points.length * 4) / timeseries.points.length);
+
+    return (
+      <div style={{ marginTop: 16 }}>
+        <div style={{ 
+          display: "flex", 
+          alignItems: "end", 
+          height: 200, 
+          gap: 4,
+          padding: "16px 0",
+          borderBottom: "1px solid #eee"
+        }}>
+          {timeseries.points.map((point, index) => {
+            const height = maxValue > 0 ? (point.value / maxValue) * 160 : 0;
+            const date = new Date(point.period);
+            const label = interval === "day" 
+              ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+              : interval === "week"
+              ? `Week ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+              : date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+
+            return (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  minWidth: barWidth,
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#3b82f6",
+                    width: Math.max(barWidth - 8, 12),
+                    height: Math.max(height, 2),
+                    borderRadius: 2,
+                    marginBottom: 8,
+                    position: "relative",
+                  }}
+                  title={`${label}: $${(point.value / 100).toLocaleString()} (${point.count} items)`}
+                />
+                <div style={{ 
+                  fontSize: 10, 
+                  transform: "rotate(-45deg)",
+                  transformOrigin: "center",
+                  whiteSpace: "nowrap",
+                  color: "#666"
+                }}>
+                  {label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 16, display: "flex", gap: 24, fontSize: 14 }}>
+          <div>
+            <span style={{ opacity: 0.7 }}>Total Value: </span>
+            <span style={{ fontWeight: "bold" }}>
+              ${(timeseries.total_value / 100).toLocaleString()}
+            </span>
+          </div>
+          <div>
+            <span style={{ opacity: 0.7 }}>Total Count: </span>
+            <span style={{ fontWeight: "bold" }}>{timeseries.total_count}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ ...card }}>
+      <div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "1fr 1fr auto", 
+        gap: 12, 
+        marginBottom: 16,
+        alignItems: "center"
+      }}>
+        <div>
+          <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: "bold" }}>
+            Metric
+          </label>
+          <select
+            value={metric}
+            onChange={(e) => handleMetricChange(e.target.value)}
+            style={input}
+          >
+            <option value="payments">Payments Received</option>
+            <option value="invoices_created">Invoices Created</option>
+            <option value="invoices_paid">Invoices Paid</option>
+            <option value="revenue">Revenue</option>
+          </select>
+        </div>
+        <div>
+          <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: "bold" }}>
+            Interval
+          </label>
+          <select
+            value={interval}
+            onChange={(e) => handleIntervalChange(e.target.value)}
+            style={input}
+          >
+            <option value="day">Daily</option>
+            <option value="week">Weekly</option>
+            <option value="month">Monthly</option>
+          </select>
+        </div>
+        <div style={{ paddingTop: 20 }}>
+          {loading && <span style={{ color: "#666" }}>Loading...</span>}
+        </div>
+      </div>
+
+      {renderChart()}
     </div>
   );
 }

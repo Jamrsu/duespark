@@ -1,0 +1,82 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - banner [ref=e6]:
+        - generic [ref=e7]:
+          - button "Open sidebar" [ref=e9] [cursor=pointer]:
+            - img [ref=e10] [cursor=pointer]
+          - generic [ref=e11]:
+            - button "Switch to light theme" [ref=e12] [cursor=pointer]:
+              - img [ref=e13] [cursor=pointer]
+            - button "Logout" [ref=e15] [cursor=pointer]:
+              - img [ref=e16] [cursor=pointer]
+      - main [ref=e19]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - button [ref=e23] [cursor=pointer]:
+              - img [ref=e24] [cursor=pointer]
+            - generic [ref=e26]:
+              - heading "Adams Inc Corp" [level=1] [ref=e27]
+              - paragraph [ref=e28]: "Client #40"
+            - button "Edit Client" [ref=e29] [cursor=pointer]
+          - generic [ref=e30]:
+            - generic [ref=e32]:
+              - heading "Client Information" [level=3] [ref=e34]
+              - generic [ref=e36]:
+                - generic [ref=e37]:
+                  - img [ref=e38]
+                  - generic [ref=e41]:
+                    - generic [ref=e42]: Email
+                    - paragraph [ref=e43]: huffmanjeffrey@example.com
+                - generic [ref=e44]:
+                  - img [ref=e46]
+                  - generic [ref=e48]:
+                    - generic [ref=e49]: Contact Person
+                    - paragraph [ref=e50]: Not specified
+                - generic [ref=e51]:
+                  - img [ref=e52]
+                  - generic [ref=e54]:
+                    - generic [ref=e55]: Phone Number
+                    - paragraph [ref=e56]: Not specified
+                - generic [ref=e57]:
+                  - img [ref=e58]
+                  - generic [ref=e61]:
+                    - generic [ref=e62]: Timezone
+                    - paragraph [ref=e63]: Asia/Tokyo
+            - generic [ref=e65]:
+              - heading "Quick Actions" [level=3] [ref=e67]
+              - generic [ref=e69]:
+                - button "Send Email" [ref=e70] [cursor=pointer]:
+                  - img [ref=e71] [cursor=pointer]
+                  - text: Send Email
+                - button "Create Invoice" [ref=e74] [cursor=pointer]
+                - button "View Invoices" [ref=e75] [cursor=pointer]
+        - generic [ref=e76]:
+          - generic: 💡 Swipe left/right to navigate • Swipe down to open menu
+    - generic [ref=e78]:
+      - link "Dashboard" [ref=e79] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e80] [cursor=pointer]
+        - generic [ref=e83] [cursor=pointer]: Dashboard
+      - link "Invoices" [ref=e84] [cursor=pointer]:
+        - /url: /invoices
+        - img [ref=e85] [cursor=pointer]
+        - generic [ref=e88] [cursor=pointer]: Invoices
+      - link "Clients" [ref=e89] [cursor=pointer]:
+        - /url: /clients
+        - img [ref=e90] [cursor=pointer]
+        - generic [ref=e95] [cursor=pointer]: Clients
+      - link "Settings" [ref=e96] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e97] [cursor=pointer]
+        - generic [ref=e100] [cursor=pointer]: Settings
+  - generic [ref=e101]:
+    - img [ref=e103]
+    - button "Open Tanstack query devtools" [ref=e151] [cursor=pointer]:
+      - img [ref=e152] [cursor=pointer]
+  - status [ref=e200]
+  - alert [ref=e201]
+```

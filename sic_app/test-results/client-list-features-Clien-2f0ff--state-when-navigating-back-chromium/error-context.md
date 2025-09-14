@@ -1,0 +1,336 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img [ref=e9]
+        - generic [ref=e11]: DueSpark
+      - navigation [ref=e12]:
+        - link "Dashboard" [ref=e13] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e14] [cursor=pointer]
+          - text: Dashboard
+        - link "Invoices" [ref=e17] [cursor=pointer]:
+          - /url: /invoices
+          - img [ref=e18] [cursor=pointer]
+          - text: Invoices
+        - link "Clients" [ref=e21] [cursor=pointer]:
+          - /url: /clients
+          - img [ref=e22] [cursor=pointer]
+          - text: Clients
+        - link "Settings" [ref=e27] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e28] [cursor=pointer]
+          - text: Settings
+    - generic [ref=e31]:
+      - banner [ref=e32]:
+        - generic [ref=e34]:
+          - button "Switch to light theme" [ref=e35] [cursor=pointer]:
+            - img [ref=e36] [cursor=pointer]
+          - button "Logout" [ref=e38] [cursor=pointer]:
+            - img [ref=e39] [cursor=pointer]
+      - main [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]:
+              - heading "Clients" [level=1] [ref=e47]
+              - paragraph [ref=e48]: Manage your client relationships
+            - button "Add Client" [ref=e49] [cursor=pointer]:
+              - img [ref=e50] [cursor=pointer]
+              - text: Add Client
+          - generic [ref=e51]:
+            - generic [ref=e53]:
+              - heading "All Clients (21)" [level=3] [ref=e54]
+              - generic [ref=e55]:
+                - generic [ref=e56]: "Sort by:"
+                - generic [ref=e57]:
+                  - button "Name ↑" [ref=e58] [cursor=pointer]
+                  - button "Email" [ref=e59] [cursor=pointer]:
+                    - text: Email
+                    - img [ref=e60] [cursor=pointer]
+                  - button "Created" [ref=e63] [cursor=pointer]:
+                    - text: Created
+                    - img [ref=e64] [cursor=pointer]
+            - generic [ref=e68]:
+              - generic [ref=e70] [cursor=pointer]:
+                - img [ref=e72] [cursor=pointer]
+                - generic [ref=e78] [cursor=pointer]:
+                  - generic [ref=e79] [cursor=pointer]:
+                    - heading "Adams Inc Corp" [level=3] [ref=e80] [cursor=pointer]
+                    - paragraph [ref=e81] [cursor=pointer]: huffmanjeffrey@example.com
+                  - generic [ref=e82] [cursor=pointer]:
+                    - generic [ref=e83] [cursor=pointer]:
+                      - generic [ref=e84] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e85] [cursor=pointer]: Timezone
+                    - generic [ref=e86] [cursor=pointer]:
+                      - generic [ref=e87] [cursor=pointer]: Invalid Date
+                      - generic [ref=e88] [cursor=pointer]: Created
+              - generic [ref=e90] [cursor=pointer]:
+                - img [ref=e92] [cursor=pointer]
+                - generic [ref=e98] [cursor=pointer]:
+                  - generic [ref=e99] [cursor=pointer]:
+                    - heading "Ali Hernandez and Lawson Co" [level=3] [ref=e100] [cursor=pointer]
+                    - paragraph [ref=e101] [cursor=pointer]: jennifer22@example.net
+                  - generic [ref=e102] [cursor=pointer]:
+                    - generic [ref=e103] [cursor=pointer]:
+                      - generic [ref=e104] [cursor=pointer]: Europe/London
+                      - generic [ref=e105] [cursor=pointer]: Timezone
+                    - generic [ref=e106] [cursor=pointer]:
+                      - generic [ref=e107] [cursor=pointer]: Invalid Date
+                      - generic [ref=e108] [cursor=pointer]: Created
+              - generic [ref=e110] [cursor=pointer]:
+                - img [ref=e112] [cursor=pointer]
+                - generic [ref=e118] [cursor=pointer]:
+                  - generic [ref=e119] [cursor=pointer]:
+                    - heading "Barnes-Erickson Co" [level=3] [ref=e120] [cursor=pointer]
+                    - paragraph [ref=e121] [cursor=pointer]: robert45@example.net
+                  - generic [ref=e122] [cursor=pointer]:
+                    - generic [ref=e123] [cursor=pointer]:
+                      - generic [ref=e124] [cursor=pointer]: UTC
+                      - generic [ref=e125] [cursor=pointer]: Timezone
+                    - generic [ref=e126] [cursor=pointer]:
+                      - generic [ref=e127] [cursor=pointer]: Invalid Date
+                      - generic [ref=e128] [cursor=pointer]: Created
+              - generic [ref=e130] [cursor=pointer]:
+                - img [ref=e132] [cursor=pointer]
+                - generic [ref=e138] [cursor=pointer]:
+                  - generic [ref=e139] [cursor=pointer]:
+                    - heading "Barr LLC Inc" [level=3] [ref=e140] [cursor=pointer]
+                    - paragraph [ref=e141] [cursor=pointer]: freytyler@example.com
+                  - generic [ref=e142] [cursor=pointer]:
+                    - generic [ref=e143] [cursor=pointer]:
+                      - generic [ref=e144] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e145] [cursor=pointer]: Timezone
+                    - generic [ref=e146] [cursor=pointer]:
+                      - generic [ref=e147] [cursor=pointer]: Invalid Date
+                      - generic [ref=e148] [cursor=pointer]: Created
+              - generic [ref=e150] [cursor=pointer]:
+                - img [ref=e152] [cursor=pointer]
+                - generic [ref=e158] [cursor=pointer]:
+                  - generic [ref=e159] [cursor=pointer]:
+                    - heading "Barrett Banks and Allen Corp" [level=3] [ref=e160] [cursor=pointer]
+                    - paragraph [ref=e161] [cursor=pointer]: turnerjohn@example.org
+                  - generic [ref=e162] [cursor=pointer]:
+                    - generic [ref=e163] [cursor=pointer]:
+                      - generic [ref=e164] [cursor=pointer]: America/Los_Angeles
+                      - generic [ref=e165] [cursor=pointer]: Timezone
+                    - generic [ref=e166] [cursor=pointer]:
+                      - generic [ref=e167] [cursor=pointer]: Invalid Date
+                      - generic [ref=e168] [cursor=pointer]: Created
+              - generic [ref=e170] [cursor=pointer]:
+                - img [ref=e172] [cursor=pointer]
+                - generic [ref=e178] [cursor=pointer]:
+                  - generic [ref=e179] [cursor=pointer]:
+                    - heading "Ben's Bits" [level=3] [ref=e180] [cursor=pointer]
+                    - paragraph [ref=e181] [cursor=pointer]: bb@example.com
+                  - generic [ref=e182] [cursor=pointer]:
+                    - generic [ref=e183] [cursor=pointer]:
+                      - generic [ref=e184] [cursor=pointer]: UTC
+                      - generic [ref=e185] [cursor=pointer]: Timezone
+                    - generic [ref=e186] [cursor=pointer]:
+                      - generic [ref=e187] [cursor=pointer]: Invalid Date
+                      - generic [ref=e188] [cursor=pointer]: Created
+              - generic [ref=e190] [cursor=pointer]:
+                - img [ref=e192] [cursor=pointer]
+                - generic [ref=e198] [cursor=pointer]:
+                  - generic [ref=e199] [cursor=pointer]:
+                    - heading "Bentley Ltd Co" [level=3] [ref=e200] [cursor=pointer]
+                    - paragraph [ref=e201] [cursor=pointer]: michael43@example.net
+                  - generic [ref=e202] [cursor=pointer]:
+                    - generic [ref=e203] [cursor=pointer]:
+                      - generic [ref=e204] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e205] [cursor=pointer]: Timezone
+                    - generic [ref=e206] [cursor=pointer]:
+                      - generic [ref=e207] [cursor=pointer]: Invalid Date
+                      - generic [ref=e208] [cursor=pointer]: Created
+              - generic [ref=e210] [cursor=pointer]:
+                - img [ref=e212] [cursor=pointer]
+                - generic [ref=e218] [cursor=pointer]:
+                  - generic [ref=e219] [cursor=pointer]:
+                    - heading "Contreras and Sons Ltd" [level=3] [ref=e220] [cursor=pointer]
+                    - paragraph [ref=e221] [cursor=pointer]: wilsonkimberly@example.net
+                  - generic [ref=e222] [cursor=pointer]:
+                    - generic [ref=e223] [cursor=pointer]:
+                      - generic [ref=e224] [cursor=pointer]: Europe/London
+                      - generic [ref=e225] [cursor=pointer]: Timezone
+                    - generic [ref=e226] [cursor=pointer]:
+                      - generic [ref=e227] [cursor=pointer]: Invalid Date
+                      - generic [ref=e228] [cursor=pointer]: Created
+              - generic [ref=e230] [cursor=pointer]:
+                - img [ref=e232] [cursor=pointer]
+                - generic [ref=e238] [cursor=pointer]:
+                  - generic [ref=e239] [cursor=pointer]:
+                    - heading "Cruz LLC Inc" [level=3] [ref=e240] [cursor=pointer]
+                    - paragraph [ref=e241] [cursor=pointer]: shannon25@example.org
+                  - generic [ref=e242] [cursor=pointer]:
+                    - generic [ref=e243] [cursor=pointer]:
+                      - generic [ref=e244] [cursor=pointer]: Europe/London
+                      - generic [ref=e245] [cursor=pointer]: Timezone
+                    - generic [ref=e246] [cursor=pointer]:
+                      - generic [ref=e247] [cursor=pointer]: Invalid Date
+                      - generic [ref=e248] [cursor=pointer]: Created
+              - generic [ref=e250] [cursor=pointer]:
+                - img [ref=e252] [cursor=pointer]
+                - generic [ref=e258] [cursor=pointer]:
+                  - generic [ref=e259] [cursor=pointer]:
+                    - heading "Davis-Allen Inc" [level=3] [ref=e260] [cursor=pointer]
+                    - paragraph [ref=e261] [cursor=pointer]: kim58@example.net
+                  - generic [ref=e262] [cursor=pointer]:
+                    - generic [ref=e263] [cursor=pointer]:
+                      - generic [ref=e264] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e265] [cursor=pointer]: Timezone
+                    - generic [ref=e266] [cursor=pointer]:
+                      - generic [ref=e267] [cursor=pointer]: Invalid Date
+                      - generic [ref=e268] [cursor=pointer]: Created
+              - generic [ref=e270] [cursor=pointer]:
+                - img [ref=e272] [cursor=pointer]
+                - generic [ref=e278] [cursor=pointer]:
+                  - generic [ref=e279] [cursor=pointer]:
+                    - heading "Delgado and Sons LLC" [level=3] [ref=e280] [cursor=pointer]
+                    - paragraph [ref=e281] [cursor=pointer]: victoria79@example.net
+                  - generic [ref=e282] [cursor=pointer]:
+                    - generic [ref=e283] [cursor=pointer]:
+                      - generic [ref=e284] [cursor=pointer]: America/Los_Angeles
+                      - generic [ref=e285] [cursor=pointer]: Timezone
+                    - generic [ref=e286] [cursor=pointer]:
+                      - generic [ref=e287] [cursor=pointer]: Invalid Date
+                      - generic [ref=e288] [cursor=pointer]: Created
+              - generic [ref=e290] [cursor=pointer]:
+                - img [ref=e292] [cursor=pointer]
+                - generic [ref=e298] [cursor=pointer]:
+                  - generic [ref=e299] [cursor=pointer]:
+                    - heading "Gray PLC Corp" [level=3] [ref=e300] [cursor=pointer]
+                    - paragraph [ref=e301] [cursor=pointer]: mclaughlinmatthew@example.net
+                  - generic [ref=e302] [cursor=pointer]:
+                    - generic [ref=e303] [cursor=pointer]:
+                      - generic [ref=e304] [cursor=pointer]: America/New_York
+                      - generic [ref=e305] [cursor=pointer]: Timezone
+                    - generic [ref=e306] [cursor=pointer]:
+                      - generic [ref=e307] [cursor=pointer]: Invalid Date
+                      - generic [ref=e308] [cursor=pointer]: Created
+              - generic [ref=e310] [cursor=pointer]:
+                - img [ref=e312] [cursor=pointer]
+                - generic [ref=e318] [cursor=pointer]:
+                  - generic [ref=e319] [cursor=pointer]:
+                    - heading "Howe-Rodriguez Ltd" [level=3] [ref=e320] [cursor=pointer]
+                    - paragraph [ref=e321] [cursor=pointer]: fwilliams@example.org
+                  - generic [ref=e322] [cursor=pointer]:
+                    - generic [ref=e323] [cursor=pointer]:
+                      - generic [ref=e324] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e325] [cursor=pointer]: Timezone
+                    - generic [ref=e326] [cursor=pointer]:
+                      - generic [ref=e327] [cursor=pointer]: Invalid Date
+                      - generic [ref=e328] [cursor=pointer]: Created
+              - generic [ref=e330] [cursor=pointer]:
+                - img [ref=e332] [cursor=pointer]
+                - generic [ref=e338] [cursor=pointer]:
+                  - generic [ref=e339] [cursor=pointer]:
+                    - heading "James-Coleman LLC" [level=3] [ref=e340] [cursor=pointer]
+                    - paragraph [ref=e341] [cursor=pointer]: henry88@example.net
+                  - generic [ref=e342] [cursor=pointer]:
+                    - generic [ref=e343] [cursor=pointer]:
+                      - generic [ref=e344] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e345] [cursor=pointer]: Timezone
+                    - generic [ref=e346] [cursor=pointer]:
+                      - generic [ref=e347] [cursor=pointer]: Invalid Date
+                      - generic [ref=e348] [cursor=pointer]: Created
+              - generic [ref=e350] [cursor=pointer]:
+                - img [ref=e352] [cursor=pointer]
+                - generic [ref=e358] [cursor=pointer]:
+                  - generic [ref=e359] [cursor=pointer]:
+                    - heading "Kim Inc Inc" [level=3] [ref=e360] [cursor=pointer]
+                    - paragraph [ref=e361] [cursor=pointer]: yadkins@example.org
+                  - generic [ref=e362] [cursor=pointer]:
+                    - generic [ref=e363] [cursor=pointer]:
+                      - generic [ref=e364] [cursor=pointer]: America/New_York
+                      - generic [ref=e365] [cursor=pointer]: Timezone
+                    - generic [ref=e366] [cursor=pointer]:
+                      - generic [ref=e367] [cursor=pointer]: Invalid Date
+                      - generic [ref=e368] [cursor=pointer]: Created
+              - generic [ref=e370] [cursor=pointer]:
+                - img [ref=e372] [cursor=pointer]
+                - generic [ref=e378] [cursor=pointer]:
+                  - generic [ref=e379] [cursor=pointer]:
+                    - heading "Mckinney Schmitt and Alvarado Inc" [level=3] [ref=e380] [cursor=pointer]
+                    - paragraph [ref=e381] [cursor=pointer]: watsonthomas@example.net
+                  - generic [ref=e382] [cursor=pointer]:
+                    - generic [ref=e383] [cursor=pointer]:
+                      - generic [ref=e384] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e385] [cursor=pointer]: Timezone
+                    - generic [ref=e386] [cursor=pointer]:
+                      - generic [ref=e387] [cursor=pointer]: Invalid Date
+                      - generic [ref=e388] [cursor=pointer]: Created
+              - generic [ref=e390] [cursor=pointer]:
+                - img [ref=e392] [cursor=pointer]
+                - generic [ref=e398] [cursor=pointer]:
+                  - generic [ref=e399] [cursor=pointer]:
+                    - heading "Palmer Inc Ltd" [level=3] [ref=e400] [cursor=pointer]
+                    - paragraph [ref=e401] [cursor=pointer]: ddixon@example.org
+                  - generic [ref=e402] [cursor=pointer]:
+                    - generic [ref=e403] [cursor=pointer]:
+                      - generic [ref=e404] [cursor=pointer]: Asia/Tokyo
+                      - generic [ref=e405] [cursor=pointer]: Timezone
+                    - generic [ref=e406] [cursor=pointer]:
+                      - generic [ref=e407] [cursor=pointer]: Invalid Date
+                      - generic [ref=e408] [cursor=pointer]: Created
+              - generic [ref=e410] [cursor=pointer]:
+                - img [ref=e412] [cursor=pointer]
+                - generic [ref=e418] [cursor=pointer]:
+                  - generic [ref=e419] [cursor=pointer]:
+                    - heading "Pena Kirk and Webb Corp" [level=3] [ref=e420] [cursor=pointer]
+                    - paragraph [ref=e421] [cursor=pointer]: wmarquez@example.com
+                  - generic [ref=e422] [cursor=pointer]:
+                    - generic [ref=e423] [cursor=pointer]:
+                      - generic [ref=e424] [cursor=pointer]: Europe/London
+                      - generic [ref=e425] [cursor=pointer]: Timezone
+                    - generic [ref=e426] [cursor=pointer]:
+                      - generic [ref=e427] [cursor=pointer]: Invalid Date
+                      - generic [ref=e428] [cursor=pointer]: Created
+              - generic [ref=e430] [cursor=pointer]:
+                - img [ref=e432] [cursor=pointer]
+                - generic [ref=e438] [cursor=pointer]:
+                  - generic [ref=e439] [cursor=pointer]:
+                    - heading "Weber Richards and Duncan LLC" [level=3] [ref=e440] [cursor=pointer]
+                    - paragraph [ref=e441] [cursor=pointer]: kimberlyhamilton@example.net
+                  - generic [ref=e442] [cursor=pointer]:
+                    - generic [ref=e443] [cursor=pointer]:
+                      - generic [ref=e444] [cursor=pointer]: America/New_York
+                      - generic [ref=e445] [cursor=pointer]: Timezone
+                    - generic [ref=e446] [cursor=pointer]:
+                      - generic [ref=e447] [cursor=pointer]: Invalid Date
+                      - generic [ref=e448] [cursor=pointer]: Created
+              - generic [ref=e450] [cursor=pointer]:
+                - img [ref=e452] [cursor=pointer]
+                - generic [ref=e458] [cursor=pointer]:
+                  - generic [ref=e459] [cursor=pointer]:
+                    - heading "Williams Group Co" [level=3] [ref=e460] [cursor=pointer]
+                    - paragraph [ref=e461] [cursor=pointer]: cameronrogers@example.com
+                  - generic [ref=e462] [cursor=pointer]:
+                    - generic [ref=e463] [cursor=pointer]:
+                      - generic [ref=e464] [cursor=pointer]: Europe/Berlin
+                      - generic [ref=e465] [cursor=pointer]: Timezone
+                    - generic [ref=e466] [cursor=pointer]:
+                      - generic [ref=e467] [cursor=pointer]: Invalid Date
+                      - generic [ref=e468] [cursor=pointer]: Created
+              - generic [ref=e470] [cursor=pointer]:
+                - img [ref=e472] [cursor=pointer]
+                - generic [ref=e478] [cursor=pointer]:
+                  - generic [ref=e479] [cursor=pointer]:
+                    - heading "Wright-Harvey Corp" [level=3] [ref=e480] [cursor=pointer]
+                    - paragraph [ref=e481] [cursor=pointer]: dianayoung@example.com
+                  - generic [ref=e482] [cursor=pointer]:
+                    - generic [ref=e483] [cursor=pointer]:
+                      - generic [ref=e484] [cursor=pointer]: UTC
+                      - generic [ref=e485] [cursor=pointer]: Timezone
+                    - generic [ref=e486] [cursor=pointer]:
+                      - generic [ref=e487] [cursor=pointer]: Invalid Date
+                      - generic [ref=e488] [cursor=pointer]: Created
+  - generic [ref=e489]:
+    - img [ref=e491]
+    - button "Open Tanstack query devtools" [ref=e539] [cursor=pointer]:
+      - img [ref=e540] [cursor=pointer]
+  - status [ref=e588]
+  - alert [ref=e589]
+```

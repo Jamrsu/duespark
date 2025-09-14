@@ -177,3 +177,68 @@ class DeadLetterOut(BaseModel):
     next_attempt_at: Optional[datetime] = None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+# Outbox
+class OutboxOut(BaseModel):
+    id: int
+    topic: str
+    payload: dict
+    status: str
+    attempts: int
+    next_attempt_at: Optional[datetime] = None
+    dispatched_at: Optional[datetime] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Analytics
+class AnalyticsStatusTotals(BaseModel):
+    all: int
+    draft: int
+    pending: int
+    paid: int
+    overdue: int
+    cancelled: int
+
+class AnalyticsTopLateClient(BaseModel):
+    client_id: int
+    client_name: str
+    client_email: str
+    avg_days_late: float
+    overdue_count: int
+    total_overdue_amount_cents: int
+
+class AnalyticsSummaryOut(BaseModel):
+    totals: AnalyticsStatusTotals
+    expected_payments_next_30d: int
+    avg_days_to_pay: Optional[float] = None
+    top_late_clients: list[AnalyticsTopLateClient]
+
+class AnalyticsTimeseriesPoint(BaseModel):
+    period: str  # ISO date string for the period start
+    value: float
+    count: Optional[int] = None  # Number of items in this period
+
+class AnalyticsTimeseriesOut(BaseModel):
+    metric: str
+    interval: str
+    points: list[AnalyticsTimeseriesPoint]
+    total_value: float
+    total_count: int
+
+# Events
+class EventCreate(BaseModel):
+    entity_type: str
+    entity_id: int
+    event_type: str
+    payload: Optional[dict] = None
+
+class EventOut(BaseModel):
+    id: int
+    user_id: int
+    entity_type: str
+    entity_id: int
+    event_type: str
+    payload: Optional[dict] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)

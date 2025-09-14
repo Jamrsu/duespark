@@ -26,8 +26,49 @@ docker compose up --build
 
 Run tests in container via compose:
 ```bash
+# Migrations + tests (default test command runs init_db.py + pytest)
 docker compose run --rm test
+
+# Or specify pytest options (init_db.py runs first)
+docker compose run --rm test sh -c "python init_db.py && pytest -vv"
+
+# Or use the helper script inside the container
+docker compose run --rm test bash -lc "./scripts/test_in_container.sh -vv -k outbox_dispatcher"
 ```
+
+### Testing with Postgres (one-liner)
+- The recommended pattern ensures DB is initialized before any pytest command:
+  - `docker compose run --rm test sh -c "python init_db.py && pytest [options]"`
+
+
+### Dev Reset Helper
+For a clean local DB (and to avoid scheduler backlogs during tests), use the reset script. Warning: this drops the Postgres volume.
+
+```bash
+# Backup DB, wipe volumes, then run tests on a clean DB
+bash scripts/dev_reset.sh --up test
+
+# Backup, wipe, recreate schema, seed sample data, then start app
+bash scripts/dev_reset.sh --seed docs/seed.sql --up app
+
+# Backup and wipe only (leave stack down)
+bash scripts/dev_reset.sh --up none
+```
+
+Backups are saved to `backups/backup-YYYYMMDD-HHMMSS.sql` before wiping volumes.
+
+### Create an Admin User (Dev)
+To quickly test admin endpoints/UI locally, seed an admin user:
+
+```bash
+# Default: admin@example.com / admin123
+make admin-seed
+
+# Or override credentials
+ADMIN_EMAIL=me@example.com ADMIN_PASSWORD=changeme make admin-seed
+```
+
+Then log in via the UI or use the JWT in API calls. Keep this to dev/staging only; rotate or remove seeded admins in shared environments.
 
 ## Alembic Migrations
 - Configure DB via `DATABASE_URL` env var
@@ -152,6 +193,33 @@ Note on bcrypt warning: if you see a log like "(trapped) error reading bcrypt ve
 Notes:
 - Use a dedicated subdomain for sending (e.g., `mail.yourdomain.com`) to protect root domain reputation.
 - Warm up gradually and keep bounce/complaint rates low.
+
+## Scheduler & Adaptive Logic
+
+- Jobs:
+  - Enqueue due reminders every minute; processes scheduled reminders whose `send_at <= now` until backlog is exhausted.
+  - Nightly adaptive (02:00 UTC): computes average lateness and modal payment window per client; schedules pre-due and overdue reminders at the preferred local hour with Friday alignment when Friday is modal.
+- Timezone: Uses `clients.timezone` (IANA). If invalid/missing, falls back to UTC and logs `invalid_timezone` warnings.
+- Exactly-once: Uses DB advisory locks and optional Redis SETNX locks (`REDIS_URL`) to avoid duplicate send.
+- Admin endpoints:
+  - `GET /admin/dead_letters?limit=50&after_id=<cursor>`: cursor pagination; response meta includes `next_cursor`.
+  - `POST /admin/reminders/requeue-failed?limit=50`: re-schedules failed reminders to send soon.
+  - `POST /admin/scheduler/requeue` with `{ "dlq_id": <id> }`: requeues a specific DLQ entry.
+  - `POST /admin/scheduler/run-adaptive`: triggers adaptive now.
+- Metrics:
+  - Counters: `scheduler_reminders_enqueued_total`, `scheduler_reminders_sent_total`, `scheduler_reminders_failed_total`, `scheduler_adaptive_runs_total`, `dlq_items_total{topic}`
+  - Histograms: `email_send_duration_seconds`, `schedule_compute_duration_seconds`
+  - Gauge: `reminders_pending`
+- Email idempotency headers/tags:
+  - `X-Idempotency-Key: reminder:<id>` plus `X-App-Reminder-Id` and `X-App-User-Id` included in sends.
+
+### Configuration
+- `REDIS_URL` (or `CELERY_BROKER_URL`): enables Redis locks for enqueue/processing.
+- `SCHEDULER_BATCH_SIZE` (default 200): scan size per fetch.
+- `SCHEDULER_LOOKAHEAD_MIN` (default 5): normalize past computed times to `now + lookahead`.
+- `ADAPTIVE_N_DAYS` (default 180): bound historical window for modal hour and lateness.
+- `ADAPTIVE_ENABLE` (default true): disable nightly adaptive when false.
+- `ADAPTIVE_LEADER_ONLY` (default true): leader-only adaptive when Redis is available; logs `adaptive_leader_*` events.
 
 ## Email (SES) Setup
 - Set `EMAIL_PROVIDER=ses`
@@ -285,6 +353,39 @@ Notes:
 
 ## Scheduler & Adaptive Logic
 
+- Jobs:
+  - Enqueue due reminders every minute; processes scheduled reminders whose `send_at <= now` until backlog is exhausted.
+  - Nightly adaptive (02:00 UTC): computes average lateness and modal payment window per client; schedules pre-due and overdue reminders at the preferred local hour with Friday alignment when Friday is modal.
+- Timezone: Uses `clients.timezone` (IANA). If invalid/missing, falls back to UTC and logs `invalid_timezone` warnings.
+- Exactly-once: Uses DB advisory locks and optional Redis SETNX locks (`REDIS_URL`) to avoid duplicate send.
+- Admin endpoints:
+  - `GET /admin/dead_letters?limit=50&after_id=<cursor>`: cursor pagination; response meta includes `next_cursor`.
+  - `POST /admin/reminders/requeue-failed?limit=50`: re-schedules failed reminders to send soon.
+  - `POST /admin/scheduler/requeue` with `{ "dlq_id": <id> }`: requeues a specific DLQ entry.
+  - `POST /admin/scheduler/run-adaptive`: triggers adaptive now.
+- Metrics:
+  - Counters: `scheduler_reminders_enqueued_total`, `scheduler_reminders_sent_total`, `scheduler_reminders_failed_total`, `scheduler_adaptive_runs_total`, `dlq_items_total{topic}`
+  - Histograms: `email_send_duration_seconds`, `schedule_compute_duration_seconds`
+  - Gauge: `reminders_pending`
+- Email idempotency headers/tags:
+  - `X-Idempotency-Key: reminder:<id>` plus `X-App-Reminder-Id` and `X-App-User-Id` included in sends.
+
+### Configuration
+- `REDIS_URL` (or `CELERY_BROKER_URL`): enables Redis locks for enqueue/processing.
+- `SCHEDULER_BATCH_SIZE` (default 200): scan size per fetch.
+- `SCHEDULER_LOOKAHEAD_MIN` (default 5): normalize past computed times to `now + lookahead`.
+- `ADAPTIVE_N_DAYS` (default 180): bound historical window for modal hour and lateness.
+- `ADAPTIVE_ENABLE` (default true): disable nightly adaptive when false.
+- `ADAPTIVE_LEADER_ONLY` (default true): leader-only adaptive when Redis is available; logs `adaptive_leader_*` events.
+- Outbox (optional):
+  - `OUTBOX_ENABLED` (default false): when true, scheduler and send-now enqueue an outbox row and a dispatcher job sends emails with retries. Useful for durability and to prepare for Celery/SQS migration.
+  - `OUTBOX_BATCH_SIZE` (default 200): max outbox rows dispatched per run.
+  - Per-user rate limiting (dispatcher):
+    - `SENDER_MAX_PER_MIN_PER_USER` (default 1000): cap emails sent per user per dispatcher run window.
+    - `SENDER_RATE_WINDOW_SEC` (default 60): window size for the per-user cap; deferred rows get `next_attempt_at = now + window`.
+
+## Scheduler & Adaptive Logic
+
 - Engine: APScheduler (in-process) started via FastAPI lifespan.
 - Jobs:
   - `enqueue_due_reminders` (every minute): sends reminders whose `status = scheduled` and `send_at <= now`.
@@ -313,7 +414,9 @@ Notes:
   - `REDIS_URL` (or `CELERY_BROKER_URL`): enables Redis SETNX locks for enqueue and processing. If unset, DB advisory locks are used.
   - `SCHEDULER_BATCH_SIZE` (default 200): max reminders scanned per minute.
   - `SCHEDULER_LOOKAHEAD_MIN` (default 5): minimum minutes in future when normalizing past-due computed times.
-  - `ADAPTIVE_N_DAYS` (reserved): future use for limiting historical window.
+  - `ADAPTIVE_N_DAYS` (default 180): limits historical window (days) used for adaptive lateness and modal-hour calculations.
+  - `ADAPTIVE_ENABLE` (default true): set to false to disable nightly adaptive scheduling.
+  - `ADAPTIVE_LEADER_ONLY` (default true): when true and Redis is available, only the instance holding the adaptive leader lock runs the nightly job.
 
 ### APScheduler vs Celery
 - We currently use APScheduler for MVP simplicity. See `docs/SCHEDULER_JUSTIFICATION.md` for tradeoffs and the migration path to Celery + Redis (preferred at scale).

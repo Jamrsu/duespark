@@ -16,9 +16,13 @@ COPY sic_backend_mvp_jwt_sqlite/requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
 COPY sic_backend_mvp_jwt_sqlite /app
+# Bring in repo-level helper scripts and init file used by compose commands
+COPY init_db.py /app/init_db.py
+COPY scripts /app/scripts
+RUN chmod +x /app/init_db.py || true \
+    && chmod +x /app/scripts/*.sh || true
 
 EXPOSE 8000
 
 # Default command can be overridden by compose
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
-

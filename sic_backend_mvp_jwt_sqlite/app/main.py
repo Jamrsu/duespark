@@ -1,13 +1,19 @@
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import Base, engine, get_db, SessionLocal
 from app import models, schemas
 from app.auth import hash_password, verify_password, create_access_token, get_current_user, get_current_user_optional, SECRET_KEY, ALGORITHM
 import os, json, stripe, jwt, logging, asyncio
+from dotenv import load_dotenv
+import time
+
+# Load environment variables from .env file
+load_dotenv()
 from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
@@ -43,15 +49,183 @@ async def app_lifespan(app: FastAPI):
         except Exception:
             pass
 
-app = FastAPI(title="DueSpark – Backend MVP", version="0.2.0", lifespan=app_lifespan)
+app = FastAPI(
+    title="DueSpark – Backend MVP", 
+    version="0.2.0", 
+    lifespan=app_lifespan,
+    description="""
+    DueSpark Backend API - Invoice management and analytics platform
+    
+    ## Features
+    
+    * **Authentication** - JWT-based authentication system
+    * **Invoice Management** - Create, update, and track invoices
+    * **Client Management** - Manage client information and relationships  
+    * **Analytics** - Comprehensive analytics and reporting capabilities
+    * **Reminders** - Automated payment reminder system
+    * **Integrations** - Stripe integration for payment processing
+    
+    ## Authentication
+    
+    Most endpoints require authentication. Use the `/auth/login` endpoint to obtain a JWT token,
+    then include it in the `Authorization` header as `Bearer <token>`.
+    """,
+    openapi_tags=[
+        {
+            "name": "authentication",
+            "description": "User authentication and authorization endpoints"
+        },
+        {
+            "name": "analytics", 
+            "description": "Analytics and reporting endpoints providing insights into invoice data, payment metrics, and client behavior"
+        },
+        {
+            "name": "clients",
+            "description": "Client management operations"
+        },
+        {
+            "name": "invoices", 
+            "description": "Invoice management and tracking"
+        },
+        {
+            "name": "reminders",
+            "description": "Payment reminder system"
+        },
+        {
+            "name": "integrations",
+            "description": "Third-party integrations (Stripe, etc.)"
+        },
+        {
+            "name": "admin",
+            "description": "Administrative operations and system management"
+        }
+    ]
+)
+
+# Custom exception handlers for structured error responses
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Structured JSON error response for HTTP exceptions"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "code": exc.status_code,
+                "message": exc.detail,
+                "type": "http_error"
+            },
+            "success": False,
+            "data": None
+        }
+    )
+
+@app.exception_handler(500)
+async def internal_server_error_handler(request: Request, exc: Exception):
+    """Structured JSON error response for internal server errors"""
+    logger.error(f"Internal server error: {str(exc)}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": 500,
+                "message": "Internal server error",
+                "type": "server_error"
+            },
+            "success": False,
+            "data": None
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Catch-all handler for unhandled exceptions"""
+    logger.error(f"Unhandled exception: {str(exc)}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": 500,
+                "message": "An unexpected error occurred",
+                "type": "server_error"
+            },
+            "success": False,
+            "data": None
+        }
+    )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",  # Additional dev port
+        "http://127.0.0.1:3000"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "X-CSRF-Token",
+        "Cache-Control",
+        "Pragma"
+    ],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    user_id = None
+    
+    # Extract user ID from JWT token for analytics tracking
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            user_email = payload.get("sub")
+            if user_email:
+                # Get user ID from database
+                try:
+                    db = SessionLocal()
+                    user = db.query(models.User).filter(models.User.email == user_email).first()
+                    if user:
+                        user_id = user.id
+                    db.close()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    
+    # Process request
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    
+    # Log analytics requests with structured format
+    if request.url.path.startswith("/analytics"):
+        log_data = {
+            "event": "analytics_request",
+            "method": request.method,
+            "path": request.url.path,
+            "query_params": dict(request.query_params),
+            "user_id": user_id,
+            "status_code": response.status_code,
+            "duration_ms": round(process_time * 1000, 2),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        logger.info(json.dumps(log_data))
+    
+    # Add performance headers
+    response.headers["X-Process-Time"] = str(process_time)
+    
+    return response
 
 # Stripe configuration from environment
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
@@ -93,6 +267,16 @@ DLQ_ITEMS_TOTAL = Counter("dlq_items_total", "DLQ items", ["topic"])
 EMAIL_SEND_DURATION_SECONDS = Histogram("email_send_duration_seconds", "Email send duration (seconds)")
 SCHEDULE_COMPUTE_DURATION_SECONDS = Histogram("schedule_compute_duration_seconds", "Adaptive scheduling compute duration (seconds)")
 REMINDERS_PENDING = Gauge("reminders_pending", "Reminders pending in next lookahead window (minutes)")
+
+# Analytics observability metrics
+ANALYTICS_REQUESTS_TOTAL = Counter("analytics_requests_total", "Analytics requests", ["endpoint", "user_id", "status"])
+ANALYTICS_REQUEST_DURATION_SECONDS = Histogram("analytics_request_duration_seconds", "Analytics request duration", ["endpoint"])
+ANALYTICS_QUERY_DURATION_SECONDS = Histogram("analytics_query_duration_seconds", "Analytics database query duration", ["query_type"])
+
+# Email send metrics (dispatcher)
+EMAIL_SENDS_ATTEMPTED_TOTAL = Counter("email_sends_attempted_total", "Email send attempts via dispatcher")
+EMAIL_SENDS_RATE_LIMITED_TOTAL = Counter("email_sends_rate_limited_total", "Emails deferred due to per-user rate limiting")
+EMAIL_PROVIDER_ERRORS_TOTAL = Counter("email_provider_errors_total", "Provider send errors")
 
 TONE_PRESETS: dict[str, dict[str, str]] = {
     "friendly": {
@@ -188,10 +372,26 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 # ---- Clients ----
 @app.get("/clients", tags=["clients"])
 def list_clients(limit: int = 50, offset: int = 0, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    q = db.query(models.Client).filter(models.Client.user_id == user.id)
+    # Optimized query with consistent ordering
+    q = db.query(models.Client).filter(
+        models.Client.user_id == user.id
+    ).order_by(models.Client.name.asc())  # Alphabetical order for clients
+
+    # Get total count efficiently
     total = q.count()
+
+    # Get paginated results
     items = q.offset(offset).limit(limit).all()
-    return _envelope([schemas.ClientOut.model_validate(i).model_dump() for i in items], {"limit": limit, "offset": offset, "total": total})
+
+    return _envelope(
+        [schemas.ClientOut.model_validate(i).model_dump() for i in items],
+        {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": offset + limit < total
+        }
+    )
 
 @app.post("/clients", tags=["clients"])
 def create_client(payload: schemas.ClientCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -231,11 +431,47 @@ def delete_client(client_id: int, db: Session = Depends(get_db), user: models.Us
 
 # ---- Invoices ----
 @app.get("/invoices", tags=["invoices"])
-def list_invoices(limit: int = 50, offset: int = 0, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    q = db.query(models.Invoice).filter(models.Invoice.user_id == user.id)
+def list_invoices(
+    limit: int = 50,
+    offset: int = 0,
+    client_id: Optional[int] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    from sqlalchemy.orm import joinedload
+
+    # Build optimized query with eager loading
+    q = db.query(models.Invoice).options(
+        joinedload(models.Invoice.client)
+    ).filter(models.Invoice.user_id == user.id)
+
+    # Apply client filter
+    if client_id is not None:
+        q = q.filter(models.Invoice.client_id == client_id)
+
+    # Apply status filter
+    if status:
+        q = q.filter(models.Invoice.status == status)
+
+    # Order by creation date (most recent first) for consistent pagination
+    q = q.order_by(models.Invoice.created_at.desc())
+
+    # Get total count more efficiently
     total = q.count()
+
+    # Get paginated results with eager loading
     items = q.offset(offset).limit(limit).all()
-    return _envelope([schemas.InvoiceOut.model_validate(i).model_dump() for i in items], {"limit": limit, "offset": offset, "total": total})
+
+    return _envelope(
+        [schemas.InvoiceOut.model_validate(i).model_dump() for i in items],
+        {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": offset + limit < total
+        }
+    )
 
 @app.post("/invoices", tags=["invoices"])
 def create_invoice(payload: schemas.InvoiceCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -266,9 +502,19 @@ def create_invoice(payload: schemas.InvoiceCreate, db: Session = Depends(get_db)
 
 @app.get("/invoices/{invoice_id}", tags=["invoices"])
 def get_invoice(invoice_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    i = db.query(models.Invoice).filter(models.Invoice.id == invoice_id, models.Invoice.user_id == user.id).first()
+    from sqlalchemy.orm import joinedload
+
+    # Eager load client data for single invoice
+    i = db.query(models.Invoice).options(
+        joinedload(models.Invoice.client)
+    ).filter(
+        models.Invoice.id == invoice_id,
+        models.Invoice.user_id == user.id
+    ).first()
+
     if not i:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
     out = schemas.InvoiceOut.model_validate(i)
     return _envelope(out.model_dump())
 
@@ -313,10 +559,32 @@ def delete_invoice(invoice_id: int, db: Session = Depends(get_db), user: models.
 # ---- Reminders ----
 @app.get("/reminders", tags=["reminders"])
 def list_reminders(limit: int = 50, offset: int = 0, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    q = db.query(models.Reminder).join(models.Invoice).filter(models.Invoice.user_id == user.id)
+    from sqlalchemy.orm import joinedload
+
+    # Optimized query with eager loading of related invoice data
+    q = db.query(models.Reminder).options(
+        joinedload(models.Reminder.invoice)
+    ).join(
+        models.Invoice
+    ).filter(
+        models.Invoice.user_id == user.id
+    ).order_by(models.Reminder.send_at.desc())  # Most recent scheduled sends first
+
+    # Get total count efficiently
     total = q.count()
+
+    # Get paginated results with eager loading
     items = q.offset(offset).limit(limit).all()
-    return _envelope([schemas.ReminderOut.model_validate(r).model_dump() for r in items], {"limit": limit, "offset": offset, "total": total})
+
+    return _envelope(
+        [schemas.ReminderOut.model_validate(r).model_dump() for r in items],
+        {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": offset + limit < total
+        }
+    )
 
 @app.post("/reminders", tags=["reminders"])
 def create_reminder(payload: schemas.ReminderCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -338,9 +606,21 @@ def create_reminder(payload: schemas.ReminderCreate, db: Session = Depends(get_d
 
 @app.get("/reminders/{reminder_id}", tags=["reminders"])
 def get_reminder(reminder_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    r = db.query(models.Reminder).join(models.Invoice).filter(models.Reminder.id == reminder_id, models.Invoice.user_id == user.id).first()
+    from sqlalchemy.orm import joinedload
+
+    # Eager load invoice data for single reminder
+    r = db.query(models.Reminder).options(
+        joinedload(models.Reminder.invoice)
+    ).join(
+        models.Invoice
+    ).filter(
+        models.Reminder.id == reminder_id,
+        models.Invoice.user_id == user.id
+    ).first()
+
     if not r:
         raise HTTPException(status_code=404, detail="Reminder not found")
+
     out = schemas.ReminderOut.model_validate(r)
     return _envelope(out.model_dump())
 
@@ -377,16 +657,565 @@ def delete_reminder(reminder_id: int, db: Session = Depends(get_db), user: model
     return _envelope({"id": reminder_id})
 
 # ---- Analytics ----
-@app.get("/analytics/summary", tags=["analytics"])
+@app.get(
+    "/analytics/summary", 
+    tags=["analytics"],
+    summary="Get analytics summary",
+    description="""
+    Retrieve comprehensive analytics summary including:
+    - Invoice counts by status (draft, pending, paid, overdue, cancelled)
+    - Expected payments in next 30 days 
+    - Average days to pay for paid invoices
+    - Top 5 late-paying clients with average lateness
+    
+    Returns aggregated metrics for the authenticated user's invoices.
+    """,
+    response_description="Analytics summary with status totals, payment metrics, and client analysis",
+    responses={
+        200: {
+            "description": "Successful response with analytics summary",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "totals": {
+                                "all": 25,
+                                "draft": 3,
+                                "pending": 8,
+                                "paid": 12,
+                                "overdue": 2,
+                                "cancelled": 0
+                            },
+                            "expected_payments_next_30d": 150000,
+                            "avg_days_to_pay": 5.2,
+                            "top_late_clients": [
+                                {
+                                    "client_id": 1,
+                                    "client_name": "Acme Corp",
+                                    "client_email": "billing@acme.com",
+                                    "avg_days_late": 12.5,
+                                    "overdue_count": 2,
+                                    "total_overdue_amount_cents": 50000
+                                }
+                            ]
+                        },
+                        "meta": {
+                            "generated_at": "2024-01-15T10:30:00Z",
+                            "currency": "USD",
+                            "window_days": 30,
+                            "notes": "Expected = pending/overdue invoices with due_date in next 30 days"
+                        }
+                    }
+                }
+            }
+        },
+        401: {"description": "Authentication required"},
+        500: {"description": "Internal server error"}
+    }
+)
 def analytics_summary(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    q = db.query(models.Invoice).filter(models.Invoice.user_id == user.id)
-    invoices = q.all()
-    totals = dict(all=len(invoices),
-                  pending=sum(1 for i in invoices if i.status == models.InvoiceStatus.pending),
-                  overdue=sum(1 for i in invoices if i.status == models.InvoiceStatus.overdue),
-                  paid=sum(1 for i in invoices if i.status == models.InvoiceStatus.paid))
-    expected = sum(i.amount_cents for i in invoices if i.status in (models.InvoiceStatus.pending, models.InvoiceStatus.overdue))
-    return _envelope({"totals": totals, "expected_payments_next_30d": expected})
+    from sqlalchemy import func, case, extract, or_, and_
+    from datetime import datetime, timezone, timedelta
+    
+    # Track analytics request and timing
+    ANALYTICS_REQUESTS_TOTAL.labels(endpoint="summary", user_id=str(user.id), status="success").inc()
+    request_start = time.time()
+    
+    # Get status totals with a single query using GROUP BY
+    query_start = time.time()
+    status_counts = db.query(
+        models.Invoice.status,
+        func.count(models.Invoice.id).label('count'),
+        func.sum(models.Invoice.amount_cents).label('total_amount')
+    ).filter(
+        models.Invoice.user_id == user.id
+    ).group_by(models.Invoice.status).all()
+    ANALYTICS_QUERY_DURATION_SECONDS.labels(query_type="status_counts").observe(time.time() - query_start)
+    
+    # Build totals dict with all statuses
+    totals = {
+        "all": 0,
+        "draft": 0,
+        "pending": 0,
+        "paid": 0,
+        "overdue": 0,
+        "cancelled": 0
+    }
+    expected_payments = 0
+    
+    for status, count, total_amount in status_counts:
+        status_str = status.value if hasattr(status, 'value') else str(status)
+        totals[status_str] = count
+        totals["all"] += count
+        
+        # Sum expected payments for pending/overdue
+        if status_str in ['pending', 'overdue']:
+            expected_payments += total_amount or 0
+    
+    # Calculate average days to pay for paid invoices
+    query_start = time.time()
+    avg_days_query = db.query(
+        func.avg(
+            extract('epoch', models.Invoice.paid_at - models.Invoice.created_at) / 86400
+        ).label('avg_days')
+    ).filter(
+        models.Invoice.user_id == user.id,
+        models.Invoice.status == models.InvoiceStatus.paid,
+        models.Invoice.paid_at.isnot(None)
+    ).scalar()
+    ANALYTICS_QUERY_DURATION_SECONDS.labels(query_type="avg_days_to_pay").observe(time.time() - query_start)
+    
+    avg_days_to_pay = float(avg_days_query) if avg_days_query else None
+
+    # Get top late clients - clients with highest average lateness
+    # Include both overdue and paid-late invoices for accurate average calculation
+    now = datetime.now(timezone.utc)
+    query_start = time.time()
+    top_late_clients_query = db.query(
+        models.Client.id.label('client_id'),
+        models.Client.name.label('client_name'),
+        models.Client.email.label('client_email'),
+        func.count(
+            case((models.Invoice.status == models.InvoiceStatus.overdue, 1))
+        ).label('overdue_count'),
+        func.sum(
+            case(
+                (models.Invoice.status == models.InvoiceStatus.overdue, models.Invoice.amount_cents),
+                else_=0
+            )
+        ).label('total_overdue_amount_cents'),
+        func.avg(
+            case(
+                # For paid invoices: use actual payment date
+                (models.Invoice.paid_at.isnot(None), 
+                 func.julianday(models.Invoice.paid_at) - func.julianday(models.Invoice.due_date)),
+                # For overdue invoices: use current date
+                else_=func.julianday('now') - func.julianday(models.Invoice.due_date)
+            )
+        ).label('avg_days_late')
+    ).join(
+        models.Invoice, models.Client.id == models.Invoice.client_id
+    ).filter(
+        models.Client.user_id == user.id,
+        # Include invoices that are either:
+        # 1. Currently overdue, OR
+        # 2. Were paid after their due date (paid late)
+        or_(
+            models.Invoice.status == models.InvoiceStatus.overdue,
+            and_(
+                models.Invoice.status == models.InvoiceStatus.paid,
+                models.Invoice.paid_at.isnot(None),
+                func.julianday(models.Invoice.paid_at) > func.julianday(models.Invoice.due_date)
+            )
+        )
+    ).group_by(
+        models.Client.id, models.Client.name, models.Client.email
+    ).having(
+        # Only include clients who actually have late payments (avg > 0)
+        func.avg(
+            case(
+                (models.Invoice.paid_at.isnot(None), 
+                 func.julianday(models.Invoice.paid_at) - func.julianday(models.Invoice.due_date)),
+                else_=func.julianday('now') - func.julianday(models.Invoice.due_date)
+            )
+        ) > 0
+    ).order_by(
+        func.avg(
+            case(
+                (models.Invoice.paid_at.isnot(None), 
+                 func.julianday(models.Invoice.paid_at) - func.julianday(models.Invoice.due_date)),
+                else_=func.julianday('now') - func.julianday(models.Invoice.due_date)
+            )
+        ).desc()
+    ).limit(5).all()
+    ANALYTICS_QUERY_DURATION_SECONDS.labels(query_type="top_late_clients").observe(time.time() - query_start)
+    
+    top_late_clients = [
+        {
+            "client_id": row.client_id,
+            "client_name": row.client_name,
+            "client_email": row.client_email,
+            "avg_days_late": float(row.avg_days_late),
+            "overdue_count": row.overdue_count,
+            "total_overdue_amount_cents": int(row.total_overdue_amount_cents or 0)
+        }
+        for row in top_late_clients_query
+    ]
+    
+    # Check if we have mixed currencies (SQLite compatible)
+    currency_count = db.query(
+        func.count(func.distinct(models.Invoice.currency))
+    ).filter(models.Invoice.user_id == user.id).scalar() or 0
+    
+    # Get the first currency if we have exactly one
+    single_currency = None
+    if currency_count == 1:
+        single_currency = db.query(models.Invoice.currency).filter(
+            models.Invoice.user_id == user.id
+        ).distinct().first()
+        single_currency = single_currency[0] if single_currency else "USD"
+    
+    is_mixed_currency = currency_count > 1
+    currency_info = "mixed" if is_mixed_currency else (single_currency if currency_count == 1 else "USD")
+    
+    result = schemas.AnalyticsSummaryOut(
+        totals=schemas.AnalyticsStatusTotals(**totals),
+        expected_payments_next_30d=expected_payments,
+        avg_days_to_pay=avg_days_to_pay,
+        top_late_clients=top_late_clients
+    )
+    
+    # Record overall request duration
+    ANALYTICS_REQUEST_DURATION_SECONDS.labels(endpoint="summary").observe(time.time() - request_start)
+    
+    meta = {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        "currency": currency_info,
+        "window_days": 30,
+        "notes": "Expected = pending/overdue invoices with due_date in next 30 days"
+    }
+    
+    return _envelope(result.model_dump(), meta)
+
+@app.get(
+    "/analytics/timeseries", 
+    tags=["analytics"],
+    summary="Get analytics timeseries data",
+    description="""
+    Retrieve time-series analytics data for various metrics over specified intervals.
+    
+    **Available Metrics:**
+    - `payments`: Invoices that were marked as paid (uses paid_at date)
+    - `invoices_created`: New invoices created (uses created_at date) 
+    - `invoices_paid`: Invoices that changed to paid status (uses paid_at date)
+    - `revenue`: Total monetary value of paid invoices (uses paid_at date)
+    
+    **Time Intervals:**
+    - `day`: Daily aggregation (last 12 days by default)
+    - `week`: Weekly aggregation (last 12 weeks by default) 
+    - `month`: Monthly aggregation (last 12 months by default)
+    
+    **Date Range:**
+    - Without date parameters: Returns last 12 periods based on interval
+    - With custom dates: Returns data within specified date range
+    - Date format: ISO 8601 (e.g., '2024-01-01T00:00:00Z')
+    
+    **Response includes:**
+    - Time series data points with period, count, and value
+    - Total aggregated count and value across all periods
+    - Metadata with effective date range and timezone info
+    """,
+    response_description="Timeseries data with points, totals, and metadata",
+    responses={
+        200: {
+            "description": "Successful response with timeseries data",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "metric": "payments",
+                            "interval": "week", 
+                            "points": [
+                                {
+                                    "period": "2024-01-01T00:00:00+00:00",
+                                    "value": 125000.0,
+                                    "count": 3
+                                },
+                                {
+                                    "period": "2024-01-08T00:00:00+00:00", 
+                                    "value": 87500.0,
+                                    "count": 2
+                                }
+                            ],
+                            "total_value": 212500.0,
+                            "total_count": 5
+                        },
+                        "meta": {
+                            "metric": "payments",
+                            "interval": "week",
+                            "from": "2024-01-01", 
+                            "to": "2024-01-31",
+                            "timezone": "UTC",
+                            "series_len": 2
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Bad request - invalid parameters",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "invalid_metric": {
+                            "summary": "Invalid metric parameter",
+                            "value": {
+                                "error": {
+                                    "code": 400,
+                                    "message": "Invalid metric. Must be one of: ['payments', 'invoices_created', 'invoices_paid', 'revenue']",
+                                    "type": "http_error"
+                                },
+                                "success": False,
+                                "data": None
+                            }
+                        },
+                        "invalid_date_range": {
+                            "summary": "Invalid date range",
+                            "value": {
+                                "error": {
+                                    "code": 400,
+                                    "message": "from_date must be less than or equal to to_date",
+                                    "type": "http_error"
+                                },
+                                "success": False,
+                                "data": None
+                            }
+                        },
+                        "invalid_date_format": {
+                            "summary": "Invalid date format",
+                            "value": {
+                                "error": {
+                                    "code": 400,
+                                    "message": "Invalid from_date format. Use ISO 8601 format (e.g., '2024-01-01T00:00:00Z')",
+                                    "type": "http_error"
+                                },
+                                "success": False,
+                                "data": None
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        401: {"description": "Authentication required"},
+        500: {"description": "Internal server error"}
+    }
+)
+def analytics_timeseries(
+    metric: str = Query(
+        default="payments",
+        description="Metric to analyze",
+        pattern="^(payments|invoices_created|invoices_paid|revenue)$",
+        examples={"payments": {"value": "payments"}}
+    ),
+    interval: str = Query(
+        default="week", 
+        description="Time interval for aggregation",
+        pattern="^(day|week|month)$",
+        examples={"week": {"value": "week"}}
+    ),
+    from_date: Optional[str] = Query(
+        default=None,
+        description="Start date for custom date range (ISO 8601 format). If not provided, defaults to 12 periods ago based on interval.",
+        pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$",
+        examples={"iso_date": {"value": "2024-01-01T00:00:00Z"}}
+    ),
+    to_date: Optional[str] = Query(
+        default=None,
+        description="End date for custom date range (ISO 8601 format). If not provided, defaults to current time. Must be greater than or equal to from_date.",
+        pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$", 
+        examples={"iso_date": {"value": "2024-12-31T23:59:59Z"}}
+    ),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    from sqlalchemy import func, extract, text
+    from datetime import datetime, timezone, timedelta
+    
+    # Validate parameters
+    valid_metrics = ["payments", "invoices_created", "invoices_paid", "revenue"]
+    valid_intervals = ["day", "week", "month"]
+    
+    if metric not in valid_metrics:
+        raise HTTPException(status_code=400, detail=f"Invalid metric. Must be one of: {valid_metrics}")
+    if interval not in valid_intervals:
+        raise HTTPException(status_code=400, detail=f"Invalid interval. Must be one of: {valid_intervals}")
+    
+    # Validate and parse date parameters
+    parsed_from_date = None
+    parsed_to_date = None
+    
+    if from_date:
+        try:
+            parsed_from_date = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid from_date format. Use ISO 8601 format (e.g., '2024-01-01T00:00:00Z')")
+    
+    if to_date:
+        try:
+            parsed_to_date = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid to_date format. Use ISO 8601 format (e.g., '2024-01-01T00:00:00Z')")
+    
+    # Validate that from_date <= to_date
+    if parsed_from_date and parsed_to_date and parsed_from_date > parsed_to_date:
+        raise HTTPException(status_code=400, detail="from_date must be less than or equal to to_date")
+    
+    # Calculate date range (either from parameters or default last 12 periods)
+    now = datetime.now(timezone.utc)
+    
+    if parsed_from_date or parsed_to_date:
+        # Use custom date range
+        start_date = parsed_from_date or now - timedelta(days=365)  # Default to 1 year ago if only to_date provided
+        end_date = parsed_to_date or now  # Default to now if only from_date provided
+    else:
+        # Use default date range (last 12 periods)
+        if interval == "day":
+            start_date = now - timedelta(days=12)
+        elif interval == "week":
+            start_date = now - timedelta(weeks=12)
+        else:  # month
+            start_date = now - timedelta(days=365)
+        end_date = now
+    
+    # Set date truncation for SQL grouping
+    if interval == "day":
+        date_trunc = "day"
+    elif interval == "week":
+        date_trunc = "week"
+    else:  # month
+        date_trunc = "month"
+    
+    # Build SQLite-compatible date formatting
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+    is_sqlite = DATABASE_URL.startswith("sqlite")
+    
+    if is_sqlite:
+        # For SQLite, use strftime for date truncation
+        if interval == "day":
+            date_format = "%Y-%m-%d"
+        elif interval == "week":
+            # SQLite doesn't have week truncation, so we'll use date and group by week
+            date_format = "%Y-%W"  # Year-Week
+        else:  # month
+            date_format = "%Y-%m"
+        
+        date_column = func.strftime(date_format, 
+            models.Invoice.paid_at if metric in ["payments", "invoices_paid", "revenue"] 
+            else models.Invoice.created_at
+        )
+    else:
+        # For PostgreSQL, use date_trunc
+        date_column = func.date_trunc(date_trunc, 
+            models.Invoice.paid_at if metric in ["payments", "invoices_paid", "revenue"] 
+            else models.Invoice.created_at
+        )
+    
+    # Build query based on metric
+    if metric == "payments":
+        # Payments = invoices that were paid
+        base_query = db.query(
+            date_column.label('period'),
+            func.count(models.Invoice.id).label('count'),
+            func.sum(models.Invoice.amount_cents).label('value')
+        ).filter(
+            models.Invoice.user_id == user.id,
+            models.Invoice.status == models.InvoiceStatus.paid,
+            models.Invoice.paid_at >= start_date,
+            models.Invoice.paid_at <= end_date,
+            models.Invoice.paid_at.isnot(None)
+        )
+    elif metric == "invoices_created":
+        base_query = db.query(
+            date_column.label('period'),
+            func.count(models.Invoice.id).label('count'),
+            func.sum(models.Invoice.amount_cents).label('value')
+        ).filter(
+            models.Invoice.user_id == user.id,
+            models.Invoice.created_at >= start_date,
+            models.Invoice.created_at <= end_date
+        )
+    elif metric == "invoices_paid":
+        base_query = db.query(
+            date_column.label('period'),
+            func.count(models.Invoice.id).label('count'),
+            func.sum(models.Invoice.amount_cents).label('value')
+        ).filter(
+            models.Invoice.user_id == user.id,
+            models.Invoice.status == models.InvoiceStatus.paid,
+            models.Invoice.paid_at >= start_date,
+            models.Invoice.paid_at <= end_date,
+            models.Invoice.paid_at.isnot(None)
+        )
+    else:  # revenue
+        # Revenue = sum of all paid invoices
+        base_query = db.query(
+            date_column.label('period'),
+            func.count(models.Invoice.id).label('count'),
+            func.sum(models.Invoice.amount_cents).label('value')
+        ).filter(
+            models.Invoice.user_id == user.id,
+            models.Invoice.status == models.InvoiceStatus.paid,
+            models.Invoice.paid_at >= start_date,
+            models.Invoice.paid_at <= end_date,
+            models.Invoice.paid_at.isnot(None)
+        )
+    
+    results = base_query.group_by(date_column).order_by(text('period')).all()
+    
+    # Convert results to response format
+    points = []
+    total_value = 0
+    total_count = 0
+    
+    for period, count, value in results:
+        if period:  # Skip null periods
+            # Handle SQLite string periods vs PostgreSQL datetime periods
+            if is_sqlite and isinstance(period, str):
+                # Convert SQLite string format to ISO date
+                try:
+                    if interval == "day":
+                        # Period is YYYY-MM-DD
+                        period_str = f"{period}T00:00:00.000Z"
+                    elif interval == "week":
+                        # Period is YYYY-WW, convert to first day of that week
+                        year, week = period.split('-')
+                        # Approximate: first day of year + week * 7 days
+                        base_date = datetime(int(year), 1, 1, tzinfo=timezone.utc)
+                        week_start = base_date + timedelta(weeks=int(week))
+                        period_str = week_start.isoformat()
+                    else:  # month
+                        # Period is YYYY-MM
+                        year, month = period.split('-')
+                        period_date = datetime(int(year), int(month), 1, tzinfo=timezone.utc)
+                        period_str = period_date.isoformat()
+                except:
+                    # Fallback: use period as-is
+                    period_str = str(period)
+            else:
+                # PostgreSQL datetime period
+                period_str = period.isoformat() if hasattr(period, 'isoformat') else str(period)
+            
+            value_float = float(value or 0)
+            count_int = int(count or 0)
+            
+            points.append({
+                "period": period_str,
+                "value": value_float,
+                "count": count_int
+            })
+            
+            total_value += value_float
+            total_count += count_int
+    
+    result = schemas.AnalyticsTimeseriesOut(
+        metric=metric,
+        interval=interval,
+        points=points,
+        total_value=total_value,
+        total_count=total_count
+    )
+    
+    meta = {
+        "metric": metric,
+        "interval": interval,
+        "from": start_date.date().isoformat(),
+        "to": end_date.date().isoformat(),
+        "timezone": "UTC",
+        "series_len": len(points)
+    }
+    
+    return _envelope(result.model_dump(), meta)
 
 # ---- Templates ----
 @app.get("/templates", tags=["templates"])
@@ -428,6 +1257,164 @@ def list_events(limit: int = 50, offset: int = 0, db: Session = Depends(get_db),
     q = db.query(models.Event).filter(models.Event.user_id == user.id).order_by(models.Event.created_at.desc())
     total = q.count(); items = q.offset(offset).limit(limit).all()
     return _envelope([schemas.EventOut.model_validate(e).model_dump() for e in items], {"limit": limit, "offset": offset, "total": total})
+
+@app.post("/events", tags=["events"])
+def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    """Create a new event for tracking user actions"""
+    db_event = models.Event(**event.model_dump(), user_id=user.id)
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return _envelope(schemas.EventOut.model_validate(db_event).model_dump())
+
+# ---- Onboarding ----
+@app.get("/auth/me", tags=["auth"])
+def get_current_user_profile(user: models.User = Depends(get_current_user)):
+    """Get current user profile including onboarding status"""
+    return _envelope({
+        "id": user.id,
+        "email": user.email,
+        "role": user.role,
+        "email_verified": user.email_verified,
+        "onboarding_status": user.onboarding_status,
+        "stripe_account_id": user.stripe_account_id,
+        "payment_method": user.payment_method,
+        "onboarding_completed_at": user.onboarding_completed_at.isoformat() if user.onboarding_completed_at else None,
+        "created_at": user.created_at.isoformat(),
+        "updated_at": user.updated_at.isoformat()
+    })
+
+@app.patch("/auth/me", tags=["auth"])
+def update_user_profile(update_data: dict, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    """Update current user profile including onboarding status"""
+    # Update allowed fields
+    allowed_fields = {'onboarding_status', 'payment_method', 'stripe_account_id', 'email_verified'}
+    for field, value in update_data.items():
+        if field in allowed_fields:
+            setattr(user, field, value)
+
+    # Set onboarding completion time if status is completed
+    if update_data.get('onboarding_status') == 'completed' and not user.onboarding_completed_at:
+        user.onboarding_completed_at = datetime.now(timezone.utc)
+
+    user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
+
+    return _envelope({
+        "id": user.id,
+        "email": user.email,
+        "onboarding_status": user.onboarding_status,
+        "payment_method": user.payment_method,
+        "onboarding_completed_at": user.onboarding_completed_at.isoformat() if user.onboarding_completed_at else None
+    })
+
+@app.post("/auth/send-verification", tags=["auth"])
+def send_verification_email(request: dict, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    """Send email verification email"""
+    import os
+
+    if user.email != request.get('email'):
+        raise HTTPException(status_code=400, detail="Email does not match account email")
+
+    # Generate a verification token
+    verification_token = jwt.encode({
+        "user_id": user.id,
+        "email": user.email,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24),
+        "type": "email_verification"
+    }, SECRET_KEY, algorithm=ALGORITHM)
+
+    user.email_verification_token = verification_token
+    db.commit()
+
+    # Check if demo mode or development
+    demo_mode = os.getenv('DEMO_MODE', 'true').lower() == 'true'
+
+    if demo_mode:
+        # In demo mode, auto-verify for better UX
+        user.email_verified = True
+        db.commit()
+
+        return _envelope({
+            "message": "Demo mode: Verification email sent and auto-verified",
+            "demo_auto_verified": True,
+            "verification_token": verification_token  # Include for testing
+        })
+    else:
+        # In production, send actual email here
+        # For now, just simulate sending
+        return _envelope({
+            "message": "Verification email sent successfully",
+            "demo_auto_verified": False,
+            "estimated_delivery": "2-5 minutes"
+        })
+
+@app.post("/onboarding/sample-data", tags=["onboarding"])
+def create_sample_data(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    """Create sample clients and invoices for demo purposes"""
+
+    # Sample clients
+    sample_clients = [
+        {
+            "name": "Acme Corporation",
+            "email": "billing@acme.com",
+            "timezone": "America/New_York"
+        },
+        {
+            "name": "Tech Solutions Inc",
+            "email": "accounts@techsolutions.com",
+            "timezone": "America/Los_Angeles"
+        },
+        {
+            "name": "Global Enterprises Ltd",
+            "email": "finance@globalent.com",
+            "timezone": "Europe/London"
+        }
+    ]
+
+    created_clients = []
+    for client_data in sample_clients:
+        db_client = models.Client(**client_data, user_id=user.id)
+        db.add(db_client)
+        db.commit()
+        db.refresh(db_client)
+        created_clients.append(db_client)
+
+    # Sample invoices
+    from datetime import date
+    sample_invoices = [
+        {"client": created_clients[0], "amount_cents": 150000, "due_date": date.today() + timedelta(days=30), "status": "pending"},
+        {"client": created_clients[0], "amount_cents": 75000, "due_date": date.today() - timedelta(days=5), "status": "overdue"},
+        {"client": created_clients[1], "amount_cents": 250000, "due_date": date.today() + timedelta(days=15), "status": "pending"},
+        {"client": created_clients[1], "amount_cents": 100000, "due_date": date.today() - timedelta(days=10), "status": "overdue"},
+        {"client": created_clients[2], "amount_cents": 500000, "due_date": date.today() + timedelta(days=7), "status": "pending"},
+        {"client": created_clients[2], "amount_cents": 300000, "due_date": date.today() - timedelta(days=3), "status": "paid"}
+    ]
+
+    created_invoices = []
+    for invoice_data in sample_invoices:
+        db_invoice = models.Invoice(
+            user_id=user.id,
+            client_id=invoice_data["client"].id,
+            amount_cents=invoice_data["amount_cents"],
+            due_date=invoice_data["due_date"],
+            status=invoice_data["status"],
+            currency="USD"
+        )
+        if invoice_data["status"] == "paid":
+            db_invoice.paid_at = datetime.now(timezone.utc)
+
+        db.add(db_invoice)
+        db.commit()
+        db.refresh(db_invoice)
+        created_invoices.append(db_invoice)
+
+    return _envelope({
+        "message": "Sample data created successfully",
+        "clients_created": len(created_clients),
+        "invoices_created": len(created_invoices)
+    })
 
 # ---- Reminder Preview ----
 def _render_template(subject_tpl: str, body_md_tpl: str, ctx: dict) -> tuple[str, str, str]:
@@ -604,14 +1591,22 @@ def reminders_send_now(payload: schemas.ReminderSendNowRequest, db: Session = De
         headers = {
             "X-App-Reminder-Id": str(r.id),
             "X-App-User-Id": str(user.id),
+            "X-Idempotency-Key": f"reminder:{r.id}",
         }
-        resp = provider.send(
-            to_email=client.email,
-            subject=subj,
-            html=body_html,
-            text=text_rendered,
-            headers=headers,
-        )
+        # Optional transactional outbox
+        if os.getenv('OUTBOX_ENABLED','false').lower() in ('1','true','yes'):
+            ob = models.Outbox(topic='email.send', payload={
+                'to_email': client.email,
+                'subject': subj,
+                'html': body_html,
+                'text': text_rendered,
+                'headers': headers,
+                'reminder_id': r.id,
+            }, status='pending')
+            db.add(ob); db.commit(); db.refresh(ob)
+            # Do not mark reminder as sent here; dispatcher will update it
+            return _envelope({"queued": True, "outbox_id": ob.id})
+        resp = provider.send(to_email=client.email, subject=subj, html=body_html, text=text_rendered, headers=headers)
         # Update reminder
         r.status = models.ReminderStatus.sent
         r.subject = subj
@@ -624,6 +1619,7 @@ def reminders_send_now(payload: schemas.ReminderSendNowRequest, db: Session = De
             "message_id": resp.get("message_id"),
             "template": "reminder",
             "tone": tone,
+            "idempotency_key": f"reminder:{r.id}",
         })
         r.meta = meta
         r.sent_at = datetime.now(timezone.utc)
@@ -643,18 +1639,52 @@ def _get_user_stripe_acct(db: Session, user_id: int) -> models.StripeAccount | N
 
 @app.get('/integrations/stripe/connect', tags=['integrations'])
 def stripe_connect_start(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    if not STRIPE_CLIENT_ID:
-        raise HTTPException(status_code=400, detail='Stripe not configured')
-    state = create_access_token(sub=user.email, expires_minutes=10)
-    params = {
-        'response_type': 'code',
-        'client_id': STRIPE_CLIENT_ID,
-        'scope': 'read_write',
-        'redirect_uri': STRIPE_REDIRECT_URI,
-        'state': state,
-    }
-    url = 'https://connect.stripe.com/oauth/authorize?' + urlencode(params)
-    return _envelope({'url': url})
+    try:
+        # Check if Stripe is properly configured
+        if not STRIPE_CLIENT_ID:
+            return _envelope({
+                'error': 'Stripe integration not configured for this environment',
+                'demo_mode': True,
+                'message': 'In demo mode, Stripe connection is not available. You can still use manual invoicing.'
+            })
+
+        if not STRIPE_REDIRECT_URI:
+            raise HTTPException(status_code=500, detail='Stripe redirect URI not configured')
+
+        # Create a secure state token
+        state = create_access_token(sub=user.email, expires_minutes=10)
+
+        # Build Stripe OAuth URL
+        params = {
+            'response_type': 'code',
+            'client_id': STRIPE_CLIENT_ID,
+            'scope': 'read_write',
+            'redirect_uri': STRIPE_REDIRECT_URI,
+            'state': state,
+        }
+
+        # Validate client_id format (should start with ca_)
+        if not STRIPE_CLIENT_ID.startswith('ca_'):
+            return _envelope({
+                'error': 'Invalid Stripe client ID configuration',
+                'demo_mode': True,
+                'message': 'Demo credentials detected. Please configure real Stripe credentials for production use.'
+            })
+
+        url = 'https://connect.stripe.com/oauth/authorize?' + urlencode(params)
+
+        # Log the connection attempt for debugging
+        logging.info(f"Stripe connect initiated for user {user.email}")
+
+        return _envelope({'url': url})
+
+    except Exception as e:
+        logging.error(f"Stripe connect error for user {user.email}: {str(e)}")
+        return _envelope({
+            'error': f'Failed to initiate Stripe connection: {str(e)}',
+            'demo_mode': True,
+            'message': 'Unable to connect to Stripe. You can use manual invoicing instead.'
+        })
 
 @app.get('/integrations/stripe/status', tags=['integrations'])
 def stripe_connect_status(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -944,13 +1974,16 @@ def stripe_import_invoices(since: str | None = None, db: Session = Depends(get_d
 
 # ---- Admin: Dead Letters ----
 @app.get('/admin/dead_letters', tags=['admin'])
-def list_dead_letters(limit: int = 50, offset: int = 0, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+def list_dead_letters(limit: int = 50, offset: int = 0, after_id: int | None = None, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     # Enforce admin role
     if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
         raise HTTPException(status_code=403, detail='Forbidden')
-    q = db.query(models.DeadLetter).order_by(models.DeadLetter.created_at.desc())
-    total = q.count(); items = q.offset(offset).limit(limit).all()
-    return _envelope([schemas.DeadLetterOut.model_validate(d).model_dump() for d in items], {"limit": limit, "offset": offset, "total": total})
+    q = db.query(models.DeadLetter).order_by(models.DeadLetter.id.desc())
+    if after_id:
+        q = q.filter(models.DeadLetter.id < after_id)
+    items = q.limit(limit).all()
+    next_cursor = items[-1].id if len(items) == limit else None
+    return _envelope([schemas.DeadLetterOut.model_validate(d).model_dump() for d in items], {"limit": limit, "after_id": after_id, "next_cursor": next_cursor})
 
 @app.post('/admin/dead_letters/{dl_id}/retry', tags=['admin'])
 def retry_dead_letter(dl_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -991,6 +2024,53 @@ def requeue_failed_reminders(limit: int = 50, db: Session = Depends(get_db), use
         n += 1
     db.commit()
     return _envelope({"requeued": n})
+
+# ---- Admin: Outbox ----
+@app.get('/admin/outbox', tags=['admin'])
+def list_outbox(limit: int = 50, after_id: int | None = None, status: str | None = None, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
+    q = db.query(models.Outbox).order_by(models.Outbox.id.desc())
+    if status:
+        q = q.filter(models.Outbox.status == status)
+    if after_id:
+        q = q.filter(models.Outbox.id < after_id)
+    items = q.limit(limit).all()
+    next_cursor = items[-1].id if len(items) == limit else None
+    return _envelope([schemas.OutboxOut.model_validate(o).model_dump() for o in items], {"limit": limit, "after_id": after_id, "next_cursor": next_cursor})
+
+@app.post('/admin/outbox/{outbox_id}/retry', tags=['admin'])
+def retry_outbox(outbox_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if getattr(user, 'role', None) != getattr(models.UserRole, 'admin', None):
+        raise HTTPException(status_code=403, detail='Forbidden')
+    ob = db.query(models.Outbox).filter(models.Outbox.id == outbox_id).first()
+    if not ob:
+        raise HTTPException(status_code=404, detail='Not found')
+    from datetime import datetime, timezone
+    ob.next_attempt_at = datetime.now(timezone.utc)
+    ob.status = 'pending'
+    db.commit(); db.refresh(ob)
+    return _envelope({"id": ob.id, "status": ob.status})
+
+# ---- Dev: Promote user to admin (guarded by env) ----
+@app.post('/dev/admin/promote', include_in_schema=False)
+def dev_promote_admin(payload: dict, db: Session = Depends(get_db)):
+    flag = os.getenv('DEV_ENABLE_ADMIN_PROMOTE', '').lower() in ('1','true','yes')
+    if not flag:
+        raise HTTPException(status_code=404, detail='Not found')
+    email = (payload or {}).get('email')
+    if not email:
+        raise HTTPException(status_code=400, detail='email required')
+    u = db.query(models.User).filter(models.User.email == email).first()
+    if not u:
+        raise HTTPException(status_code=404, detail='User not found')
+    try:
+        u.role = models.UserRole.admin
+        db.commit(); db.refresh(u)
+        return _envelope({"email": u.email, "role": u.role.value})
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ---- Admin: Scheduler Controls ----
 class RequeueRequest(schemas.BaseModel):

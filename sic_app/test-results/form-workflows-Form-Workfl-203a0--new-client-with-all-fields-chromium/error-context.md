@@ -1,0 +1,111 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img [ref=e9]
+        - generic [ref=e11]: DueSpark
+      - navigation [ref=e12]:
+        - link "Dashboard" [ref=e13] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e14] [cursor=pointer]
+          - text: Dashboard
+        - link "Invoices" [ref=e17] [cursor=pointer]:
+          - /url: /invoices
+          - img [ref=e18] [cursor=pointer]
+          - text: Invoices
+        - link "Clients" [ref=e21] [cursor=pointer]:
+          - /url: /clients
+          - img [ref=e22] [cursor=pointer]
+          - text: Clients
+        - link "Settings" [ref=e27] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e28] [cursor=pointer]
+          - text: Settings
+    - generic [ref=e31]:
+      - banner [ref=e32]:
+        - generic [ref=e34]:
+          - button "Switch to light theme" [ref=e35] [cursor=pointer]:
+            - img [ref=e36] [cursor=pointer]
+          - button "Logout" [ref=e38] [cursor=pointer]:
+            - img [ref=e39] [cursor=pointer]
+      - main [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - button "Back to clients" [ref=e46] [cursor=pointer]:
+              - img [ref=e47] [cursor=pointer]
+            - generic [ref=e49]:
+              - heading "Add New Client" [level=1] [ref=e50]
+              - paragraph [ref=e51]: Create a new client for your business
+          - generic [ref=e52]:
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - heading "Client Information" [level=3] [ref=e57]:
+                  - img [ref=e58]
+                  - text: Client Information
+                - generic [ref=e61]:
+                  - generic [ref=e62]:
+                    - generic [ref=e63]:
+                      - img [ref=e64]
+                      - text: Client Name *
+                    - textbox "Client Name *" [ref=e67]
+                  - generic [ref=e68]:
+                    - generic [ref=e69]:
+                      - img [ref=e70]
+                      - text: Email Address *
+                    - textbox "Email Address *" [ref=e73]
+                    - paragraph [ref=e74]: This email will be used for sending invoices and reminders
+                  - generic [ref=e75]:
+                    - generic [ref=e76]:
+                      - img [ref=e77]
+                      - text: Contact Person
+                    - textbox "Contact Person" [ref=e80]
+                    - paragraph [ref=e81]: The primary contact person for this client
+                  - generic [ref=e82]:
+                    - generic [ref=e83]:
+                      - img [ref=e84]
+                      - text: Phone Number
+                    - textbox "Phone Number" [ref=e86]
+                    - paragraph [ref=e87]: Phone number for the primary contact person
+                  - generic [ref=e88]:
+                    - generic [ref=e89]:
+                      - img [ref=e90]
+                      - text: Timezone
+                    - combobox "Timezone" [ref=e93]:
+                      - option "Select timezone (optional)" [selected]
+                      - option "Eastern Time (ET)"
+                      - option "Central Time (CT)"
+                      - option "Mountain Time (MT)"
+                      - option "Pacific Time (PT)"
+                      - option "London (GMT/BST)"
+                      - option "Paris (CET/CEST)"
+                      - option "Berlin (CET/CEST)"
+                      - option "Tokyo (JST)"
+                      - option "Shanghai (CST)"
+                      - option "Sydney (AEST/AEDT)"
+                    - paragraph [ref=e94]: Used for scheduling reminders at appropriate times
+              - generic [ref=e95]:
+                - button "Reset Form" [ref=e96] [cursor=pointer]
+                - button "Create Client" [ref=e97] [cursor=pointer]
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - heading "Quick Actions" [level=3] [ref=e101]
+                - generic [ref=e103]:
+                  - button "Create Invoice" [ref=e104] [cursor=pointer]
+                  - button "View All Clients" [ref=e105] [cursor=pointer]
+                  - button "Back to Dashboard" [ref=e106] [cursor=pointer]
+              - generic [ref=e107]:
+                - heading "Tips" [level=3] [ref=e109]
+                - generic [ref=e111]:
+                  - paragraph [ref=e112]: • Use the client's business email for best results
+                  - paragraph [ref=e113]: • Setting timezone helps with reminder scheduling
+                  - paragraph [ref=e114]: • All client information can be updated later
+  - generic [ref=e115]:
+    - img [ref=e117]
+    - button "Open Tanstack query devtools" [ref=e165] [cursor=pointer]:
+      - img [ref=e166] [cursor=pointer]
+  - status [ref=e214]
+  - alert [ref=e215]
+```

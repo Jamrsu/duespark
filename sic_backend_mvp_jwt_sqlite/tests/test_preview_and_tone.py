@@ -28,9 +28,11 @@ def test_preview_variables_missing_keys():
     headers = make_headers()
     r = client.post("/reminders/preview", headers=headers, json=body)
     assert r.status_code == 400
-    detail = r.json().get("detail")
-    assert "missing" in detail
-    missing = set(detail["missing"]) if isinstance(detail, dict) else set()
+    response_data = r.json()
+    # Check for the new error response structure
+    error_message = response_data.get("error", {}).get("message", {})
+    assert "missing" in error_message
+    missing = set(error_message["missing"]) if isinstance(error_message, dict) else set()
     assert {"amount_formatted", "due_date_iso", "pay_link", "from_name"}.issubset(missing)
 
 

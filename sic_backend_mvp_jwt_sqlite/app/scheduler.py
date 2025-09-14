@@ -26,6 +26,15 @@ logger = logging.getLogger("duespark.scheduler")
 _REDIS_URL = os.getenv('REDIS_URL') or os.getenv('CELERY_BROKER_URL')
 _BATCH_SIZE = int(os.getenv('SCHEDULER_BATCH_SIZE', '200'))
 _LOOKAHEAD_MIN = int(os.getenv('SCHEDULER_LOOKAHEAD_MIN', '5'))
+_ADAPTIVE_N_DAYS = int(os.getenv('ADAPTIVE_N_DAYS', '180'))
+_ADAPTIVE_ENABLE = os.getenv('ADAPTIVE_ENABLE', 'true').lower() not in ('0','false','no')
+_ADAPTIVE_LEADER_ONLY = os.getenv('ADAPTIVE_LEADER_ONLY', 'true').lower() not in ('0','false','no')
+_OUTBOX_ENABLED = os.getenv('OUTBOX_ENABLED', 'false').lower() in ('1','true','yes')
+_OUTBOX_BATCH_SIZE = int(os.getenv('OUTBOX_BATCH_SIZE', '200'))
+_SENDER_MAX_PER_MIN_PER_USER = int(os.getenv('SENDER_MAX_PER_MIN_PER_USER', '1000'))
+_SENDER_RATE_WINDOW_SEC = int(os.getenv('SENDER_RATE_WINDOW_SEC', '60'))
+_SCHEDULER_MAX_LOOPS = int(os.getenv('SCHEDULER_MAX_LOOPS', '5'))
+_SCHEDULER_RECENT_SECONDS = int(os.getenv('SCHEDULER_RECENT_SECONDS', '0'))
 
 _redis_client = None
 if _REDIS_URL and _redis:
@@ -126,19 +135,33 @@ def _send_due_reminder(db: Session, r: models.Reminder) -> Optional[str]:
     from time import perf_counter
     t0 = perf_counter()
     subj, text_rendered, body_html = render_markdown_template(subject, body_md, ctx)
+    headers = {"X-App-Reminder-Id": str(r.id), "X-Idempotency-Key": f"reminder:{r.id}"}
+    if _OUTBOX_ENABLED:
+        ob = models.Outbox(topic='email.send', payload={
+            'to_email': client.email,
+            'subject': subj,
+            'html': body_html,
+            'text': text_rendered,
+            'headers': headers,
+            'reminder_id': r.id,
+        }, status='pending')
+        db.add(ob); db.commit(); db.refresh(ob)
+        # Nudge reminder's next attempt into the near future to avoid re-enqueue in the same loop
+        r.send_at = datetime.now(timezone.utc) + timedelta(minutes=_LOOKAHEAD_MIN)
+        db.commit(); db.refresh(r)
+        # Defer status change to dispatcher
+        return str(ob.id)
     provider = get_email_provider()
-    resp = provider.send(
-        to_email=client.email,
-        subject=subj,
-        html=body_html,
-        text=text_rendered,
-        headers={"X-App-Reminder-Id": str(r.id)},
-    )
+    resp = provider.send(to_email=client.email, subject=subj, html=body_html, text=text_rendered, headers=headers)
     r.status = models.ReminderStatus.sent
     r.subject = subj
     r.body = text_rendered
     meta = r.meta or {}
-    meta.update({"message_id": resp.get("message_id"), "provider": resp.get("provider", "postmark")})
+    meta.update({
+        "message_id": resp.get("message_id"),
+        "provider": resp.get("provider", "postmark"),
+        "idempotency_key": f"reminder:{r.id}",
+    })
     r.meta = meta
     r.sent_at = datetime.now(timezone.utc)
     db.commit(); db.refresh(r)
@@ -160,12 +183,21 @@ def job_enqueue_due_reminders():
     db = SessionLocal()
     try:
         from app.main import SCHEDULER_REMINDERS_ENQUEUED_TOTAL, SCHEDULER_REMINDERS_FAILED_TOTAL, DLQ_ITEMS_TOTAL
+        loops = 0
         while True:
             now = datetime.now(timezone.utc)
+            recent_cut = None
+            if _SCHEDULER_RECENT_SECONDS > 0:
+                recent_cut = now - timedelta(seconds=_SCHEDULER_RECENT_SECONDS)
             items = (
                 db.query(models.Reminder)
                 .filter(models.Reminder.status == models.ReminderStatus.scheduled)
                 .filter(models.Reminder.send_at <= now)
+            )
+            if recent_cut is not None:
+                items = items.filter(models.Reminder.created_at >= recent_cut)
+            items = (
+                items
                 .order_by(models.Reminder.send_at.asc())
                 .limit(_BATCH_SIZE)
                 .all()
@@ -205,11 +237,48 @@ def job_enqueue_due_reminders():
                         DLQ_ITEMS_TOTAL.labels(topic='reminder.send').inc()
                     except Exception:
                         pass
+            loops += 1
+            if loops >= _SCHEDULER_MAX_LOOPS:
+                break
     finally:
         db.close()
 
 
 def job_compute_adaptive_schedules():
+    # Allow disabling adaptive via env
+    if not _ADAPTIVE_ENABLE:
+        try:
+            logger.info({"event": "adaptive_disabled"})
+        except Exception:
+            pass
+        return
+    # Leader-only execution if configured and Redis available
+    if _ADAPTIVE_LEADER_ONLY and _redis_client is not None:
+        try:
+            k = f"scheduler:adaptive:lock:{datetime.now(timezone.utc).date().isoformat()}"
+            got = bool(_redis_client.set(k, 1, nx=True, ex=600))
+            if not got:
+                try:
+                    logger.info({"event": "adaptive_leader_skipped", "key": k})
+                except Exception:
+                    pass
+                return
+            else:
+                try:
+                    logger.info({"event": "adaptive_leader_acquired", "key": k})
+                except Exception:
+                    pass
+        except Exception:
+            # If Redis is unavailable, proceed rather than failing the job
+            try:
+                logger.warning({"event": "adaptive_leader_redis_error"})
+            except Exception:
+                pass
+    elif _ADAPTIVE_LEADER_ONLY and _redis_client is None:
+        try:
+            logger.info({"event": "adaptive_leader_no_redis"})
+        except Exception:
+            pass
     try:
         from app.main import PROM_SCHEDULER_RUNS, PROM_SCHEDULER_ERRORS, PROM_REMINDERS_SCHEDULED, SCHEDULER_ADAPTIVE_RUNS_TOTAL, SCHEDULE_COMPUTE_DURATION_SECONDS
         PROM_SCHEDULER_RUNS.labels(job="compute_adaptive_schedules").inc()
@@ -234,6 +303,15 @@ def job_compute_adaptive_schedules():
                 paid_counts: dict[tuple[str,int], int] = {}
                 for inv in invs:
                     if inv.paid_at is not None and inv.due_date is not None:
+                        # Bound historical window for adaptive statistics if configured
+                        if _ADAPTIVE_N_DAYS > 0:
+                            cutoff = now_utc - timedelta(days=_ADAPTIVE_N_DAYS)
+                            # Ensure timezone-aware comparison
+                            paid_at_aware = inv.paid_at
+                            if paid_at_aware.tzinfo is None:
+                                paid_at_aware = paid_at_aware.replace(tzinfo=timezone.utc)
+                            if paid_at_aware < cutoff:
+                                continue
                         late_days = (inv.paid_at.date() - inv.due_date).days
                         diffs.append(late_days)
                         # Modal weekday/hour in client tz
@@ -246,7 +324,11 @@ def job_compute_adaptive_schedules():
                             except Exception:
                                 pass
                             tz = ZoneInfo('UTC')
-                        local_dt = inv.paid_at.astimezone(tz)
+                        # Ensure timezone-aware for astimezone
+                        paid_at_for_tz = inv.paid_at
+                        if paid_at_for_tz.tzinfo is None:
+                            paid_at_for_tz = paid_at_for_tz.replace(tzinfo=timezone.utc)
+                        local_dt = paid_at_for_tz.astimezone(tz)
                         key = (local_dt.strftime('%a'), local_dt.hour)
                         paid_counts[key] = paid_counts.get(key, 0) + 1
                 avg_late = sum(diffs) / len(diffs) if diffs else 0.0
@@ -356,4 +438,101 @@ def init_scheduler(scheduler: Optional[AsyncIOScheduler] = None) -> AsyncIOSched
     sched.add_job(job_enqueue_due_reminders, IntervalTrigger(minutes=1), id="enqueue_due_reminders", replace_existing=True)
     # Nightly at 02:00 UTC: compute adaptive schedules
     sched.add_job(job_compute_adaptive_schedules, CronTrigger(hour=2, minute=0), id="compute_adaptive_schedules", replace_existing=True)
+    # Outbox dispatcher
+    sched.add_job(job_outbox_dispatcher, IntervalTrigger(minutes=1), id="outbox_dispatch", replace_existing=True)
     return sched
+
+
+def job_outbox_dispatcher():
+    if not _OUTBOX_ENABLED:
+        return
+    db = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+        sends_per_user: dict[int, int] = {}
+        items = (
+            db.query(models.Outbox)
+            .filter(models.Outbox.dispatched_at == None)
+            .filter((models.Outbox.next_attempt_at == None) | (models.Outbox.next_attempt_at <= now))
+            .order_by(models.Outbox.id.asc())
+            .limit(_OUTBOX_BATCH_SIZE)
+            .all()
+        )
+        provider = get_email_provider()
+        for ob in items:
+            try:
+                p = ob.payload or {}
+                # Optional per-user rate limiting
+                rid = p.get('reminder_id')
+                user_id: int | None = None
+                if rid:
+                    inv = None
+                    r_tmp = db.query(models.Reminder).filter(models.Reminder.id == int(rid)).first()
+                    if r_tmp:
+                        inv = db.query(models.Invoice).filter(models.Invoice.id == r_tmp.invoice_id).first()
+                        user_id = inv.user_id if inv else None
+                if user_id is not None:
+                    cnt = sends_per_user.get(user_id, 0)
+                    if cnt >= _SENDER_MAX_PER_MIN_PER_USER:
+                        # Defer to next window
+                        ob.next_attempt_at = now + timedelta(seconds=_SENDER_RATE_WINDOW_SEC)
+                        db.commit(); db.refresh(ob)
+                        try:
+                            from app.main import EMAIL_SENDS_RATE_LIMITED_TOTAL as _RL
+                            _RL.inc()
+                        except Exception:
+                            pass
+                        continue
+                resp = provider.send(
+                    to_email=p.get('to_email',''),
+                    subject=p.get('subject',''),
+                    html=p.get('html',''),
+                    text=p.get('text',''),
+                    headers=p.get('headers') or {},
+                )
+                if user_id is not None:
+                    sends_per_user[user_id] = sends_per_user.get(user_id, 0) + 1
+                try:
+                    from app.main import EMAIL_SENDS_ATTEMPTED_TOTAL as _AT
+                    _AT.inc()
+                except Exception:
+                    pass
+                ob.dispatched_at = now
+                ob.status = 'sent'
+                ob.attempts = (ob.attempts or 0) + 1
+                db.commit(); db.refresh(ob)
+                # If reminder_id present, update its status
+                if rid:
+                    r = db.query(models.Reminder).filter(models.Reminder.id == int(rid)).first()
+                    if r:
+                        r.status = models.ReminderStatus.sent
+                        r.sent_at = datetime.now(timezone.utc)
+                        meta = r.meta or {}
+                        meta.update({
+                            'message_id': resp.get('message_id'),
+                            'provider': resp.get('provider', 'postmark'),
+                            'idempotency_key': p.get('headers',{}).get('X-Idempotency-Key')
+                        })
+                        r.meta = meta
+                        db.commit()
+            except Exception as e:
+                try:
+                    from app.main import EMAIL_PROVIDER_ERRORS_TOTAL as _PE
+                    _PE.inc()
+                except Exception:
+                    pass
+                ob.attempts = (ob.attempts or 0) + 1
+                # exponential backoff
+                delay = min(3600, 30 * (2 ** (ob.attempts - 1)))
+                ob.next_attempt_at = datetime.now(timezone.utc) + timedelta(seconds=delay)
+                ob.status = 'pending'
+                db.commit(); db.refresh(ob)
+                try:
+                    # Write DLQ after several attempts
+                    if ob.attempts >= 5:
+                        db.add(models.DeadLetter(kind='outbox.email.send', payload=ob.payload, error=str(e)))
+                        db.commit()
+                except Exception:
+                    pass
+    finally:
+        db.close()

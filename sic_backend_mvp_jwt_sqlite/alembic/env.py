@@ -37,6 +37,12 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Guard against indefinite locks during migrations
+        try:
+            connection.exec_driver_sql("SET lock_timeout = '5s'")
+            connection.exec_driver_sql("SET statement_timeout = '60s'")
+        except Exception:
+            pass
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
@@ -46,4 +52,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

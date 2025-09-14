@@ -41,9 +41,43 @@ export type Reminder = {
   body?: string | null
 }
 
+export type AnalyticsStatusTotals = {
+  all: number
+  draft: number
+  pending: number
+  paid: number
+  overdue: number
+  cancelled: number
+}
+
+export type AnalyticsTopLateClient = {
+  client_id: number
+  client_name: string
+  client_email: string
+  avg_days_late: number
+  overdue_count: number
+  total_overdue_amount_cents: number
+}
+
 export type AnalyticsSummary = {
-  totals: { all: number; pending: number; overdue: number; paid: number }
+  totals: AnalyticsStatusTotals
   expected_payments_next_30d: number
+  avg_days_to_pay?: number | null
+  top_late_clients: AnalyticsTopLateClient[]
+}
+
+export type AnalyticsTimeseriesPoint = {
+  period: string  // ISO date string
+  value: number
+  count?: number
+}
+
+export type AnalyticsTimeseries = {
+  metric: string
+  interval: string
+  points: AnalyticsTimeseriesPoint[]
+  total_value: number
+  total_count: number
 }
 
 export type Template = {

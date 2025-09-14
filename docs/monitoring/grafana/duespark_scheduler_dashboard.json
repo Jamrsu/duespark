@@ -1,0 +1,140 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Reminders Enqueued/s",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(scheduler_reminders_enqueued_total[5m])",
+        "legendFormat": "enqueued/s",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "Reminders Sent/s",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(scheduler_reminders_sent_total[5m])",
+        "legendFormat": "sent/s",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "Reminders Failed/s",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(scheduler_reminders_failed_total[5m])",
+        "legendFormat": "failed/s",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "graph",
+      "title": "DLQ by Topic",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "rate(dlq_items_total[5m])",
+        "legendFormat": "{{topic}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "gauge",
+      "title": "Pending Reminders (Lookahead)",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "reminders_pending",
+        "legendFormat": "pending",
+        "refId": "A"
+      }],
+      "options": {"reduceOptions": {"calcs": ["last"]}}
+    },
+    {
+      "type": "heatmap",
+      "title": "Email Send Duration (s)",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(email_send_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "heatmap",
+      "title": "Adaptive Compute Duration (s)",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(schedule_compute_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "graph",
+      "title": "Adaptive Runs",
+      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "increase(scheduler_adaptive_runs_total[1d])",
+        "legendFormat": "adaptive runs",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "graph",
+      "title": "Scheduler Job Runs",
+      "gridPos": {"x": 12, "y": 20, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "increase(duespark_scheduler_runs_total[1h])",
+        "legendFormat": "{{job}}",
+        "refId": "A"
+      }]
+    }
+    ,{
+      "type": "stat",
+      "title": "Email Sends Attempted/s",
+      "gridPos": {"x": 0, "y": 28, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(email_sends_attempted_total[5m])",
+        "legendFormat": "attempted/s",
+        "refId": "A"
+      }]
+    }
+    ,{
+      "type": "stat",
+      "title": "Rate Limited/s",
+      "gridPos": {"x": 6, "y": 28, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(email_sends_rate_limited_total[5m])",
+        "legendFormat": "limited/s",
+        "refId": "A"
+      }]
+    }
+    ,{
+      "type": "stat",
+      "title": "Provider Errors/s",
+      "gridPos": {"x": 12, "y": 28, "w": 6, "h": 4},
+      "targets": [{
+        "expr": "rate(email_provider_errors_total[5m])",
+        "legendFormat": "errors/s",
+        "refId": "A"
+      }]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["duespark", "scheduler"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DueSpark Scheduler",
+  "version": 1
+}

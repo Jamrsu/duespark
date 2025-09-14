@@ -34,7 +34,7 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "python init_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/healthz || exit 1"]
       interval: 5s
@@ -58,9 +58,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      app:
-        condition: service_healthy
-    command: sh -c "alembic upgrade head && pytest -q"
+    command: sh -c "python init_db.py && pytest -q"
 
 volumes:
   pgdata:

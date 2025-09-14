@@ -1,9 +1,16 @@
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Text, Numeric, Date, func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Text, Numeric, Date, func, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.database import Base
 import enum
+import os
+
+# Use JSONB for PostgreSQL, JSON for SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+if DATABASE_URL.startswith("postgresql"):
+    from sqlalchemy.dialects.postgresql import JSONB as JSONBType
+else:
+    JSONBType = JSON
 
 class InvoiceStatus(str, enum.Enum):
     draft = "draft"
@@ -28,17 +35,52 @@ class UserRole(str, enum.Enum):
     member = "member"
     admin = "admin"
 
+class OnboardingStatus(str, enum.Enum):
+    not_started = "not_started"
+    account_created = "account_created"
+    email_verified = "email_verified"
+    payment_configured = "payment_configured"
+    completed = "completed"
+
+class EventType(str, enum.Enum):
+    onboarding_started = "onboarding_started"
+    account_created = "account_created"
+    email_verification_sent = "email_verification_sent"
+    email_verified = "email_verified"
+    stripe_connected = "stripe_connected"
+    manual_payment_selected = "manual_payment_selected"
+    sample_data_imported = "sample_data_imported"
+    first_invoice_imported = "first_invoice_imported"
+    onboarding_completed = "onboarding_completed"
+    onboarding_skipped = "onboarding_skipped"
+
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="userrole"), server_default=UserRole.owner.value, nullable=False)
+
+    # Onboarding fields
+    email_verified: Mapped[bool] = mapped_column(server_default='false', nullable=False)
+    email_verification_token: Mapped[str] = mapped_column(String(255), nullable=True)
+    onboarding_status: Mapped[OnboardingStatus] = mapped_column(
+        Enum(OnboardingStatus, name="onboardingstatus"),
+        server_default=OnboardingStatus.not_started.value,
+        nullable=False
+    )
+    onboarding_completed_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Payment configuration
+    stripe_account_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    payment_method: Mapped[str] = mapped_column(String(50), nullable=True)  # 'stripe' or 'manual'
+
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     clients = relationship("Client", back_populates="owner", cascade="all, delete-orphan")
     invoices = relationship("Invoice", back_populates="owner", cascade="all, delete-orphan")
+    events = relationship("Event", back_populates="user", cascade="all, delete-orphan")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -90,7 +132,7 @@ class Reminder(Base):
     status: Mapped[ReminderStatus] = mapped_column(Enum(ReminderStatus, name="reminderstatus"), default=ReminderStatus.scheduled, nullable=False, index=True)
     subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
-    meta: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    meta: Mapped[dict | None] = mapped_column(JSONBType, nullable=True)
     sent_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -120,9 +162,11 @@ class Event(Base):
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
     entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
     event_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    payload: Mapped[dict | None] = mapped_column(JSONBType, nullable=True)
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user = relationship("User", back_populates="events")
 
 class StripeAccount(Base):
     __tablename__ = "stripe_accounts"
@@ -140,9 +184,22 @@ class DeadLetter(Base):
     __tablename__ = "dead_letters"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     kind: Mapped[str] = mapped_column(String(64), index=True)  # e.g., webhook_stripe
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONBType, nullable=False)
     error: Mapped[str] = mapped_column(Text, nullable=False)
     retries: Mapped[int] = mapped_column(Integer, default=0)
     next_attempt_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Outbox(Base):
+    __tablename__ = "outbox"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    topic: Mapped[str] = mapped_column(String(64), index=True)  # e.g., email.send
+    payload: Mapped[dict] = mapped_column(JSONBType, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), index=True, default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), nullable=True)
+    dispatched_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

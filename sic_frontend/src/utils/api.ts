@@ -3,7 +3,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { Envelope } from '../types/api'
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:8001'
 })
 
 // Optional helpers to work with the { data, meta } envelope

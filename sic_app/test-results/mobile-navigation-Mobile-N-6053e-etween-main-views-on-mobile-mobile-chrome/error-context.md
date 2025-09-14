@@ -1,0 +1,270 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - banner [ref=e6]:
+        - generic [ref=e7]:
+          - button "Open sidebar" [ref=e9] [cursor=pointer]:
+            - img [ref=e10] [cursor=pointer]
+          - generic [ref=e11]:
+            - button "Switch to light theme" [ref=e12] [cursor=pointer]:
+              - img [ref=e13] [cursor=pointer]
+            - button "Logout" [ref=e15] [cursor=pointer]:
+              - img [ref=e16] [cursor=pointer]
+      - main [ref=e19]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]:
+              - heading "Clients" [level=1] [ref=e24]
+              - paragraph [ref=e25]: Manage your client relationships
+            - button "Add Client" [ref=e26] [cursor=pointer]:
+              - img [ref=e27] [cursor=pointer]
+              - text: Add Client
+          - generic [ref=e28]:
+            - generic [ref=e30]:
+              - heading "All Clients (21)" [level=3] [ref=e31]
+              - generic [ref=e32]:
+                - generic [ref=e33]: "Sort by:"
+                - generic [ref=e34]:
+                  - button "Name ↑" [ref=e35] [cursor=pointer]
+                  - button "Email" [ref=e36] [cursor=pointer]:
+                    - text: Email
+                    - img [ref=e37] [cursor=pointer]
+                  - button "Created" [ref=e40] [cursor=pointer]:
+                    - text: Created
+                    - img [ref=e41] [cursor=pointer]
+            - generic [ref=e45]:
+              - generic [ref=e46] [cursor=pointer]:
+                - generic [ref=e47] [cursor=pointer]:
+                  - img [ref=e49] [cursor=pointer]
+                  - generic [ref=e56] [cursor=pointer]:
+                    - heading "Adams Inc Corp" [level=3] [ref=e57] [cursor=pointer]
+                    - paragraph [ref=e58] [cursor=pointer]: huffmanjeffrey@example.com
+                - generic [ref=e60] [cursor=pointer]: Invalid Date
+              - generic [ref=e61] [cursor=pointer]:
+                - generic [ref=e62] [cursor=pointer]:
+                  - img [ref=e64] [cursor=pointer]
+                  - generic [ref=e71] [cursor=pointer]:
+                    - heading "Ali Hernandez and Lawson Co" [level=3] [ref=e72] [cursor=pointer]
+                    - paragraph [ref=e73] [cursor=pointer]: jennifer22@example.net
+                - generic [ref=e75] [cursor=pointer]: Invalid Date
+              - generic [ref=e76] [cursor=pointer]:
+                - generic [ref=e77] [cursor=pointer]:
+                  - img [ref=e79] [cursor=pointer]
+                  - generic [ref=e86] [cursor=pointer]:
+                    - heading "Barnes-Erickson Co" [level=3] [ref=e87] [cursor=pointer]
+                    - paragraph [ref=e88] [cursor=pointer]: robert45@example.net
+                - generic [ref=e90] [cursor=pointer]: Invalid Date
+              - generic [ref=e91] [cursor=pointer]:
+                - generic [ref=e92] [cursor=pointer]:
+                  - img [ref=e94] [cursor=pointer]
+                  - generic [ref=e101] [cursor=pointer]:
+                    - heading "Barr LLC Inc" [level=3] [ref=e102] [cursor=pointer]
+                    - paragraph [ref=e103] [cursor=pointer]: freytyler@example.com
+                - generic [ref=e105] [cursor=pointer]: Invalid Date
+              - generic [ref=e106] [cursor=pointer]:
+                - generic [ref=e107] [cursor=pointer]:
+                  - img [ref=e109] [cursor=pointer]
+                  - generic [ref=e116] [cursor=pointer]:
+                    - heading "Barrett Banks and Allen Corp" [level=3] [ref=e117] [cursor=pointer]
+                    - paragraph [ref=e118] [cursor=pointer]: turnerjohn@example.org
+                - generic [ref=e120] [cursor=pointer]: Invalid Date
+              - generic [ref=e121] [cursor=pointer]:
+                - generic [ref=e122] [cursor=pointer]:
+                  - img [ref=e124] [cursor=pointer]
+                  - generic [ref=e131] [cursor=pointer]:
+                    - heading "Ben's Bits" [level=3] [ref=e132] [cursor=pointer]
+                    - paragraph [ref=e133] [cursor=pointer]: bb@example.com
+                - generic [ref=e135] [cursor=pointer]: Invalid Date
+              - generic [ref=e136] [cursor=pointer]:
+                - generic [ref=e137] [cursor=pointer]:
+                  - img [ref=e139] [cursor=pointer]
+                  - generic [ref=e146] [cursor=pointer]:
+                    - heading "Bentley Ltd Co" [level=3] [ref=e147] [cursor=pointer]
+                    - paragraph [ref=e148] [cursor=pointer]: michael43@example.net
+                - generic [ref=e150] [cursor=pointer]: Invalid Date
+              - generic [ref=e151] [cursor=pointer]:
+                - generic [ref=e152] [cursor=pointer]:
+                  - img [ref=e154] [cursor=pointer]
+                  - generic [ref=e161] [cursor=pointer]:
+                    - heading "Contreras and Sons Ltd" [level=3] [ref=e162] [cursor=pointer]
+                    - paragraph [ref=e163] [cursor=pointer]: wilsonkimberly@example.net
+                - generic [ref=e165] [cursor=pointer]: Invalid Date
+              - generic [ref=e166] [cursor=pointer]:
+                - generic [ref=e167] [cursor=pointer]:
+                  - img [ref=e169] [cursor=pointer]
+                  - generic [ref=e176] [cursor=pointer]:
+                    - heading "Cruz LLC Inc" [level=3] [ref=e177] [cursor=pointer]
+                    - paragraph [ref=e178] [cursor=pointer]: shannon25@example.org
+                - generic [ref=e180] [cursor=pointer]: Invalid Date
+              - generic [ref=e181] [cursor=pointer]:
+                - generic [ref=e182] [cursor=pointer]:
+                  - img [ref=e184] [cursor=pointer]
+                  - generic [ref=e191] [cursor=pointer]:
+                    - heading "Davis-Allen Inc" [level=3] [ref=e192] [cursor=pointer]
+                    - paragraph [ref=e193] [cursor=pointer]: kim58@example.net
+                - generic [ref=e195] [cursor=pointer]: Invalid Date
+              - generic [ref=e196] [cursor=pointer]:
+                - generic [ref=e197] [cursor=pointer]:
+                  - img [ref=e199] [cursor=pointer]
+                  - generic [ref=e206] [cursor=pointer]:
+                    - heading "Delgado and Sons LLC" [level=3] [ref=e207] [cursor=pointer]
+                    - paragraph [ref=e208] [cursor=pointer]: victoria79@example.net
+                - generic [ref=e210] [cursor=pointer]: Invalid Date
+              - generic [ref=e211] [cursor=pointer]:
+                - generic [ref=e212] [cursor=pointer]:
+                  - img [ref=e214] [cursor=pointer]
+                  - generic [ref=e221] [cursor=pointer]:
+                    - heading "Gray PLC Corp" [level=3] [ref=e222] [cursor=pointer]
+                    - paragraph [ref=e223] [cursor=pointer]: mclaughlinmatthew@example.net
+                - generic [ref=e225] [cursor=pointer]: Invalid Date
+              - generic [ref=e226] [cursor=pointer]:
+                - generic [ref=e227] [cursor=pointer]:
+                  - img [ref=e229] [cursor=pointer]
+                  - generic [ref=e236] [cursor=pointer]:
+                    - heading "Howe-Rodriguez Ltd" [level=3] [ref=e237] [cursor=pointer]
+                    - paragraph [ref=e238] [cursor=pointer]: fwilliams@example.org
+                - generic [ref=e240] [cursor=pointer]: Invalid Date
+              - generic [ref=e241] [cursor=pointer]:
+                - generic [ref=e242] [cursor=pointer]:
+                  - img [ref=e244] [cursor=pointer]
+                  - generic [ref=e251] [cursor=pointer]:
+                    - heading "James-Coleman LLC" [level=3] [ref=e252] [cursor=pointer]
+                    - paragraph [ref=e253] [cursor=pointer]: henry88@example.net
+                - generic [ref=e255] [cursor=pointer]: Invalid Date
+              - generic [ref=e256] [cursor=pointer]:
+                - generic [ref=e257] [cursor=pointer]:
+                  - img [ref=e259] [cursor=pointer]
+                  - generic [ref=e266] [cursor=pointer]:
+                    - heading "Kim Inc Inc" [level=3] [ref=e267] [cursor=pointer]
+                    - paragraph [ref=e268] [cursor=pointer]: yadkins@example.org
+                - generic [ref=e270] [cursor=pointer]: Invalid Date
+              - generic [ref=e271] [cursor=pointer]:
+                - generic [ref=e272] [cursor=pointer]:
+                  - img [ref=e274] [cursor=pointer]
+                  - generic [ref=e281] [cursor=pointer]:
+                    - heading "Mckinney Schmitt and Alvarado Inc" [level=3] [ref=e282] [cursor=pointer]
+                    - paragraph [ref=e283] [cursor=pointer]: watsonthomas@example.net
+                - generic [ref=e285] [cursor=pointer]: Invalid Date
+              - generic [ref=e286] [cursor=pointer]:
+                - generic [ref=e287] [cursor=pointer]:
+                  - img [ref=e289] [cursor=pointer]
+                  - generic [ref=e296] [cursor=pointer]:
+                    - heading "Palmer Inc Ltd" [level=3] [ref=e297] [cursor=pointer]
+                    - paragraph [ref=e298] [cursor=pointer]: ddixon@example.org
+                - generic [ref=e300] [cursor=pointer]: Invalid Date
+              - generic [ref=e301] [cursor=pointer]:
+                - generic [ref=e302] [cursor=pointer]:
+                  - img [ref=e304] [cursor=pointer]
+                  - generic [ref=e311] [cursor=pointer]:
+                    - heading "Pena Kirk and Webb Corp" [level=3] [ref=e312] [cursor=pointer]
+                    - paragraph [ref=e313] [cursor=pointer]: wmarquez@example.com
+                - generic [ref=e315] [cursor=pointer]: Invalid Date
+              - generic [ref=e316] [cursor=pointer]:
+                - generic [ref=e317] [cursor=pointer]:
+                  - img [ref=e319] [cursor=pointer]
+                  - generic [ref=e326] [cursor=pointer]:
+                    - heading "Weber Richards and Duncan LLC" [level=3] [ref=e327] [cursor=pointer]
+                    - paragraph [ref=e328] [cursor=pointer]: kimberlyhamilton@example.net
+                - generic [ref=e330] [cursor=pointer]: Invalid Date
+              - generic [ref=e331] [cursor=pointer]:
+                - generic [ref=e332] [cursor=pointer]:
+                  - img [ref=e334] [cursor=pointer]
+                  - generic [ref=e341] [cursor=pointer]:
+                    - heading "Williams Group Co" [level=3] [ref=e342] [cursor=pointer]
+                    - paragraph [ref=e343] [cursor=pointer]: cameronrogers@example.com
+                - generic [ref=e345] [cursor=pointer]: Invalid Date
+              - generic [ref=e346] [cursor=pointer]:
+                - generic [ref=e347] [cursor=pointer]:
+                  - img [ref=e349] [cursor=pointer]
+                  - generic [ref=e356] [cursor=pointer]:
+                    - heading "Wright-Harvey Corp" [level=3] [ref=e357] [cursor=pointer]
+                    - paragraph [ref=e358] [cursor=pointer]: dianayoung@example.com
+                - generic [ref=e360] [cursor=pointer]: Invalid Date
+        - generic [ref=e361]:
+          - generic: 💡 Swipe left/right to navigate • Swipe down to open menu
+    - generic [ref=e363]:
+      - link "Dashboard" [ref=e364] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e365] [cursor=pointer]
+        - generic [ref=e368] [cursor=pointer]: Dashboard
+      - link "Invoices" [ref=e369] [cursor=pointer]:
+        - /url: /invoices
+        - img [ref=e370] [cursor=pointer]
+        - generic [ref=e373] [cursor=pointer]: Invoices
+      - link "Clients" [ref=e374] [cursor=pointer]:
+        - /url: /clients
+        - img [ref=e375] [cursor=pointer]
+        - generic [ref=e380] [cursor=pointer]: Clients
+      - link "Settings" [ref=e381] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e382] [cursor=pointer]
+        - generic [ref=e385] [cursor=pointer]: Settings
+  - complementary "Tanstack query devtools" [ref=e386]:
+    - button "Close tanstack query devtools" [ref=e388] [cursor=pointer]:
+      - img [ref=e389] [cursor=pointer]
+    - generic [ref=e391]:
+      - generic [ref=e392]:
+        - generic [ref=e393]:
+          - button "Close Tanstack query devtools" [ref=e394] [cursor=pointer]:
+            - generic [ref=e395] [cursor=pointer]: TANSTACK
+            - generic [ref=e396] [cursor=pointer]: React Query v5
+          - radiogroup [ref=e397]:
+            - group [ref=e398]:
+              - radio "Queries" [checked] [ref=e399]
+              - generic "Toggle Queries View" [ref=e400] [cursor=pointer]: Queries
+            - group [ref=e401]:
+              - radio "Mutations" [ref=e402]
+              - generic "Toggle Mutations View" [ref=e403] [cursor=pointer]: Mutations
+        - generic [ref=e404]:
+          - button "1" [ref=e405] [cursor=pointer]:
+            - generic [ref=e407] [cursor=pointer]: "1"
+          - button "0" [ref=e408] [cursor=pointer]:
+            - generic [ref=e410] [cursor=pointer]: "0"
+          - button "0" [ref=e411] [cursor=pointer]:
+            - generic [ref=e413] [cursor=pointer]: "0"
+          - button "0" [ref=e414] [cursor=pointer]:
+            - generic [ref=e416] [cursor=pointer]: "0"
+          - button "3" [ref=e417] [cursor=pointer]:
+            - generic [ref=e419] [cursor=pointer]: "3"
+      - generic [ref=e420]:
+        - generic [ref=e421]:
+          - generic [ref=e422]:
+            - img [ref=e423]
+            - textbox "Filter queries by query key" [ref=e425]
+          - generic [ref=e426]:
+            - combobox [ref=e427]:
+              - option "Sort by status" [selected]
+              - option "Sort by query hash"
+              - option "Sort by last updated"
+            - img [ref=e428]
+          - button "Sort order ascending" [ref=e430] [cursor=pointer]:
+            - generic [ref=e431] [cursor=pointer]: Asc
+            - img [ref=e432] [cursor=pointer]
+        - generic [ref=e434]:
+          - button "Clear query cache" [ref=e435] [cursor=pointer]:
+            - img [ref=e436] [cursor=pointer]
+          - button "Mock offline behavior" [ref=e438] [cursor=pointer]:
+            - img [ref=e439] [cursor=pointer]
+          - button "Open in picture-in-picture mode" [ref=e442] [cursor=pointer]:
+            - img [ref=e443] [cursor=pointer]
+          - button [ref=e445] [cursor=pointer]:
+            - img [ref=e446] [cursor=pointer]
+      - generic [ref=e450]:
+        - 'button "Query key [\"clients\",{\"limit\":100,\"offset\":0}]" [ref=e451] [cursor=pointer]':
+          - generic [ref=e452] [cursor=pointer]: "1"
+          - code [ref=e453] [cursor=pointer]: "[\"clients\",{\"limit\":100,\"offset\":0}]"
+        - 'button "Query key [\"invoices\",{\"limit\":100,\"offset\":0}]" [ref=e454] [cursor=pointer]':
+          - generic [ref=e455] [cursor=pointer]: "0"
+          - code [ref=e456] [cursor=pointer]: "[\"invoices\",{\"limit\":100,\"offset\":0}]"
+        - 'button "Query key [\"invoices\",{\"limit\":5,\"offset\":0}]" [ref=e457] [cursor=pointer]':
+          - generic [ref=e458] [cursor=pointer]: "0"
+          - code [ref=e459] [cursor=pointer]: "[\"invoices\",{\"limit\":5,\"offset\":0}]"
+        - button "Query key [\"analytics\",\"summary\"]" [ref=e460] [cursor=pointer]:
+          - generic [ref=e461] [cursor=pointer]: "0"
+          - code [ref=e462] [cursor=pointer]: "[\"analytics\",\"summary\"]"
+  - status [ref=e463]
+  - alert [ref=e464]
+```
