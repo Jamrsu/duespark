@@ -33,7 +33,7 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
         return response.data
       } else {
         // Configure manual payment
-        const response = await apiClient.patch('/auth/me', {
+        const response = await apiClient.put('/auth/me', {
           payment_method: 'manual'
         })
         return response.data
@@ -119,7 +119,37 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
 
   const handleManualPayment = () => {
     setSelectedMethod('manual')
-    configurePaymentMutation.mutate('manual')
+
+    try {
+      // Immediately update the query cache to reflect manual payment method
+      queryClient.setQueryData(['user', 'profile'], (oldData: any) => {
+        if (oldData) {
+          return { ...oldData, payment_method: 'manual' }
+        }
+        return oldData
+      })
+
+      setProcessStatus('success')
+      setStatusMessage('Manual payment method configured!')
+
+      // Track event
+      apiClient.post('/events', {
+        entity_type: 'user',
+        entity_id: user?.id,
+        event_type: 'manual_payment_selected',
+        payload: { method: 'manual' }
+      })
+
+      // Continue to next step
+      setTimeout(() => onNext(), 1500)
+
+      // Update server in background
+      configurePaymentMutation.mutate('manual')
+    } catch (error) {
+      console.error('Manual payment error:', error)
+      // Fallback: still try the API call
+      configurePaymentMutation.mutate('manual')
+    }
   }
 
   const isStripeConnected = user?.stripe_account_id && user?.payment_method === 'stripe'

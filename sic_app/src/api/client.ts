@@ -219,6 +219,70 @@ class ApiClient {
   getClient(): AxiosInstance {
     return this.client
   }
+
+  // Subscription API methods
+  getSubscriptionInfo = async () => {
+    console.log('Getting subscription info, auth status:', this.isAuthenticated())
+    console.log('Token:', this.getToken())
+    const envelope = await this.get<any>('/api/subscription/info')
+    console.log('Subscription response:', envelope)
+    return envelope.data
+  }
+
+  upgradeSubscription = async (tier: string) => {
+    const envelope = await this.post<any>('/api/subscription/upgrade', { tier })
+    return envelope.data
+  }
+
+  openBillingPortal = async () => {
+    const envelope = await this.post<any>('/api/subscription/billing-portal')
+    return envelope.data
+  }
+
+  applyCoupon = async (couponId: string) => {
+    const envelope = await this.post<any>('/api/subscription/apply-coupon', { coupon_id: couponId })
+    return envelope.data
+  }
+
+  pauseSubscription = async () => {
+    const envelope = await this.post<any>('/api/subscription/pause')
+    return envelope.data
+  }
+
+  resumeSubscription = async () => {
+    const envelope = await this.post<any>('/api/subscription/resume')
+    return envelope.data
+  }
+
+  // Referral API methods
+  getMyReferralCode = async () => {
+    const envelope = await this.get<any>('/api/referrals/my-code')
+    return envelope.data
+  }
+
+  validateReferralCode = async (referralCode: string) => {
+    const envelope = await this.post<any>('/api/referrals/validate', { referral_code: referralCode })
+    return envelope.data
+  }
+
+  getReferralStats = async () => {
+    const envelope = await this.get<any>('/api/referrals/stats')
+    return envelope.data
+  }
+
+  getCreditsBreakdown = async () => {
+    const envelope = await this.get<any>('/api/referrals/credits')
+    return envelope.data
+  }
+
+  adminGrantCredit = async (userId: number, months: number, description: string) => {
+    const envelope = await this.post<any>('/api/referrals/admin/grant-credit', {
+      user_id: userId,
+      months,
+      description
+    })
+    return envelope.data
+  }
 }
 
 // Create and export singleton instance

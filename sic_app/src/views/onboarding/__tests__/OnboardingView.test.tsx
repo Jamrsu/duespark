@@ -64,12 +64,17 @@ describe('OnboardingView', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: () => true,
       logout: vi.fn(),
-      user: mockUser,
+      getToken: () => 'mock-token',
+      clearAllAuthData: vi.fn(),
     })
   })
 
   it('renders onboarding welcome screen', async () => {
-    mockApiClient.get.mockResolvedValue({ data: mockUser })
+    mockApiClient.get.mockResolvedValue({
+      success: true,
+      data: mockUser,
+      meta: {}
+    })
 
     render(<OnboardingView />, { wrapper: createWrapper() })
 
@@ -80,7 +85,11 @@ describe('OnboardingView', () => {
   })
 
   it('shows step 1 (Account Setup) initially', async () => {
-    mockApiClient.get.mockResolvedValue({ data: mockUser })
+    mockApiClient.get.mockResolvedValue({
+      success: true,
+      data: mockUser,
+      meta: {}
+    })
 
     render(<OnboardingView />, { wrapper: createWrapper() })
 
@@ -92,7 +101,11 @@ describe('OnboardingView', () => {
 
   it('progresses through steps correctly', async () => {
     const user = userEvent.setup()
-    mockApiClient.get.mockResolvedValue({ data: mockUser })
+    mockApiClient.get.mockResolvedValue({
+      success: true,
+      data: mockUser,
+      meta: {}
+    })
     mockApiClient.post.mockResolvedValue({
       data: { message: 'Verification email sent', demo_auto_verified: true }
     })
@@ -119,7 +132,11 @@ describe('OnboardingView', () => {
 
   it('handles email verification error', async () => {
     const user = userEvent.setup()
-    mockApiClient.get.mockResolvedValue({ data: mockUser })
+    mockApiClient.get.mockResolvedValue({
+      success: true,
+      data: mockUser,
+      meta: {}
+    })
     mockApiClient.post.mockRejectedValue({
       response: { data: { detail: 'Email verification failed' } }
     })
@@ -333,7 +350,11 @@ describe('OnboardingView', () => {
   })
 
   it('displays progress correctly', async () => {
-    mockApiClient.get.mockResolvedValue({ data: mockUser })
+    mockApiClient.get.mockResolvedValue({
+      success: true,
+      data: mockUser,
+      meta: {}
+    })
 
     render(<OnboardingView />, { wrapper: createWrapper() })
 

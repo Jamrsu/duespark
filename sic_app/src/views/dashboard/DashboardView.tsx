@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Plus, TrendingUp, AlertCircle, DollarSign } from 'lucide-react'
+import { Plus, TrendingUp, AlertCircle, DollarSign, Send, Eye, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { KPICard, RevenueKPICard, InvoiceCountKPICard, OverdueKPICard } from '@/components/ui/KPICard'
@@ -51,21 +51,60 @@ export function DashboardView() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <InvoiceCountKPICard
           value={totals.all}
           subtitle="Total invoices"
           onClick={() => navigate('/invoices')}
+          showMobileActions={true}
+          quickActions={[
+            {
+              label: "View All",
+              icon: <Eye className="h-4 w-4" />,
+              action: () => navigate('/invoices'),
+              color: 'bg-blue-500 hover:bg-blue-600'
+            },
+            {
+              label: "Create New",
+              icon: <Plus className="h-4 w-4" />,
+              action: () => navigate('/invoices/new'),
+              color: 'bg-green-500 hover:bg-green-600'
+            }
+          ]}
         />
-        
+
         <RevenueKPICard
           value={analytics?.expected_payments_next_30d || 0}
           onClick={() => navigate('/invoices?status=pending')}
+          showMobileActions={true}
+          quickActions={[
+            {
+              label: "View Pending",
+              icon: <Clock className="h-4 w-4" />,
+              action: () => navigate('/invoices?status=pending'),
+              color: 'bg-yellow-500 hover:bg-yellow-600'
+            }
+          ]}
         />
-        
+
         <OverdueKPICard
           value={totals.overdue}
           onClick={() => navigate('/invoices?status=overdue')}
+          showMobileActions={true}
+          quickActions={[
+            {
+              label: "Send Reminders",
+              icon: <Send className="h-4 w-4" />,
+              action: () => navigate('/reminders?bulk=overdue'),
+              color: 'bg-red-500 hover:bg-red-600'
+            },
+            {
+              label: "View Overdue",
+              icon: <AlertCircle className="h-4 w-4" />,
+              action: () => navigate('/invoices?status=overdue'),
+              color: 'bg-orange-500 hover:bg-orange-600'
+            }
+          ]}
         />
 
         <KPICard
@@ -73,26 +112,60 @@ export function DashboardView() {
           value={analytics?.avg_days_to_pay ? `${analytics.avg_days_to_pay.toFixed(1)} days` : 'N/A'}
           color="gray"
           icon={<TrendingUp className="h-6 w-6" />}
+          showMobileActions={true}
+          quickActions={[
+            {
+              label: "View Trends",
+              icon: <TrendingUp className="h-4 w-4" />,
+              action: () => navigate('/analytics'),
+              color: 'bg-purple-500 hover:bg-purple-600'
+            }
+          ]}
         />
       </div>
 
-      {/* Status Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice Status Breakdown</CardTitle>
+      {/* Status Breakdown - Mobile-First Design */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">Invoice Status Breakdown</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <CardContent className="p-0">
+          {/* Mobile: Horizontal Scrollable */}
+          <div className="flex sm:hidden gap-4 px-4 pb-4 overflow-x-auto scrollbar-hide">
             {[
-              { label: 'Draft', value: totals.draft, color: 'text-gray-600' },
-              { label: 'Pending', value: totals.pending, color: 'text-warning-600' },
-              { label: 'Paid', value: totals.paid, color: 'text-success-600' },
-              { label: 'Overdue', value: totals.overdue, color: 'text-error-600' },
-              { label: 'Cancelled', value: totals.cancelled, color: 'text-gray-500' },
+              { label: 'Draft', value: totals.draft, color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-gray-800' },
+              { label: 'Pending', value: totals.pending, color: 'text-warning-600', bg: 'bg-warning-50 dark:bg-warning-900/20' },
+              { label: 'Paid', value: totals.paid, color: 'text-success-600', bg: 'bg-success-50 dark:bg-success-900/20' },
+              { label: 'Overdue', value: totals.overdue, color: 'text-error-600', bg: 'bg-error-50 dark:bg-error-900/20' },
+              { label: 'Cancelled', value: totals.cancelled, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800' },
             ].map((item) => (
-              <div 
-                key={item.label} 
-                className="text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg p-3 transition-colors"
+              <div
+                key={item.label}
+                className={`flex-shrink-0 w-24 text-center cursor-pointer rounded-lg p-3 transition-all duration-200 active:scale-95 ${item.bg}`}
+                onClick={() => navigate(`/invoices?status=${item.label.toLowerCase()}`)}
+              >
+                <div className={`text-2xl font-bold ${item.color} dark:opacity-90`}>
+                  {item.value}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 capitalize mt-1">
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Grid Layout */}
+          <div className="hidden sm:grid grid-cols-3 lg:grid-cols-5 gap-1">
+            {[
+              { label: 'Draft', value: totals.draft, color: 'text-gray-600', bg: 'hover:bg-gray-50 dark:hover:bg-gray-800' },
+              { label: 'Pending', value: totals.pending, color: 'text-warning-600', bg: 'hover:bg-warning-50 dark:hover:bg-warning-900/20' },
+              { label: 'Paid', value: totals.paid, color: 'text-success-600', bg: 'hover:bg-success-50 dark:hover:bg-success-900/20' },
+              { label: 'Overdue', value: totals.overdue, color: 'text-error-600', bg: 'hover:bg-error-50 dark:hover:bg-error-900/20' },
+              { label: 'Cancelled', value: totals.cancelled, color: 'text-gray-500', bg: 'hover:bg-gray-50 dark:hover:bg-gray-800' },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`text-center cursor-pointer rounded-lg p-4 transition-colors ${item.bg}`}
                 onClick={() => navigate(`/invoices?status=${item.label.toLowerCase()}`)}
               >
                 <div className={`text-2xl font-bold ${item.color} dark:opacity-90`}>
@@ -108,7 +181,7 @@ export function DashboardView() {
       </Card>
 
       {/* Recent Invoices and Top Late Clients */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Invoices */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">

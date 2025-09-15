@@ -141,7 +141,7 @@ export function LoginView() {
             Demo Credentials:
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            Email: demo@duespark.com<br />
+            Email: demo@example.com<br />
             Password: demo123
           </p>
         </div>

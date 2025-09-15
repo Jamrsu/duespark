@@ -10,6 +10,7 @@ class Token(BaseModel):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
+    referral_code: Optional[str] = None
 
 class UserOut(BaseModel):
     id: int

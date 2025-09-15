@@ -27,8 +27,12 @@ const ClientsView = React.lazy(() => import('./views/clients/ClientsView').then(
 const ClientDetailView = React.lazy(() => import('./views/clients/ClientDetailView').then(module => ({ default: module.ClientDetailView })))
 const ClientCreateView = React.lazy(() => import('./views/clients/ClientCreateView').then(module => ({ default: module.ClientCreateView })))
 const ClientEditView = React.lazy(() => import('./views/clients/ClientEditView').then(module => ({ default: module.ClientEditView })))
+const SubscriptionView = React.lazy(() => import('./views/subscription/SubscriptionView').then(module => ({ default: module.SubscriptionView })))
 const SettingsView = React.lazy(() => import('./views/settings/SettingsView').then(module => ({ default: module.SettingsView })))
 const OnboardingView = React.lazy(() => import('./views/onboarding/OnboardingView').then(module => ({ default: module.OnboardingView })))
+const ReferralsView = React.lazy(() => import('./views/referrals/ReferralsView').then(module => ({ default: module.ReferralsView })))
+const FAQView = React.lazy(() => import('./views/help/FAQView'))
+const EnterpriseView = React.lazy(() => import('./views/enterprise/EnterpriseView').then(module => ({ default: module.EnterpriseView })))
 
 // Route guards
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -255,10 +259,46 @@ export default function App() {
                         />
 
                         <Route
+                          path="subscription"
+                          element={
+                            <ErrorBoundary level="component">
+                              <SubscriptionView />
+                            </ErrorBoundary>
+                          }
+                        />
+
+                        <Route
+                          path="referrals"
+                          element={
+                            <ErrorBoundary level="component">
+                              <ReferralsView />
+                            </ErrorBoundary>
+                          }
+                        />
+
+                        <Route
                           path="settings"
                           element={
                             <ErrorBoundary level="component">
                               <SettingsView />
+                            </ErrorBoundary>
+                          }
+                        />
+
+                        <Route
+                          path="help/faq"
+                          element={
+                            <ErrorBoundary level="component">
+                              <FAQView />
+                            </ErrorBoundary>
+                          }
+                        />
+
+                        <Route
+                          path="enterprise/*"
+                          element={
+                            <ErrorBoundary level="component">
+                              <EnterpriseView />
                             </ErrorBoundary>
                           }
                         />

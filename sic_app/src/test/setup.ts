@@ -53,10 +53,20 @@ global.localStorage = localStorageMock
 global.sessionStorage = localStorageMock
 
 // Mock PerformanceObserver
-global.PerformanceObserver = vi.fn().mockImplementation(() => ({
+const PerformanceObserverMock = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   disconnect: vi.fn(),
 }))
+
+// Add static property for supportedEntryTypes
+Object.defineProperty(PerformanceObserverMock, 'supportedEntryTypes', {
+  value: ['navigation', 'measure', 'paint', 'layout-shift', 'largest-contentful-paint', 'first-input'],
+  writable: false,
+  enumerable: true,
+  configurable: false,
+})
+
+global.PerformanceObserver = PerformanceObserverMock as any
 
 // Mock navigator
 Object.defineProperty(window, 'navigator', {
@@ -68,7 +78,7 @@ Object.defineProperty(window, 'navigator', {
 })
 
 // Set test environment flag for monitoring service
-global.__vitest__ = true
+;(global as any).__vitest__ = true
 
 // Mock react-hot-toast globally
 vi.mock('react-hot-toast', () => ({

@@ -440,6 +440,8 @@ def init_scheduler(scheduler: Optional[AsyncIOScheduler] = None) -> AsyncIOSched
     sched.add_job(job_compute_adaptive_schedules, CronTrigger(hour=2, minute=0), id="compute_adaptive_schedules", replace_existing=True)
     # Outbox dispatcher
     sched.add_job(job_outbox_dispatcher, IntervalTrigger(minutes=1), id="outbox_dispatch", replace_existing=True)
+    # Referral reward processor (daily at 06:00 UTC)
+    sched.add_job(job_process_referral_rewards, CronTrigger(hour=6, minute=0), id="process_referral_rewards", replace_existing=True)
     return sched
 
 
@@ -534,5 +536,25 @@ def job_outbox_dispatcher():
                         db.commit()
                 except Exception:
                     pass
+    finally:
+        db.close()
+
+
+def job_process_referral_rewards():
+    """Process pending referral rewards for users with 30+ day paid subscriptions"""
+    db = SessionLocal()
+    try:
+        from app.referral_service import referral_service
+        rewards_granted = referral_service.process_pending_referral_rewards(db)
+        if rewards_granted > 0:
+            logger.info({
+                "event": "referral_rewards_processed",
+                "rewards_granted": rewards_granted
+            })
+    except Exception as e:
+        logger.error({
+            "event": "referral_processing_error",
+            "error": str(e)
+        })
     finally:
         db.close()

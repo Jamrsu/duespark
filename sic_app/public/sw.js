@@ -1,50 +1,85 @@
-// Service Worker for offline support
-// Version 1.0.0
+// DueSpark Service Worker - Advanced PWA Capabilities
+// Version 1.1.0 - Phase 2 Mobile-First Enhancements
 
-const CACHE_NAME = 'sic-app-v1.0.0'
-const STATIC_CACHE = 'sic-app-static-v1.0.0'
-const DYNAMIC_CACHE = 'sic-app-dynamic-v1.0.0'
+const CACHE_NAME = 'duespark-v1.1.0'
+const STATIC_CACHE = 'duespark-static-v1.1.0'
+const DYNAMIC_CACHE = 'duespark-dynamic-v1.1.0'
+const API_CACHE = 'duespark-api-v1.1.0'
 
 // Files to cache for offline support
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  // Add your static assets here
+  '/offline.html',
+  // Core app routes for SPA
+  '/dashboard',
+  '/invoices',
+  '/clients',
+  '/reminders',
+  // Critical API data for offline functionality
 ]
 
-// API endpoints to cache
+// API endpoints to cache with stale-while-revalidate
 const CACHEABLE_API_PATTERNS = [
+  /\/api\/analytics\/summary/,
+  /\/api\/invoices\?limit=5/,
   /\/api\/clients/,
-  /\/api\/invoices/,
   /\/api\/dashboard/,
 ]
 
-// Network-first strategy for API calls
+// Network-first strategy for critical operations
 const NETWORK_FIRST_PATTERNS = [
   /\/api\/auth/,
   /\/api\/.*\/(create|update|delete)/,
+  /\/api\/reminders\/send/,
+  /\/api\/payments/,
+]
+
+// Background sync patterns
+const SYNC_PATTERNS = [
+  /\/api\/invoices\/\d+\/remind/,
+  /\/api\/analytics\/track/,
 ]
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...')
+  console.log('[DueSpark SW] Installing service worker v1.1.0...')
 
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[SW] Caching static assets')
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('[DueSpark SW] Caching static assets')
         return cache.addAll(STATIC_ASSETS)
-      })
+      }),
+      // Pre-cache critical API data if user is authenticated
+      preCacheCriticalData()
+    ])
       .then(() => {
-        console.log('[SW] Service worker installed successfully')
+        console.log('[DueSpark SW] Service worker installed successfully')
         return self.skipWaiting()
       })
       .catch((error) => {
-        console.error('[SW] Failed to install service worker:', error)
+        console.error('[DueSpark SW] Failed to install service worker:', error)
       })
   )
 })
+
+// Pre-cache critical data for better offline experience
+async function preCacheCriticalData() {
+  try {
+    const cache = await caches.open(API_CACHE)
+    // Pre-cache dashboard data if available
+    const dashboardUrl = '/api/analytics/summary'
+    const response = await fetch(dashboardUrl)
+    if (response.ok) {
+      await cache.put(dashboardUrl, response)
+    }
+  } catch (error) {
+    console.warn('[DueSpark SW] Pre-caching failed:', error)
+  }
+}
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
@@ -179,9 +214,13 @@ async function handleNavigationRequest(request) {
         </head>
         <body>
           <div class="offline">
-            <h1>You're offline</h1>
-            <p>Please check your internet connection and try again.</p>
-            <button onclick="window.location.reload()">Retry</button>
+            <h1>📱 DueSpark Offline</h1>
+            <p>Don't worry! You can still view your cached invoices and analytics.</p>
+            <div style="margin: 2rem 0;">
+              <a href="/dashboard" style="display: inline-block; background: #0ea5e9; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Dashboard</a>
+              <a href="/invoices" style="display: inline-block; background: #10b981; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Invoices</a>
+            </div>
+            <button onclick="window.location.reload()" style="background: #6b7280; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;">Try Reconnecting</button>
           </div>
         </body>
       </html>`,
@@ -251,17 +290,47 @@ async function networkFirstStrategy(request, cacheName) {
 
 // Background sync for failed requests
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    console.log('[SW] Background sync triggered')
-    event.waitUntil(syncFailedRequests())
+  console.log('[DueSpark SW] Background sync triggered:', event.tag)
+
+  if (event.tag === 'duespark-reminders') {
+    event.waitUntil(syncPendingReminders())
+  } else if (event.tag === 'duespark-analytics') {
+    event.waitUntil(syncAnalyticsEvents())
+  } else if (event.tag === 'duespark-invoices') {
+    event.waitUntil(syncInvoiceUpdates())
   }
 })
 
-// Sync failed requests when back online
-async function syncFailedRequests() {
-  // Implementation would depend on your app's needs
-  // Could replay failed API calls stored in IndexedDB
-  console.log('[SW] Syncing failed requests...')
+// Sync pending reminder requests
+async function syncPendingReminders() {
+  console.log('[DueSpark SW] Syncing pending reminders...')
+  const offlineDb = await openOfflineDB()
+  const pendingReminders = await getPendingRequests(offlineDb, 'reminders')
+
+  for (const reminder of pendingReminders) {
+    try {
+      await fetch(reminder.url, {
+        method: reminder.method,
+        headers: reminder.headers,
+        body: reminder.body
+      })
+      await removePendingRequest(offlineDb, 'reminders', reminder.id)
+    } catch (error) {
+      console.warn('[DueSpark SW] Failed to sync reminder:', error)
+    }
+  }
+}
+
+// Sync analytics events
+async function syncAnalyticsEvents() {
+  console.log('[DueSpark SW] Syncing analytics events...')
+  // Implementation for analytics sync
+}
+
+// Sync invoice updates
+async function syncInvoiceUpdates() {
+  console.log('[DueSpark SW] Syncing invoice updates...')
+  // Implementation for invoice sync
 }
 
 // Handle push notifications (if needed)
@@ -271,11 +340,24 @@ self.addEventListener('push', (event) => {
 
     const options = {
       body: data.body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/badge-72.png',
-      tag: data.tag || 'default',
+      icon: '/icon-192x192.png',
+      badge: '/icon-192x192.png',
+      tag: data.tag || 'duespark-notification',
       data: data.data || {},
-      actions: data.actions || [],
+      vibrate: [200, 100, 200], // Mobile vibration pattern
+      requireInteraction: data.urgent || false,
+      actions: data.actions || [
+        {
+          action: 'view',
+          title: '👁️ View',
+          icon: '/icon-192x192.png'
+        },
+        {
+          action: 'remind',
+          title: '📧 Send Reminder',
+          icon: '/icon-192x192.png'
+        }
+      ],
     }
 
     event.waitUntil(
@@ -293,4 +375,90 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-console.log('[SW] Service worker loaded successfully')
+// Add offline database support
+async function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('DueSparkOffline', 1)
+
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(request.result)
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result
+
+      // Store for pending requests
+      if (!db.objectStoreNames.contains('pendingRequests')) {
+        const store = db.createObjectStore('pendingRequests', { keyPath: 'id', autoIncrement: true })
+        store.createIndex('type', 'type', { unique: false })
+        store.createIndex('timestamp', 'timestamp', { unique: false })
+      }
+
+      // Store for offline actions
+      if (!db.objectStoreNames.contains('offlineActions')) {
+        const store = db.createObjectStore('offlineActions', { keyPath: 'id', autoIncrement: true })
+        store.createIndex('action', 'action', { unique: false })
+      }
+    }
+  })
+}
+
+async function getPendingRequests(db, type) {
+  const transaction = db.transaction(['pendingRequests'], 'readonly')
+  const store = transaction.objectStore('pendingRequests')
+  const index = store.index('type')
+
+  return new Promise((resolve, reject) => {
+    const request = index.getAll(type)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function removePendingRequest(db, type, id) {
+  const transaction = db.transaction(['pendingRequests'], 'readwrite')
+  const store = transaction.objectStore('pendingRequests')
+
+  return new Promise((resolve, reject) => {
+    const request = store.delete(id)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+}
+
+// Message handling for app communication
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type) {
+    switch (event.data.type) {
+      case 'SKIP_WAITING':
+        self.skipWaiting()
+        break
+      case 'QUEUE_REMINDER':
+        queueOfflineAction('reminder', event.data.payload)
+        break
+      case 'QUEUE_ANALYTICS':
+        queueOfflineAction('analytics', event.data.payload)
+        break
+    }
+  }
+})
+
+async function queueOfflineAction(action, payload) {
+  try {
+    const db = await openOfflineDB()
+    const transaction = db.transaction(['offlineActions'], 'readwrite')
+    const store = transaction.objectStore('offlineActions')
+
+    await store.add({
+      action,
+      payload,
+      timestamp: Date.now()
+    })
+
+    // Register background sync
+    await self.registration.sync.register(`duespark-${action}s`)
+  } catch (error) {
+    console.error('[DueSpark SW] Failed to queue offline action:', error)
+  }
+}
+
+console.log('[DueSpark SW] Service worker v1.1.0 loaded successfully with enhanced PWA features')

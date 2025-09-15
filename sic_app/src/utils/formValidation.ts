@@ -67,46 +67,48 @@ export const CommonSchemas = {
 
   // Currency validation
   currency: (fieldName: string = 'Amount', min?: number, max?: number) => {
-    let schema = z.string()
+    const baseSchema = z.string()
       .min(1, ValidationMessages.required(fieldName))
       .regex(ValidationPatterns.currency, ValidationMessages.validCurrency(fieldName))
-      .transform((val) => parseFloat(val)) as z.ZodEffects<z.ZodString, number, string>
+      .transform((val) => parseFloat(val))
 
-    if (min !== undefined) {
-      schema = schema.refine((val) => val >= min, {
+    if (min !== undefined && max !== undefined) {
+      return baseSchema.refine((val) => val >= min && val <= max, {
+        message: `${fieldName} must be between ${min} and ${max}`
+      })
+    } else if (min !== undefined) {
+      return baseSchema.refine((val) => val >= min, {
         message: ValidationMessages.min(fieldName, min)
-      }) as z.ZodEffects<z.ZodString, number, string>
-    }
-
-    if (max !== undefined) {
-      schema = schema.refine((val) => val <= max, {
+      })
+    } else if (max !== undefined) {
+      return baseSchema.refine((val) => val <= max, {
         message: ValidationMessages.max(fieldName, max)
-      }) as z.ZodEffects<z.ZodString, number, string>
+      })
     }
 
-    return schema
+    return baseSchema
   },
 
   // Date validation with future/past constraints
   date: (fieldName: string = 'Date', constraint?: 'future' | 'past') => {
-    let schema = z.string()
+    const baseSchema = z.string()
       .min(1, ValidationMessages.required(fieldName))
       .transform((val) => new Date(val))
       .refine((date) => !isNaN(date.getTime()), {
         message: `Please enter a valid ${fieldName.toLowerCase()}`
-      }) as z.ZodEffects<z.ZodEffects<z.ZodString, Date, string>, Date, string>
+      })
 
     if (constraint === 'future') {
-      schema = schema.refine((date) => date > new Date(), {
+      return baseSchema.refine((date) => date > new Date(), {
         message: ValidationMessages.futureDate(fieldName)
-      }) as z.ZodEffects<z.ZodEffects<z.ZodString, Date, string>, Date, string>
+      })
     } else if (constraint === 'past') {
-      schema = schema.refine((date) => date < new Date(), {
+      return baseSchema.refine((date) => date < new Date(), {
         message: ValidationMessages.pastDate(fieldName)
-      }) as z.ZodEffects<z.ZodEffects<z.ZodString, Date, string>, Date, string>
+      })
     }
 
-    return schema
+    return baseSchema
   },
 
   // Required string with length constraints

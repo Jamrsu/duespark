@@ -30,6 +30,7 @@ export function OnboardingView() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [currentStep, setCurrentStep] = useState(0)
+  const [isSkipping, setIsSkipping] = useState(false)
 
   // Get current user and onboarding status
   const { data: user, isLoading } = useQuery({
@@ -55,13 +56,19 @@ export function OnboardingView() {
   // Update onboarding status
   const updateStatusMutation = useMutation({
     mutationFn: async (status: OnboardingStatus) => {
-      const response = await apiClient.patch('/auth/me', {
+      console.log('Updating onboarding status to:', status)
+      const response = await apiClient.put('/auth/me', {
         onboarding_status: status
       })
+      console.log('Status update response:', response.data)
       return response.data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Status update succeeded:', data)
       queryClient.invalidateQueries({ queryKey: ['user', 'profile'] })
+    },
+    onError: (error) => {
+      console.error('Status update failed:', error)
     }
   })
 
@@ -116,6 +123,9 @@ export function OnboardingView() {
     }
   }, [user?.onboarding_status])
 
+  // Get the current step component, default to first step while loading
+  const CurrentStepComponent = steps[currentStep]?.component || steps[0]?.component
+
   // Track onboarding start
   useEffect(() => {
     if (user && user.onboarding_status === 'not_started') {
@@ -136,14 +146,43 @@ export function OnboardingView() {
       }
 
       if (statusMap[currentStep]) {
-        await updateStatusMutation.mutateAsync(statusMap[currentStep])
+        // Optimistically update cache first
+        queryClient.setQueryData(['user', 'profile'], (oldData: any) => {
+          if (oldData) {
+            return { ...oldData, onboarding_status: statusMap[currentStep] }
+          }
+          return oldData
+        })
+
+        // Update server in background
+        updateStatusMutation.mutate(statusMap[currentStep])
       }
     } else {
       // Complete onboarding
-      await updateStatusMutation.mutateAsync('completed')
-      trackEventMutation.mutate('onboarding_completed')
-      toast.success('Welcome to SIC! Your account is ready to use.')
-      navigate('/dashboard')
+      try {
+        // Immediately update the query cache to reflect completed status
+        queryClient.setQueryData(['user', 'profile'], (oldData: any) => {
+          if (oldData) {
+            return { ...oldData, onboarding_status: 'completed' }
+          }
+          return oldData
+        })
+
+        // Track completion and show success message
+        trackEventMutation.mutate('onboarding_completed')
+        toast.success('Welcome to DueSpark! Your account is ready to use.')
+
+        // Navigate to dashboard
+        navigate('/dashboard')
+
+        // Update status on server in background
+        updateStatusMutation.mutate('completed')
+      } catch (error) {
+        console.error('Complete setup error:', error)
+        // Even if anything fails, still try to navigate
+        toast.success('Welcome to DueSpark! Your account is ready to use.')
+        navigate('/dashboard')
+      }
     }
   }
 
@@ -154,37 +193,62 @@ export function OnboardingView() {
   }
 
   const handleSkip = async () => {
-    trackEventMutation.mutate('onboarding_skipped')
-    await updateStatusMutation.mutateAsync('completed')
-    toast.success('Onboarding skipped. You can complete setup later from settings.')
-    navigate('/dashboard')
-  }
+    console.log('=== SKIP CLICKED ===')
+    setIsSkipping(true)
+    try {
+      // Track the skip event (fire and forget)
+      trackEventMutation.mutate('onboarding_skipped')
 
-  if (isLoading) {
-    return (
-      <LoadingContent
-        isLoading={true}
-        className="min-h-screen flex items-center justify-center"
-        fallback={
-          <div className="text-center">
-            <LoadingSpinner size="lg" className="mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Loading your account...</p>
-          </div>
+      // Immediately update the query cache to reflect completed status
+      // This prevents the RequireOnboardingComplete guard from redirecting back
+      console.log('Updating cache to completed status')
+      queryClient.setQueryData(['user', 'profile'], (oldData: any) => {
+        console.log('Cache update - oldData:', oldData)
+        if (oldData) {
+          const newData = { ...oldData, onboarding_status: 'completed' }
+          console.log('Cache update - newData:', newData)
+          return newData
         }
-      >
-        {/* This won't render while loading */}
-        <div />
-      </LoadingContent>
-    )
+        return oldData
+      })
+
+      // Show success message
+      toast.success('Onboarding skipped. You can complete setup later from settings.')
+
+      // Navigate to dashboard
+      console.log('Navigating to dashboard...')
+      navigate('/dashboard', { replace: true })
+
+      // Update status on server in background
+      console.log('Starting server update...')
+      updateStatusMutation.mutate('completed')
+    } catch (error) {
+      console.error('Skip error:', error)
+      // Even if anything fails, still try to navigate
+      toast.success('Onboarding skipped. You can complete setup later from settings.')
+      navigate('/dashboard', { replace: true })
+    } finally {
+      setIsSkipping(false)
+    }
   }
 
-  // If already completed, redirect to dashboard
+  // Redirect to dashboard if already completed (must be before any early returns)
+  useEffect(() => {
+    if (user?.onboarding_status === 'completed') {
+      navigate('/dashboard')
+    }
+  }, [user?.onboarding_status, navigate])
+
+  // Show loading only in header while allowing UI to be interactive
+  if (isLoading) {
+    // Allow the UI to render but show loading state in header
+    // This prevents blocking the entire interface while user data loads
+  }
+
+  // If already completed, show loading while redirecting
   if (user?.onboarding_status === 'completed') {
-    navigate('/dashboard')
     return null
   }
-
-  const CurrentStepComponent = steps[currentStep]?.component
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -192,11 +256,17 @@ export function OnboardingView() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome to SIC
+            Welcome to DueSpark
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
             Let's get your invoice management system set up in just a few steps
           </p>
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <LoadingSpinner size="sm" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">Loading your account...</span>
+            </div>
+          )}
         </div>
 
         {/* Progress Steps */}
@@ -223,9 +293,10 @@ export function OnboardingView() {
                   variant="ghost"
                   size="sm"
                   onClick={handleSkip}
+                  disabled={isSkipping}
                   className="text-gray-500 hover:text-gray-700"
                 >
-                  Skip for now
+                  {isSkipping ? 'Skipping...' : 'Skip for now'}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -256,12 +327,13 @@ export function OnboardingView() {
             <Button
               variant="ghost"
               onClick={handleSkip}
+              disabled={isSkipping}
             >
-              Skip Setup
+              {isSkipping ? 'Skipping...' : 'Skip Setup'}
             </Button>
             <Button
               onClick={handleNext}
-              disabled={updateStatusMutation.isPending}
+              disabled={updateStatusMutation.isPending || isLoading}
               className="flex items-center gap-2"
             >
               {currentStep === steps.length - 1 ? 'Complete Setup' : 'Next Step'}

@@ -1,0 +1,268 @@
+name: Docker Build and Security Scan
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'sic_backend_mvp_jwt_sqlite/**'
+      - 'sic_app/**'
+      - 'docker-compose.yml'
+      - 'Dockerfile*'
+      - '.github/workflows/docker-build.yml'
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ${{ github.repository }}/backend
+  FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha
+
+    - name: Create backend Dockerfile
+      run: |
+        cat > sic_backend_mvp_jwt_sqlite/Dockerfile << 'EOF'
+        FROM python:3.11-slim
+
+        WORKDIR /app
+
+        # Install system dependencies
+        RUN apt-get update && apt-get install -y \
+            gcc \
+            libpq-dev \
+            && rm -rf /var/lib/apt/lists/*
+
+        # Copy requirements first for better caching
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
+
+        # Copy application code
+        COPY . .
+
+        # Create non-root user
+        RUN useradd --create-home --shell /bin/bash app \
+            && chown -R app:app /app
+        USER app
+
+        # Health check
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+          CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+
+        EXPOSE 8000
+
+        CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        EOF
+
+    - name: Build backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sic_backend_mvp_jwt_sqlite
+        platforms: linux/amd64,linux/arm64
+        push: false
+        load: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        format: 'sarif'
+        output: 'trivy-backend-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-backend-results.sarif'
+        category: 'trivy-backend'
+
+    - name: Run Trivy vulnerability scanner (Table format)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+
+    - name: Push backend image
+      if: github.event_name != 'pull_request'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sic_backend_mvp_jwt_sqlite
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha
+
+    - name: Create frontend Dockerfile
+      run: |
+        cat > sic_app/Dockerfile << 'EOF'
+        # Build stage
+        FROM node:18-alpine AS builder
+
+        WORKDIR /app
+
+        # Copy package files
+        COPY package*.json ./
+        RUN npm ci --only=production && npm cache clean --force
+
+        # Copy source code
+        COPY . .
+
+        # Build the application
+        RUN npm run build
+
+        # Production stage
+        FROM nginx:alpine
+
+        # Copy built application
+        COPY --from=builder /app/dist /usr/share/nginx/html
+
+        # Copy nginx configuration
+        RUN echo 'server {
+            listen 80;
+            server_name localhost;
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+
+            # Handle client-side routing
+            location / {
+                try_files $uri $uri/ /index.html;
+            }
+
+            # Security headers
+            add_header X-Frame-Options DENY;
+            add_header X-Content-Type-Options nosniff;
+            add_header X-XSS-Protection "1; mode=block";
+            add_header Referrer-Policy strict-origin-when-cross-origin;
+        }' > /etc/nginx/conf.d/default.conf
+
+        # Health check
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+          CMD curl -f http://localhost/ || exit 1
+
+        EXPOSE 80
+
+        CMD ["nginx", "-g", "daemon off;"]
+        EOF
+
+    - name: Build frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sic_app
+        platforms: linux/amd64,linux/arm64
+        push: false
+        load: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        format: 'sarif'
+        output: 'trivy-frontend-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-frontend-results.sarif'
+        category: 'trivy-frontend'
+
+    - name: Run Trivy vulnerability scanner (Table format)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+
+    - name: Push frontend image
+      if: github.event_name != 'pull_request'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sic_app
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

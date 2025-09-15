@@ -54,3 +54,13 @@ def get_current_user_optional(db: Session = Depends(get_db), token: str | None =
         return None
     user = db.query(models.User).filter(models.User.email == email).first()
     return user
+
+
+def get_current_admin_user(current_user: models.User = Depends(get_current_user)) -> models.User:
+    """Get current user and ensure they have admin role"""
+    if current_user.role != models.UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user

@@ -38,8 +38,8 @@ export function useKeyboardShortcuts({
     if (keyboardEvent.shiftKey) pressedKeys.push('shift')
 
     // Add the main key (convert to lowercase for consistency)
-    const mainKey = keyboardEvent.key.toLowerCase()
-    if (!['control', 'meta', 'alt', 'shift'].includes(mainKey)) {
+    const mainKey = keyboardEvent.key?.toLowerCase()
+    if (mainKey && !['control', 'meta', 'alt', 'shift'].includes(mainKey)) {
       pressedKeys.push(mainKey)
     }
 
@@ -227,7 +227,7 @@ export function getKeyDisplayName(key: string): string {
     arrowright: '→',
   }
 
-  return keyMap[key.toLowerCase()] || key.toUpperCase()
+  return keyMap[key?.toLowerCase() || ''] || key?.toUpperCase() || ''
 }
 
 // Format shortcut for display

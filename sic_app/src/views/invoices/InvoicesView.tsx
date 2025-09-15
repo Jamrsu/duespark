@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, X, Save, Star, Trash2, Home, Check } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -23,7 +23,8 @@ interface FilterPreset {
 
 export function InvoicesView() {
   const navigate = useNavigate()
-  
+  const [searchParams] = useSearchParams()
+
   // Filter states
   const [filters, setFilters] = React.useState({
     client_id: '',
@@ -40,21 +41,32 @@ export function InvoicesView() {
   const [defaultPresetId, setDefaultPresetId] = React.useState<string | null>(null)
   const [hasLoadedDefaults, setHasLoadedDefaults] = React.useState(false)
   
+  // Check URL parameters for client_id filter on mount
+  React.useEffect(() => {
+    const clientIdFromUrl = searchParams.get('client_id')
+    if (clientIdFromUrl) {
+      setFilters(prev => ({ ...prev, client_id: clientIdFromUrl }))
+      setShowFilters(true) // Show filters panel to make it clear what's applied
+      setHasLoadedDefaults(true) // Prevent default preset from overriding URL filter
+    }
+  }, [searchParams])
+
   // Load saved presets and default preset from localStorage on mount
   React.useEffect(() => {
     const saved = localStorage.getItem('invoiceFilterPresets')
     const defaultId = localStorage.getItem('invoiceDefaultPresetId')
-    
+
     if (saved) {
       try {
         const presets = JSON.parse(saved)
         setSavedPresets(presets)
-        
+
         // Set default preset ID if it exists
         if (defaultId) {
           setDefaultPresetId(defaultId)
-          
+
           // Apply default preset if it exists and we haven't loaded defaults yet
+          // (but don't override URL parameters)
           const defaultPreset = presets.find((p: FilterPreset) => p.id === defaultId)
           if (defaultPreset && !hasLoadedDefaults) {
             setFilters(defaultPreset.filters)
@@ -87,6 +99,13 @@ export function InvoicesView() {
   const sortedClients = React.useMemo(() => {
     return [...clients].sort((a, b) => a.name.localeCompare(b.name))
   }, [clients])
+
+  // Get the filtered client name for display
+  const filteredClientName = React.useMemo(() => {
+    if (!filters.client_id) return null
+    const client = clients.find(c => c.id.toString() === filters.client_id)
+    return client?.name
+  }, [filters.client_id, clients])
   
   // Helper function to get client name
   const getClientName = (invoice: typeof rawInvoices[0]) => {
@@ -222,10 +241,13 @@ export function InvoicesView() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Invoices
+            {filteredClientName ? `${filteredClientName} Invoices` : 'Invoices'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage your invoices and track payments
+            {filteredClientName
+              ? `Showing invoices for ${filteredClientName}`
+              : 'Manage your invoices and track payments'
+            }
           </p>
         </div>
         <div className="flex gap-2">

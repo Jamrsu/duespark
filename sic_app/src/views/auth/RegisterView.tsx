@@ -1,8 +1,8 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useRegister } from '@/api/hooks'
 import { registerSchema, RegisterFormData } from '@/lib/schemas'
@@ -12,7 +12,11 @@ export function RegisterView() {
   const [showPassword, setShowPassword] = React.useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const registerMutation = useRegister()
+
+  // Get referral code from URL parameters
+  const referralCodeFromUrl = searchParams.get('ref') || ''
 
   const {
     register,
@@ -24,6 +28,7 @@ export function RegisterView() {
       email: '',
       password: '',
       confirmPassword: '',
+      referralCode: referralCodeFromUrl,
     },
   })
 
@@ -32,6 +37,7 @@ export function RegisterView() {
       await registerMutation.mutateAsync({
         email: data.email,
         password: data.password,
+        referral_code: data.referralCode || undefined,
       })
       navigate('/dashboard', { replace: true })
     } catch (error) {
@@ -162,6 +168,42 @@ export function RegisterView() {
           {errors.confirmPassword && (
             <p className="mt-1 text-sm text-error-600 dark:text-error-400">
               {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
+
+        {/* Referral Code field */}
+        <div>
+          <label
+            htmlFor="referralCode"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Referral code <span className="text-gray-500">(optional)</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Users className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              {...register('referralCode')}
+              type="text"
+              id="referralCode"
+              className={cn(
+                'input pl-10',
+                errors.referralCode && 'border-error-500 focus:ring-error-500'
+              )}
+              placeholder="Enter referral code"
+              maxLength={8}
+            />
+          </div>
+          {errors.referralCode && (
+            <p className="mt-1 text-sm text-error-600 dark:text-error-400">
+              {errors.referralCode.message}
+            </p>
+          )}
+          {referralCodeFromUrl && (
+            <p className="mt-1 text-sm text-primary-600 dark:text-primary-400">
+              ✓ Referral code applied from invitation link
             </p>
           )}
         </div>

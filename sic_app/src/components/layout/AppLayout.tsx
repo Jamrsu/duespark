@@ -10,7 +10,10 @@ import {
   LogOut,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Crown,
+  Gift,
+  HelpCircle
 } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/api/client'
@@ -26,7 +29,10 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Clients', href: '/clients', icon: Users },
+  { name: 'Subscription', href: '/subscription', icon: Crown },
+  { name: 'Referrals', href: '/referrals', icon: Gift },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Help & FAQ', href: '/help/faq', icon: HelpCircle },
 ]
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -187,6 +193,16 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => navigate('/help/faq')}
+                className="p-2"
+                aria-label="Help & FAQ"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={toggleTheme}
                 className="p-2"
                 aria-label={`Switch to ${theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'} theme`}
@@ -208,7 +224,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6" ref={swipeRef}>
+        <main className="p-4 lg:p-6 pb-20 lg:pb-6" ref={swipeRef}>
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

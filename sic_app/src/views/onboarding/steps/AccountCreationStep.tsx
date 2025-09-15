@@ -193,7 +193,7 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {isEmailVerified
-                ? 'Your email address has been verified successfully.'
+                ? 'Your email has been verified successfully. You can now receive invoice notifications, account updates, and use password recovery features.'
                 : 'Please verify your email address to continue.'
               }
             </div>
@@ -300,7 +300,7 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
       )}
 
       {isEmailVerified && (
-        <div className="text-center">
+        <div className="text-center mb-8">
           <LoadingButton
             onClick={onNext}
             isLoading={isLoading}
@@ -345,24 +345,19 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
       )}
 
       {/* Helpful Tips */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-          {isEmailVerified ? '✅ Email Verified!' : '🔐 Why Email Verification?'}
-        </h4>
-        {isEmailVerified ? (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Your email has been verified successfully. You can now receive invoice notifications,
-            account updates, and use password recovery features.
-          </div>
-        ) : (
+      {!isEmailVerified && (
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+          <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+            🔐 Why Email Verification?
+          </h4>
           <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <li>• Secure your account from unauthorized access</li>
             <li>• Enable invoice and reminder notifications</li>
             <li>• Recover your account if you forget your password</li>
             <li>• Comply with security best practices</li>
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

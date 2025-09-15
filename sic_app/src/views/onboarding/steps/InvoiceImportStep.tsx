@@ -42,7 +42,7 @@ export function InvoiceImportStep({ user, onNext, isLoading }: InvoiceImportStep
       queryClient.invalidateQueries({ queryKey: ['clients'] })
       queryClient.invalidateQueries({ queryKey: ['invoices'] })
 
-      setTimeout(() => onNext(), 2000)
+      // Don't auto-advance - let user see what was imported and manually proceed
     },
     onError: (error: any) => {
       displayError(error, {
@@ -66,7 +66,8 @@ export function InvoiceImportStep({ user, onNext, isLoading }: InvoiceImportStep
     },
     onSuccess: () => {
       toast.success('Setup complete! You can add clients and invoices manually.')
-      setTimeout(() => onNext(), 1000)
+
+      // Don't auto-advance - let user manually proceed with completion button
     }
   })
 

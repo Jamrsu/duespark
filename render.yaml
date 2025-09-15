@@ -1,0 +1,108 @@
+# DueSpark Backend - Render Configuration
+# This file defines the infrastructure for deploying DueSpark on Render
+
+services:
+  # FastAPI Backend Service
+  - type: web
+    name: duespark-backend
+    env: python
+    region: oregon  # or virginia, singapore, frankfurt
+    plan: starter  # starter, standard, pro, pro plus, pro max, pro ultra
+    buildCommand: |
+      cd sic_backend_mvp_jwt_sqlite
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: |
+      cd sic_backend_mvp_jwt_sqlite
+      alembic upgrade head
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    branch: main
+    rootDir: ./
+    envVars:
+      # Application Settings
+      - key: PYTHONPATH
+        value: /opt/render/project/src/sic_backend_mvp_jwt_sqlite
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+
+      # Database (PostgreSQL addon will provide DATABASE_URL automatically)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: duespark-postgres
+          property: connectionString
+
+      # Required Secrets (set in Render Dashboard)
+      - key: SECRET_KEY
+        sync: false  # Set manually in dashboard
+      - key: ENCRYPTION_KEY
+        sync: false  # Set manually in dashboard
+
+      # Email Provider Settings
+      - key: EMAIL_PROVIDER
+        value: postmark
+      - key: POSTMARK_SERVER_TOKEN
+        sync: false  # Set manually in dashboard
+      - key: EMAIL_FROM
+        sync: false  # Set manually in dashboard
+
+      # Stripe Configuration
+      - key: STRIPE_SECRET_KEY
+        sync: false  # Set manually in dashboard
+      - key: STRIPE_CLIENT_ID
+        sync: false  # Set manually in dashboard
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false  # Set manually in dashboard
+      - key: STRIPE_REDIRECT_URI
+        value: https://duespark-backend.onrender.com/integrations/stripe/callback
+
+      # Application URLs
+      - key: PUBLIC_BASE_URL
+        value: https://duespark-backend.onrender.com
+      - key: FRONTEND_URL
+        value: https://app.duespark.com
+
+      # Scheduler Settings
+      - key: SCHEDULER_BATCH_SIZE
+        value: "200"
+      - key: ADAPTIVE_ENABLE
+        value: "true"
+      - key: ADAPTIVE_LEADER_ONLY
+        value: "true"
+
+      # Rate Limiting
+      - key: RATE_LIMIT_REQUESTS_PER_MINUTE
+        value: "60"
+      - key: RATE_LIMIT_REQUESTS_PER_HOUR
+        value: "1000"
+
+      # Optional: Redis (can be added as separate service)
+      - key: REDIS_URL
+        value: ""  # Leave empty for memory fallback
+
+      # Optional: Monitoring
+      - key: SENTRY_DSN
+        sync: false  # Set manually if using Sentry
+
+databases:
+  # PostgreSQL Database
+  - name: duespark-postgres
+    databaseName: duespark
+    user: duespark
+    region: oregon  # Must match web service region
+    plan: starter  # starter, standard, pro, pro plus
+    version: "16"  # PostgreSQL version
+
+  # Optional: Redis for caching and background jobs
+  # - name: duespark-redis
+  #   type: redis
+  #   region: oregon
+  #   plan: starter
+  #   maxmemoryPolicy: allkeys-lru

@@ -28,6 +28,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string
   password: string
+  referral_code?: string
 }
 
 export interface AuthResponse {

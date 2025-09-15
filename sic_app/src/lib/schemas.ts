@@ -25,6 +25,12 @@ export const registerSchema = z
     confirmPassword: z
       .string()
       .min(1, 'Please confirm your password'),
+    referralCode: z
+      .string()
+      .optional()
+      .refine((value) => !value || (value.length === 8 && /^[A-Z0-9]+$/.test(value)), {
+        message: "Referral code must be 8 characters long and contain only letters and numbers"
+      }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",

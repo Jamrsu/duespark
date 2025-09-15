@@ -1,0 +1,79 @@
+:root {
+  --background: oklch(0.9800 0 0);
+  --foreground: oklch(0.1500 0 0);
+  --card: oklch(1.0000 0 0 / 0.80);
+  --card-foreground: oklch(0.1500 0 0);
+  --popover: oklch(1.0000 0 0 / 0.95);
+  --popover-foreground: oklch(0.1500 0 0);
+  --primary: oklch(0.4800 0.2200 260);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.9400 0 0 / 0.80);
+  --secondary-foreground: oklch(0.1500 0 0);
+  --muted: oklch(0.9600 0 0 / 0.60);
+  --muted-foreground: oklch(0.4500 0 0);
+  --accent: oklch(0.6500 0.2800 300);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0.5800 0.2400 15);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9200 0 0 / 0.20);
+  --input: oklch(0.9600 0 0 / 0.50);
+  --ring: oklch(0.4800 0.2200 260);
+  --chart-1: oklch(0.4800 0.2200 260);
+  --chart-2: oklch(0.6500 0.2800 300);
+  --chart-3: oklch(0.5500 0.2600 200);
+  --chart-4: oklch(0.7000 0.2000 40);
+  --chart-5: oklch(0.4500 0.2400 180);
+  --sidebar: oklch(0.9800 0 0 / 0.80);
+  --sidebar-foreground: oklch(0.1500 0 0);
+  --sidebar-primary: oklch(0.4800 0.2200 260);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9400 0 0 / 0.80);
+  --sidebar-accent-foreground: oklch(0.1500 0 0);
+  --sidebar-border: oklch(0.9200 0 0 / 0.20);
+  --sidebar-ring: oklch(0.4800 0.2200 260);
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --radius: 1.25rem;
+  --shadow-2xs: 0 1px 2px 0px hsl(260 50% 48% / 0.08), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow-xs: 0 2px 4px 0px hsl(260 50% 48% / 0.10), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow-sm: 0 2px 8px 0px hsl(260 50% 48% / 0.12), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow: 0 4px 16px 0px hsl(260 50% 48% / 0.15), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow-md: 0 8px 24px 0px hsl(260 50% 48% / 0.18), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow-lg: 0 16px 32px 0px hsl(260 50% 48% / 0.22), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow-xl: 0 24px 48px 0px hsl(260 50% 48% / 0.25), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --shadow-2xl: 0 32px 64px 0px hsl(260 50% 48% / 0.30), 0 0 0 1px hsl(260 50% 48% / 0.05);
+  --tracking-normal: -0.01em;
+  --spacing: 0.25rem;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+}
+
+.glass-button {
+  background: rgba(72, 56, 149, 0.8);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
