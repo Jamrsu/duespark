@@ -12,7 +12,7 @@ services:
     healthCheckPath: /healthz
     autoDeploy: true
     branch: main
-    rootDir: ./
+    rootDir: ./sic_backend_mvp_jwt_sqlite
     envVars:
       # Application Settings
       - key: PYTHONPATH
