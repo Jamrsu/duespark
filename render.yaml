@@ -12,7 +12,7 @@ services:
     dockerfilePath: ./Dockerfile.render
     healthCheckPath: /healthz
     autoDeploy: true
-    branch: render-deployment-fix
+    branch: main
     envVars:
       # Application Settings
       - key: PYTHONPATH

@@ -1,5 +1,6 @@
 import os
 import secrets
+import sys
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -18,8 +19,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # Ensure SECRET_KEY is set and secure
 if not SECRET_KEY:
     # Allow deterministic but securely generated key during tests
-    import sys
-
     if "pytest" in sys.modules or os.getenv("TESTING") == "true":
         SECRET_KEY = os.getenv("TEST_SECRET_KEY", secrets.token_hex(32))
     else:

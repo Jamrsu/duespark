@@ -37,8 +37,9 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser && \
 
 USER appuser
 
-# Expose port (Render sets PORT environment variable)
-EXPOSE $PORT
+# Expose port (Render sets PORT environment variable, but EXPOSE doesn't support env vars)
+# Render will map the correct port, so we use a default that will be overridden
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
