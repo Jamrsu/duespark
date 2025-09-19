@@ -4,13 +4,28 @@ Script to populate the demo account with dummy data
 Creates 10 clients and 100 invoices for demo@example.com
 """
 
-import requests
 import json
+import logging
 import random
 from datetime import datetime, timedelta
+
+import requests
 from faker import Faker
 
 fake = Faker()
+
+logger = logging.getLogger("duespark.populate_demo_data")
+
+
+def configure_logging() -> None:
+    if logging.getLogger().handlers:
+        return
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='{"timestamp":"%(asctime)s","logger":"%(name)s","level":"%(levelname)s","message":"%(message)s"}'
+    )
+
 
 # Configuration
 API_BASE = "http://localhost:8001"
@@ -31,7 +46,10 @@ def get_auth_token():
     )
     
     if response.status_code != 200:
-        print(f"Login failed: {response.status_code} - {response.text}")
+        logger.error(
+            "demo login failed",
+            extra={"status_code": response.status_code, "response_text": response.text}
+        )
         return None
     
     data = response.json()
@@ -55,9 +73,13 @@ def create_client(token, name, email, timezone="UTC"):
     )
     
     if response.status_code != 200:
-        print(f"Failed to create client {name}: {response.status_code} - {response.text}")
+        logger.error(
+            "failed creating client",
+            extra={"client_name": name, "status_code": response.status_code, "response_text": response.text}
+        )
         return None
-    
+
+    logger.info("created client", extra={"client_name": name})
     data = response.json()
     return data["data"]
 
@@ -81,25 +103,38 @@ def create_invoice(token, client_id, amount_cents, due_date, status="draft"):
     )
     
     if response.status_code != 200:
-        print(f"Failed to create invoice: {response.status_code} - {response.text}")
+        logger.error(
+            "failed creating invoice",
+            extra={"status_code": response.status_code, "response_text": response.text}
+        )
         return None
-    
-    data = response.json()
-    return data["data"]
+
+    invoice = response.json()["data"]
+    logger.info(
+        "created invoice",
+        extra={
+            "invoice_id": invoice.get("id"),
+            "invoice_number": invoice.get("invoice_number"),
+            "client_id": client_id,
+            "amount_cents": amount_cents
+        }
+    )
+    return invoice
 
 def main():
-    print("🚀 Starting demo data population...")
-    
+    configure_logging()
+    logger.info("starting demo data population", extra={"api_base": API_BASE, "demo_email": DEMO_EMAIL})
+
     # Get auth token
     token = get_auth_token()
     if not token:
-        print("❌ Failed to get auth token")
+        logger.error("aborting demo population due to missing auth token")
         return
-    
-    print("✅ Successfully authenticated")
-    
+
+    logger.info("authenticated demo user")
+
     # Create 10 clients
-    print("\n📝 Creating 10 clients...")
+    logger.info("creating clients", extra={"target_count": 10})
     clients = []
     
     company_types = ["Inc", "LLC", "Corp", "Ltd", "Co"]
@@ -114,18 +149,17 @@ def main():
         client = create_client(token, company_name, client_email, timezone)
         if client:
             clients.append(client)
-            print(f"  ✅ Created client: {company_name}")
         else:
-            print(f"  ❌ Failed to create client: {company_name}")
-    
+            logger.error("client creation failed", extra={"client_name": company_name})
+
     if not clients:
-        print("❌ No clients created, cannot create invoices")
+        logger.error("no clients created; aborting invoice generation")
         return
-    
-    print(f"✅ Created {len(clients)} clients")
-    
+
+    logger.info("clients created", extra={"count": len(clients)})
+
     # Create 100 invoices
-    print("\n💰 Creating 100 invoices...")
+    logger.info("creating invoices", extra={"target_count": 100})
     invoices_created = 0
     
     # Status distribution
@@ -155,16 +189,23 @@ def main():
         if invoice:
             invoices_created += 1
             if invoices_created % 10 == 0:
-                print(f"  📊 Created {invoices_created}/100 invoices...")
+                logger.info("invoice progress", extra={"created": invoices_created, "target": 100})
     
-    print(f"✅ Created {invoices_created} invoices")
-    
+    logger.info(
+        "demo invoice creation complete",
+        extra={"created_invoices": invoices_created}
+    )
+
     # Summary
-    print(f"\n🎉 Demo data population complete!")
-    print(f"   👥 Clients: {len(clients)}")
-    print(f"   📄 Invoices: {invoices_created}")
-    print(f"   🔑 Demo credentials: {DEMO_EMAIL} / {DEMO_PASSWORD}")
-    print(f"   🌐 Login at: http://localhost:5173")
+    logger.info(
+        "demo data population complete",
+        extra={
+            "clients": len(clients),
+            "invoices": invoices_created,
+            "demo_email": DEMO_EMAIL,
+            "login_url": "http://localhost:5173"
+        }
+    )
 
 if __name__ == "__main__":
     main()

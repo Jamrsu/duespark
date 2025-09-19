@@ -1,296 +1,206 @@
-// Service Worker for offline support
-// Version 1.0.0
+/**
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-const CACHE_NAME = 'sic-app-v1.0.0'
-const STATIC_CACHE = 'sic-app-static-v1.0.0'
-const DYNAMIC_CACHE = 'sic-app-dynamic-v1.0.0'
+// If the loader is already loaded, just stop.
+if (!self.define) {
+  let registry = {};
 
-// Files to cache for offline support
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  // Add your static assets here
-]
+  // Used for `eval` and `importScripts` where we can't get script URL by other means.
+  // In both cases, it's safe to use a global var because those functions are synchronous.
+  let nextDefineUri;
 
-// API endpoints to cache
-const CACHEABLE_API_PATTERNS = [
-  /\/api\/clients/,
-  /\/api\/invoices/,
-  /\/api\/dashboard/,
-]
-
-// Network-first strategy for API calls
-const NETWORK_FIRST_PATTERNS = [
-  /\/api\/auth/,
-  /\/api\/.*\/(create|update|delete)/,
-]
-
-// Install event - cache static assets
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...')
-
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[SW] Caching static assets')
-        return cache.addAll(STATIC_ASSETS)
-      })
+  const singleRequire = (uri, parentUri) => {
+    uri = new URL(uri + ".js", parentUri).href;
+    return registry[uri] || (
+      
+        new Promise(resolve => {
+          if ("document" in self) {
+            const script = document.createElement("script");
+            script.src = uri;
+            script.onload = resolve;
+            document.head.appendChild(script);
+          } else {
+            nextDefineUri = uri;
+            importScripts(uri);
+            resolve();
+          }
+        })
+      
       .then(() => {
-        console.log('[SW] Service worker installed successfully')
-        return self.skipWaiting()
+        let promise = registry[uri];
+        if (!promise) {
+          throw new Error(`Module ${uri} didn’t register its module`);
+        }
+        return promise;
       })
-      .catch((error) => {
-        console.error('[SW] Failed to install service worker:', error)
-      })
-  )
-})
+    );
+  };
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...')
-
-  event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((cacheName) => {
-              return cacheName !== STATIC_CACHE &&
-                     cacheName !== DYNAMIC_CACHE &&
-                     cacheName.startsWith('sic-app-')
-            })
-            .map((cacheName) => {
-              console.log('[SW] Deleting old cache:', cacheName)
-              return caches.delete(cacheName)
-            })
-        )
-      })
-      .then(() => {
-        console.log('[SW] Service worker activated')
-        return self.clients.claim()
-      })
-  )
-})
-
-// Fetch event - handle offline/online requests
-self.addEventListener('fetch', (event) => {
-  const { request } = event
-
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return
-  }
-
-  // Skip chrome-extension and other non-http requests
-  if (!request.url.startsWith('http')) {
-    return
-  }
-
-  // Handle different types of requests
-  if (request.url.includes('/api/')) {
-    // API requests
-    event.respondWith(handleApiRequest(request))
-  } else if (request.destination === 'document') {
-    // Navigation requests
-    event.respondWith(handleNavigationRequest(request))
-  } else {
-    // Static assets (JS, CSS, images, etc.)
-    event.respondWith(handleStaticRequest(request))
-  }
-})
-
-// Handle API requests with appropriate caching strategy
-async function handleApiRequest(request) {
-  const url = request.url
-
-  // Network-first for critical operations
-  if (NETWORK_FIRST_PATTERNS.some(pattern => pattern.test(url))) {
-    return networkFirstStrategy(request, DYNAMIC_CACHE)
-  }
-
-  // Cache-first for read operations that can be stale
-  if (CACHEABLE_API_PATTERNS.some(pattern => pattern.test(url))) {
-    return cacheFirstStrategy(request, DYNAMIC_CACHE)
-  }
-
-  // Default: network only for uncached API calls
-  try {
-    return await fetch(request)
-  } catch (error) {
-    console.warn('[SW] API request failed:', url)
-    // Return a custom offline response for API calls
-    return new Response(
-      JSON.stringify({
-        error: 'Offline',
-        message: 'This feature requires an internet connection'
-      }),
-      {
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    )
-  }
+  self.define = (depsNames, factory) => {
+    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
+    if (registry[uri]) {
+      // Module is already loading or loaded.
+      return;
+    }
+    let exports = {};
+    const require = depUri => singleRequire(depUri, uri);
+    const specialDeps = {
+      module: { uri },
+      exports,
+      require
+    };
+    registry[uri] = Promise.all(depsNames.map(
+      depName => specialDeps[depName] || require(depName)
+    )).then(deps => {
+      factory(...deps);
+      return exports;
+    });
+  };
 }
+define(['./workbox-f1e82ed9'], (function (workbox) { 'use strict';
 
-// Handle navigation requests (SPA routing)
-async function handleNavigationRequest(request) {
-  try {
-    // Try network first
-    const response = await fetch(request)
+  self.skipWaiting();
+  workbox.clientsClaim();
 
-    // Cache successful responses
-    if (response.status === 200) {
-      const cache = await caches.open(DYNAMIC_CACHE)
-      cache.put(request, response.clone())
-    }
+  /**
+   * The precacheAndRoute() method efficiently caches and responds to
+   * requests for URLs in the manifest.
+   * See https://goo.gl/S9QRab
+   */
+  workbox.precacheAndRoute([{
+    "url": "assets/Badge-dcvuvZBI.js",
+    "revision": null
+  }, {
+    "url": "assets/ClientCreateView-D45VEjtM.js",
+    "revision": null
+  }, {
+    "url": "assets/ClientDetailView-CyABFG_W.js",
+    "revision": null
+  }, {
+    "url": "assets/ClientEditView-CotD8A4_.js",
+    "revision": null
+  }, {
+    "url": "assets/ClientForm-CIteNxtr.js",
+    "revision": null
+  }, {
+    "url": "assets/ClientsView-lh5GLU_C.js",
+    "revision": null
+  }, {
+    "url": "assets/DashboardView-QHy7MdA4.js",
+    "revision": null
+  }, {
+    "url": "assets/data-vendor-vybsYvzX.js",
+    "revision": null
+  }, {
+    "url": "assets/date-vendor-DBdW3y0n.js",
+    "revision": null
+  }, {
+    "url": "assets/EnterpriseView-DqcW4jxb.js",
+    "revision": null
+  }, {
+    "url": "assets/FAQView-CilidcQ-.js",
+    "revision": null
+  }, {
+    "url": "assets/form-vendor-IAZZ7zNx.js",
+    "revision": null
+  }, {
+    "url": "assets/hooks-De3QLl0G.js",
+    "revision": null
+  }, {
+    "url": "assets/index-6g1Lgde9.css",
+    "revision": null
+  }, {
+    "url": "assets/index-CyK9IDyA.js",
+    "revision": null
+  }, {
+    "url": "assets/InvoiceCreateView-BqiorCqY.js",
+    "revision": null
+  }, {
+    "url": "assets/InvoiceDetailView-B4TXTp6b.js",
+    "revision": null
+  }, {
+    "url": "assets/InvoiceEditView-hbCzvGl9.js",
+    "revision": null
+  }, {
+    "url": "assets/InvoiceForm-C0UPslng.js",
+    "revision": null
+  }, {
+    "url": "assets/InvoicesView-Ccs-bCZF.js",
+    "revision": null
+  }, {
+    "url": "assets/LoadingStates-gn6_MbE0.js",
+    "revision": null
+  }, {
+    "url": "assets/LoginView-QM8qm4KZ.js",
+    "revision": null
+  }, {
+    "url": "assets/OnboardingView-Bhed6iyZ.js",
+    "revision": null
+  }, {
+    "url": "assets/placeholder.svg",
+    "revision": null
+  }, {
+    "url": "assets/react-vendor-DBbBoGAA.js",
+    "revision": null
+  }, {
+    "url": "assets/ReferralsView-DbxCdNNa.js",
+    "revision": null
+  }, {
+    "url": "assets/RegisterView-yU8Tu6Ly.js",
+    "revision": null
+  }, {
+    "url": "assets/schemas-DELryz0P.js",
+    "revision": null
+  }, {
+    "url": "assets/SettingsView-QqRoarq-.js",
+    "revision": null
+  }, {
+    "url": "assets/StatusBadge-kyg_Rki7.js",
+    "revision": null
+  }, {
+    "url": "assets/SubscriptionView-BN6jbs_L.js",
+    "revision": null
+  }, {
+    "url": "assets/vendor-DjxHXWWU.js",
+    "revision": null
+  }, {
+    "url": "index.html",
+    "revision": "bade2a86e12669d239bc4d9cf0a1b922"
+  }, {
+    "url": "offline.html",
+    "revision": "5fa3861f4e63cc5cb738fb376423faee"
+  }, {
+    "url": "registerSW.js",
+    "revision": "1872c500de691dce40960bb85481de07"
+  }, {
+    "url": "manifest.webmanifest",
+    "revision": "96b77deac99266e246300e79079264f8"
+  }], {});
+  workbox.cleanupOutdatedCaches();
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
+  workbox.registerRoute(/^https:\/\/api\./, new workbox.NetworkFirst({
+    "cacheName": "api-cache",
+    "networkTimeoutSeconds": 10,
+    plugins: [new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    })]
+  }), 'GET');
+  workbox.registerRoute(/\.(png|jpg|jpeg|svg|gif)$/, new workbox.CacheFirst({
+    "cacheName": "images-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 100,
+      maxAgeSeconds: 2592000
+    })]
+  }), 'GET');
 
-    return response
-  } catch (error) {
-    console.log('[SW] Network failed for navigation, serving from cache')
-
-    // Fallback to cached version
-    const cachedResponse = await caches.match(request)
-    if (cachedResponse) {
-      return cachedResponse
-    }
-
-    // Fallback to index.html for SPA routing
-    const indexResponse = await caches.match('/index.html')
-    if (indexResponse) {
-      return indexResponse
-    }
-
-    // Last resort: offline page
-    return new Response(
-      `<!DOCTYPE html>
-      <html>
-        <head>
-          <title>Offline - SIC App</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { font-family: system-ui; text-align: center; padding: 2rem; }
-            .offline { color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="offline">
-            <h1>You're offline</h1>
-            <p>Please check your internet connection and try again.</p>
-            <button onclick="window.location.reload()">Retry</button>
-          </div>
-        </body>
-      </html>`,
-      {
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      }
-    )
-  }
-}
-
-// Handle static assets
-async function handleStaticRequest(request) {
-  return cacheFirstStrategy(request, STATIC_CACHE)
-}
-
-// Cache-first strategy: check cache first, fallback to network
-async function cacheFirstStrategy(request, cacheName) {
-  const cachedResponse = await caches.match(request)
-
-  if (cachedResponse) {
-    console.log('[SW] Serving from cache:', request.url)
-    return cachedResponse
-  }
-
-  try {
-    console.log('[SW] Fetching from network:', request.url)
-    const response = await fetch(request)
-
-    if (response.status === 200) {
-      const cache = await caches.open(cacheName)
-      cache.put(request, response.clone())
-    }
-
-    return response
-  } catch (error) {
-    console.warn('[SW] Network request failed:', request.url)
-    throw error
-  }
-}
-
-// Network-first strategy: try network first, fallback to cache
-async function networkFirstStrategy(request, cacheName) {
-  try {
-    console.log('[SW] Fetching from network (network-first):', request.url)
-    const response = await fetch(request)
-
-    if (response.status === 200) {
-      const cache = await caches.open(cacheName)
-      cache.put(request, response.clone())
-    }
-
-    return response
-  } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url)
-
-    const cachedResponse = await caches.match(request)
-    if (cachedResponse) {
-      console.log('[SW] Serving stale content from cache:', request.url)
-      return cachedResponse
-    }
-
-    throw error
-  }
-}
-
-// Background sync for failed requests
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    console.log('[SW] Background sync triggered')
-    event.waitUntil(syncFailedRequests())
-  }
-})
-
-// Sync failed requests when back online
-async function syncFailedRequests() {
-  // Implementation would depend on your app's needs
-  // Could replay failed API calls stored in IndexedDB
-  console.log('[SW] Syncing failed requests...')
-}
-
-// Handle push notifications (if needed)
-self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json()
-
-    const options = {
-      body: data.body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/badge-72.png',
-      tag: data.tag || 'default',
-      data: data.data || {},
-      actions: data.actions || [],
-    }
-
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    )
-  }
-})
-
-// Handle notification clicks
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url || '/')
-  )
-})
-
-console.log('[SW] Service worker loaded successfully')
+}));

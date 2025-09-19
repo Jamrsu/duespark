@@ -22,13 +22,17 @@ interface InvoiceFormProps {
   onSubmit: (data: CreateInvoiceRequest) => void
   isLoading?: boolean
   defaultValues?: Partial<InvoiceFormData>
+  submitButtonText?: string
+  loadingButtonText?: string
 }
 
-export function InvoiceForm({ 
-  clients, 
-  onSubmit, 
-  isLoading = false, 
-  defaultValues 
+export function InvoiceForm({
+  clients,
+  onSubmit,
+  isLoading = false,
+  defaultValues,
+  submitButtonText = 'Create Invoice',
+  loadingButtonText = 'Creating...'
 }: InvoiceFormProps) {
   const {
     register,
@@ -230,7 +234,7 @@ export function InvoiceForm({
           disabled={isSubmitting || isLoading}
           className="order-first sm:order-none"
         >
-          {isSubmitting || isLoading ? 'Creating...' : 'Create Invoice'}
+          {isSubmitting || isLoading ? loadingButtonText : submitButtonText}
         </Button>
       </div>
 

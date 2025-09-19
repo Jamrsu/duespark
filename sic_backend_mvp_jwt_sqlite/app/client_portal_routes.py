@@ -4,13 +4,14 @@ Public routes for client invoice viewing, payments, and communication
 """
 
 from typing import Dict, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
+
+from app.client_portal_service import ClientPortalService, get_client_portal_service
 from app.database import get_db
 from app.models import Client, Invoice
-from app.client_portal_service import get_client_portal_service, ClientPortalService
 
 router = APIRouter(prefix="/api/client-portal", tags=["client-portal"])
 
@@ -39,8 +40,7 @@ class ClientFeedbackRequest(BaseModel):
 
 @router.post("/access")
 async def request_client_access(
-    request: ClientAccessRequest,
-    db: Session = Depends(get_db)
+    request: ClientAccessRequest, db: Session = Depends(get_db)
 ):
     """Generate access token for client portal (public endpoint)"""
     try:
@@ -52,26 +52,28 @@ async def request_client_access(
             # For security, don't reveal if email exists or not
             return {
                 "success": True,
-                "message": "If this email has invoices, an access link will be sent."
+                "message": "If this email has invoices, an access link will be sent.",
             }
 
         # Generate access token
         access_token = portal_service.generate_client_access_token(client)
 
         # In production, send email with access link
-        access_url = f"https://pay.duespark.com/portal/{access_token}?email={client.email}"
+        access_url = (
+            f"https://pay.duespark.com/portal/{access_token}?email={client.email}"
+        )
 
         return {
             "success": True,
             "access_token": access_token,
             "access_url": access_url,
             "message": "Access link generated successfully",
-            "expires_in": 7200  # 2 hours in seconds
+            "expires_in": 7200,  # 2 hours in seconds
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate access: {str(e)}"
+            detail=f"Failed to generate access: {str(e)}",
         )
 
 
@@ -79,7 +81,7 @@ async def request_client_access(
 async def get_client_portal(
     access_token: str,
     email: EmailStr = Query(..., description="Client email for verification"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get client portal dashboard (public endpoint)"""
     try:
@@ -90,25 +92,19 @@ async def get_client_portal(
         if not is_valid or not client:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid access token or email"
+                detail="Invalid access token or email",
             )
 
         # Get portal data
         portal_data = portal_service.get_client_portal_data(client, access_token)
 
-        return {
-            "success": True,
-            "data": portal_data
-        }
+        return {"success": True, "data": portal_data}
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get portal data: {str(e)}"
+            detail=f"Failed to get portal data: {str(e)}",
         )
 
 
@@ -116,7 +112,7 @@ async def get_client_portal(
 async def get_invoice_payment_page(
     invoice_id: int,
     access_token: str = Query(..., description="Client access token"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get branded payment page for specific invoice (public endpoint)"""
     try:
@@ -124,19 +120,13 @@ async def get_invoice_payment_page(
 
         payment_data = portal_service.get_invoice_payment_page(invoice_id, access_token)
 
-        return {
-            "success": True,
-            "data": payment_data
-        }
+        return {"success": True, "data": payment_data}
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get payment page: {str(e)}"
+            detail=f"Failed to get payment page: {str(e)}",
         )
 
 
@@ -145,7 +135,7 @@ async def process_invoice_payment(
     invoice_id: int,
     payment_request: PaymentRequest,
     access_token: str = Query(..., description="Client access token"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Process payment for invoice (public endpoint)"""
     try:
@@ -153,24 +143,16 @@ async def process_invoice_payment(
 
         # Process payment
         payment_result = portal_service.process_payment(
-            invoice_id,
-            payment_request.dict(),
-            access_token
+            invoice_id, payment_request.dict(), access_token
         )
 
-        return {
-            "success": True,
-            "data": payment_result
-        }
+        return {"success": True, "data": payment_result}
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Payment processing failed: {str(e)}"
+            detail=f"Payment processing failed: {str(e)}",
         )
 
 
@@ -179,7 +161,7 @@ async def send_client_message(
     message_request: ClientMessageRequest,
     access_token: str = Query(..., description="Client access token"),
     email: EmailStr = Query(..., description="Client email"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Send message from client to vendor (public endpoint)"""
     try:
@@ -190,16 +172,16 @@ async def send_client_message(
         if not is_valid or not client:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid access token or email"
+                detail="Invalid access token or email",
             )
 
         # Get vendor
         from app.models import User
+
         vendor = db.query(User).filter(User.id == client.user_id).first()
         if not vendor:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Vendor not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Vendor not found"
             )
 
         # Send message
@@ -207,16 +189,13 @@ async def send_client_message(
             client, vendor, message_request.message, message_request.invoice_id
         )
 
-        return {
-            "success": True,
-            "data": message_result
-        }
+        return {"success": True, "data": message_result}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send message: {str(e)}"
+            detail=f"Failed to send message: {str(e)}",
         )
 
 
@@ -224,7 +203,7 @@ async def send_client_message(
 async def get_communication_history(
     access_token: str,
     email: EmailStr = Query(..., description="Client email"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get communication history between client and vendor (public endpoint)"""
     try:
@@ -235,7 +214,7 @@ async def get_communication_history(
         if not is_valid or not client:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid access token or email"
+                detail="Invalid access token or email",
             )
 
         # Get communication history
@@ -246,15 +225,15 @@ async def get_communication_history(
             "data": {
                 "messages": history,
                 "client_name": client.name,
-                "total_messages": len(history)
-            }
+                "total_messages": len(history),
+            },
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get communication history: {str(e)}"
+            detail=f"Failed to get communication history: {str(e)}",
         )
 
 
@@ -263,7 +242,7 @@ async def submit_client_feedback(
     feedback_request: ClientFeedbackRequest,
     access_token: str = Query(..., description="Client access token"),
     email: EmailStr = Query(..., description="Client email"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Submit client feedback and testimonial (public endpoint)"""
     try:
@@ -274,16 +253,16 @@ async def submit_client_feedback(
         if not is_valid or not client:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid access token or email"
+                detail="Invalid access token or email",
             )
 
         # Get vendor for context
         from app.models import User
+
         vendor = db.query(User).filter(User.id == client.user_id).first()
         if not vendor:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Vendor not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Vendor not found"
             )
 
         # Process feedback (in production, store in database)
@@ -297,7 +276,7 @@ async def submit_client_feedback(
             "feedback": feedback_request.feedback,
             "public_testimonial": feedback_request.public_testimonial,
             "submitted_at": "2024-09-14T19:30:00Z",
-            "status": "submitted"
+            "status": "submitted",
         }
 
         # Viral sharing opportunity
@@ -308,8 +287,8 @@ async def submit_client_feedback(
                 "share_url": f"https://duespark.com/signup?ref=client-feedback&vendor={vendor.id}",
                 "templates": {
                     "twitter": f"Great experience paying {vendor.name} through @DueSpark! Super easy and professional. #SmallBusiness #Freelancer",
-                    "linkedin": f"Had a seamless payment experience with {vendor.name} using DueSpark. Impressive how technology can make business transactions so smooth!"
-                }
+                    "linkedin": f"Had a seamless payment experience with {vendor.name} using DueSpark. Impressive how technology can make business transactions so smooth!",
+                },
             }
 
         return {
@@ -319,23 +298,20 @@ async def submit_client_feedback(
                 "message": "Thank you for your feedback!",
                 "rating_received": feedback_request.rating,
                 "vendor_notified": True,
-                "sharing": sharing_incentive
-            }
+                "sharing": sharing_incentive,
+            },
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to submit feedback: {str(e)}"
+            detail=f"Failed to submit feedback: {str(e)}",
         )
 
 
 @router.get("/receipt/{payment_id}")
-async def get_payment_receipt(
-    payment_id: str,
-    db: Session = Depends(get_db)
-):
+async def get_payment_receipt(payment_id: str, db: Session = Depends(get_db)):
     """Get payment receipt (public endpoint)"""
     try:
         # Mock receipt data - in production, query actual payment records
@@ -347,17 +323,14 @@ async def get_payment_receipt(
             "transaction_date": "2024-09-14T19:30:00Z",
             "invoice_number": "INV-001",
             "vendor": "DueSpark Demo Vendor",
-            "receipt_number": f"RCP-{payment_id[-8:].upper()}"
+            "receipt_number": f"RCP-{payment_id[-8:].upper()}",
         }
 
-        return {
-            "success": True,
-            "data": receipt_data
-        }
+        return {"success": True, "data": receipt_data}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get receipt: {str(e)}"
+            detail=f"Failed to get receipt: {str(e)}",
         )
 
 
@@ -372,8 +345,8 @@ async def client_portal_health():
             "invoice_viewing": True,
             "payment_processing": True,
             "client_communication": True,
-            "branded_experience": True
-        }
+            "branded_experience": True,
+        },
     }
 
 
@@ -387,19 +360,19 @@ async def get_demo_portal():
             "client": {
                 "name": "Demo Client",
                 "email": "client@example.com",
-                "company": "Example Corp"
+                "company": "Example Corp",
             },
             "vendor": {
                 "name": "Sarah Johnson",
                 "company": "SJ Design Studio",
-                "subscription_tier": "professional"
+                "subscription_tier": "professional",
             },
             "branding": {
                 "logo_url": "https://via.placeholder.com/120x40/2563eb/ffffff?text=SJ+Design",
                 "company_name": "SJ Design Studio",
                 "primary_color": "#2563eb",
                 "custom_branding_enabled": True,
-                "powered_by_text": "Powered by DueSpark"
+                "powered_by_text": "Powered by DueSpark",
             },
             "invoices": [
                 {
@@ -413,7 +386,7 @@ async def get_demo_portal():
                     "description": "Website Design - Phase 1",
                     "is_overdue": False,
                     "days_until_due": 7,
-                    "can_pay": True
+                    "can_pay": True,
                 },
                 {
                     "id": 2,
@@ -424,15 +397,15 @@ async def get_demo_portal():
                     "status_display": "Paid",
                     "paid_at": "2024-09-10T14:30:00Z",
                     "description": "Logo Design",
-                    "can_pay": False
-                }
+                    "can_pay": False,
+                },
             ],
             "summary": {
                 "total_outstanding": 1250.00,
                 "total_outstanding_display": "$1,250.00",
-                "invoice_count": 1
+                "invoice_count": 1,
             },
             "access_token": "demo_token_12345",
-            "portal_url": "https://pay.duespark.com/demo"
-        }
+            "portal_url": "https://pay.duespark.com/demo",
+        },
     }

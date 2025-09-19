@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { User, Shield, Bell, Palette, CreditCard, RotateCcw, CheckCircle, ExternalLink, Zap, FileText } from 'lucide-react'
+import { Shield, Bell, Palette, CreditCard, RotateCcw, CheckCircle, ExternalLink, Zap, FileText, User as UserIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { LoadingButton, ProcessStatus } from '@/components/ui/LoadingStates'
@@ -8,13 +8,17 @@ import { useTheme } from '@/lib/theme'
 import { useAuth, apiClient } from '@/api/client'
 import { toast } from 'react-hot-toast'
 import { displayError } from '@/utils/errorHandling'
+import type { User as UserType, StripeConnectResponse } from '@/types/api'
 
 type PaymentMethod = 'stripe' | 'manual' | null
+type ConfigurablePaymentMethod = Exclude<PaymentMethod, null>
 
 interface NotificationSettings {
   email_notifications: boolean
   payment_reminders: boolean
 }
+
+type UserSettingsState = NotificationSettings & { theme?: string }
 
 export function SettingsView() {
   const { theme, setTheme } = useTheme()
@@ -29,7 +33,7 @@ export function SettingsView() {
   const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
     queryKey: ['user', 'profile'],
     queryFn: async () => {
-      const response = await apiClient.get('/auth/me')
+      const response = await apiClient.get<UserType>('/auth/me')
       return response.data
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -38,7 +42,7 @@ export function SettingsView() {
   })
 
   // Get user settings
-  const { data: userSettings, isLoading: settingsLoading } = useQuery({
+  const { data: userSettings, isLoading: settingsLoading } = useQuery<UserSettingsState>({
     queryKey: ['user', 'settings'],
     queryFn: async () => {
       // For now, return default settings since backend doesn't have this endpoint yet
@@ -88,37 +92,39 @@ export function SettingsView() {
   }, [refetchUser, queryClient])
 
   // Update payment method with optimistic updates
-  const updatePaymentMethodMutation = useMutation({
-    mutationFn: async (method: PaymentMethod) => {
+  const updatePaymentMethodMutation = useMutation<StripeConnectResponse | UserType, unknown, ConfigurablePaymentMethod, { previousUser?: UserType } | undefined>({
+    mutationFn: async (method: ConfigurablePaymentMethod) => {
       if (method === 'stripe') {
-        const response = await apiClient.get('/integrations/stripe/connect')
-        return response.data
-      } else if (method === 'manual') {
-        const response = await apiClient.patch('/auth/me', {
-          payment_method: 'manual'
-        })
+        const response = await apiClient.get<StripeConnectResponse>('/integrations/stripe/connect')
         return response.data
       }
+
+      const response = await apiClient.patch<UserType>('/auth/me', {
+        payment_method: 'manual'
+      })
+      return response.data
     },
     onMutate: async (method) => {
       // Optimistic update for manual payment method
       if (method === 'manual') {
         await queryClient.cancelQueries({ queryKey: ['user', 'profile'] })
-        const previousUser = queryClient.getQueryData(['user', 'profile'])
+        const previousUser = queryClient.getQueryData<UserType>(['user', 'profile'])
 
-        queryClient.setQueryData(['user', 'profile'], (old: any) => ({
-          ...old,
-          payment_method: 'manual'
-        }))
+        queryClient.setQueryData<UserType | undefined>(['user', 'profile'], (old) => {
+          if (!old) return old
+          return { ...old, payment_method: 'manual' }
+        })
 
         return { previousUser }
       }
     },
     onSuccess: (data, method) => {
       if (method === 'stripe') {
+        const stripeData = data as StripeConnectResponse
         // Handle Stripe connection response
-        if (data.error || data.demo_mode) {
-          displayError(new Error(data.message || data.error), {
+        if (stripeData.error || stripeData.demo_mode) {
+          const message = stripeData.message || stripeData.error || 'Stripe connection not available'
+          displayError(new Error(message), {
             operation: 'stripe_connect',
             component: 'SettingsView'
           })
@@ -126,9 +132,9 @@ export function SettingsView() {
           return
         }
 
-        if (data.url) {
+        if (stripeData.url) {
           toast.success('Redirecting to Stripe...')
-          window.location.href = data.url
+          window.location.href = stripeData.url
         } else {
           displayError(new Error('Unable to generate Stripe connection URL'), {
             operation: 'stripe_connect',
@@ -137,12 +143,13 @@ export function SettingsView() {
           setStripeConnecting(false)
         }
       } else if (method === 'manual') {
+        void (data as UserType)
         toast.success('Payment method updated to manual invoicing')
         // Force refetch to ensure consistency
         refetchUser()
       }
     },
-    onError: (error: any, method, context) => {
+    onError: (error: unknown, method, context) => {
       // Rollback optimistic update
       if (context?.previousUser) {
         queryClient.setQueryData(['user', 'profile'], context.previousUser)
@@ -157,9 +164,9 @@ export function SettingsView() {
   })
 
   // Reset onboarding with better UX
-  const resetOnboardingMutation = useMutation({
+  const resetOnboardingMutation = useMutation<UserType, unknown, void, { previousUser?: UserType } | undefined>({
     mutationFn: async () => {
-      const response = await apiClient.patch('/auth/me', {
+      const response = await apiClient.patch<UserType>('/auth/me', {
         onboarding_status: 'not_started'
       })
       return response.data
@@ -167,12 +174,12 @@ export function SettingsView() {
     onMutate: async () => {
       // Optimistic update
       await queryClient.cancelQueries({ queryKey: ['user', 'profile'] })
-      const previousUser = queryClient.getQueryData(['user', 'profile'])
+      const previousUser = queryClient.getQueryData<UserType>(['user', 'profile'])
 
-      queryClient.setQueryData(['user', 'profile'], (old: any) => ({
-        ...old,
-        onboarding_status: 'not_started'
-      }))
+      queryClient.setQueryData<UserType | undefined>(['user', 'profile'], (old) => {
+        if (!old) return old
+        return { ...old, onboarding_status: 'not_started' }
+      })
 
       return { previousUser }
     },
@@ -186,7 +193,7 @@ export function SettingsView() {
         window.location.href = '/onboarding'
       }, 1500)
     },
-    onError: (error: any, variables, context) => {
+    onError: (error: unknown, variables, context) => {
       // Rollback optimistic update
       if (context?.previousUser) {
         queryClient.setQueryData(['user', 'profile'], context.previousUser)
@@ -200,7 +207,7 @@ export function SettingsView() {
   })
 
   // Add notification settings mutation
-  const updateNotificationsMutation = useMutation({
+  const updateNotificationsMutation = useMutation<UserSettingsState, unknown, NotificationSettings, { previousSettings?: UserSettingsState } | undefined>({
     mutationFn: async (settings: NotificationSettings) => {
       // For now, just simulate API call since backend doesn't have this endpoint
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -210,19 +217,19 @@ export function SettingsView() {
       // Optimistic update
       setNotifications(newSettings)
       await queryClient.cancelQueries({ queryKey: ['user', 'settings'] })
-      const previousSettings = queryClient.getQueryData(['user', 'settings'])
+      const previousSettings = queryClient.getQueryData<UserSettingsState>(['user', 'settings'])
 
-      queryClient.setQueryData(['user', 'settings'], (old: any) => ({
-        ...old,
-        ...newSettings
-      }))
+      queryClient.setQueryData<UserSettingsState | undefined>(['user', 'settings'], (old) => {
+        if (!old) return { ...newSettings, theme: user?.theme || 'system' }
+        return { ...old, ...newSettings }
+      })
 
       return { previousSettings }
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success('Notification preferences updated')
     },
-    onError: (error: any, variables, context) => {
+    onError: (error: unknown, variables, context) => {
       // Rollback optimistic update
       if (context?.previousSettings) {
         queryClient.setQueryData(['user', 'settings'], context.previousSettings)
@@ -281,7 +288,7 @@ export function SettingsView() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <UserIcon className="h-5 w-5" />
               Profile
             </CardTitle>
           </CardHeader>

@@ -65,23 +65,23 @@ export DATABASE_URL="sqlite:///./test_e2e.db"\n\
 export SECRET_KEY="test-secret-key-for-docker-e2e"\n\
 export ENCRYPTION_KEY="test-encryption-key-for-docker-e2e"\n\
 export EMAIL_PROVIDER="console"\n\
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &\n\
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8005 &\n\
 BACKEND_PID=$!\n\
 \n\
 # Start frontend\n\
 cd /app/sic_app\n\
-export VITE_API_BASE_URL="http://localhost:8000"\n\
+export VITE_API_BASE_URL="http://localhost:8005"\n\
 npm run preview -- --port 5173 --host &\n\
 FRONTEND_PID=$!\n\
 \n\
 # Wait for services\n\
-timeout 60 bash -c "while ! curl -f http://localhost:8000/healthz; do sleep 2; done"\n\
+timeout 60 bash -c "while ! curl -f http://localhost:8005/healthz; do sleep 2; done"\n\
 timeout 60 bash -c "while ! curl -f http://localhost:5173; do sleep 2; done"\n\
 \n\
 # Run tests\n\
 cd /app/sic_app\n\
 export PLAYWRIGHT_BASE_URL="http://localhost:5173"\n\
-export API_BASE_URL="http://localhost:8000"\n\
+export API_BASE_URL="http://localhost:8005"\n\
 npx playwright test --project=chromium --reporter=github\n\
 \n\
 # Cleanup\n\
@@ -90,11 +90,11 @@ kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n' > /app/run-tests.sh
 RUN chmod +x /app/run-tests.sh
 
 # Expose ports
-EXPOSE 8000 5173
+EXPOSE 8005 5173
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5173 && curl -f http://localhost:8000/healthz || exit 1
+    CMD curl -f http://localhost:5173 && curl -f http://localhost:8005/healthz || exit 1
 
 # Default command
 CMD ["/app/run-tests.sh"]

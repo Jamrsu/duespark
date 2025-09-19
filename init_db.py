@@ -1,19 +1,32 @@
+import logging
 import os
-import sys
 from sqlalchemy import create_engine, text
+
+
+logger = logging.getLogger("duespark.init_db")
+
+
+def configure_logging() -> None:
+    if logging.getLogger().handlers:
+        return
+
+    logging.basicConfig(
+        level=os.getenv("DUESPARK_LOG_LEVEL", "INFO"),
+        format='{"timestamp":"%(asctime)s","logger":"%(name)s","level":"%(levelname)s","message":"%(message)s"}'
+    )
 
 
 def alembic_upgrade_head() -> None:
     try:
         from alembic.config import Config
         from alembic import command
-    except Exception as e:
-        print(f"[init_db] Alembic not available: {e}", file=sys.stderr)
+    except Exception:
+        logger.exception("alembic not available")
         raise
 
     ini_path = os.path.join(os.getcwd(), "sic_backend_mvp_jwt_sqlite", "alembic.ini")
     if not os.path.exists(ini_path):
-        print(f"[init_db] alembic.ini not found at {ini_path}", file=sys.stderr)
+        logger.error("alembic.ini missing", extra={"path": ini_path})
         raise SystemExit(2)
     cfg = Config(ini_path)
     command.upgrade(cfg, "head")
@@ -22,7 +35,7 @@ def alembic_upgrade_head() -> None:
 def verify_core_tables() -> None:
     db_url = os.environ.get("DATABASE_URL")
     if not db_url:
-        print("[init_db] DATABASE_URL not set; skipping verification", file=sys.stderr)
+        logger.warning("DATABASE_URL not set; skipping core table verification")
         return
     eng = create_engine(db_url)
     with eng.connect() as conn:
@@ -32,14 +45,14 @@ def verify_core_tables() -> None:
 
 
 def main() -> int:
-    print("[init_db] Running Alembic upgrade head…")
+    configure_logging()
+    logger.info("running alembic upgrade head")
     alembic_upgrade_head()
-    print("[init_db] Verifying core tables…")
+    logger.info("verifying core tables")
     verify_core_tables()
-    print("[init_db] Database initialized and verified.")
+    logger.info("database initialized and verified")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

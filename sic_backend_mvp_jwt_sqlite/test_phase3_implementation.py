@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from app.models import User, Subscription, SubscriptionCredit, SubscriptionTier, SubscriptionStatus
 from app.billing_credit_service import billing_credit_service
 from app.referral_service import referral_service
-from app.subscription_service import subscription_service
+from app.subscription_service import create_subscription_service
 
 def test_phase3_implementation():
     """Test Phase 3: Billing System Integration"""
@@ -189,6 +189,8 @@ def test_phase3_implementation():
 
         # Test 6: Integration with subscription service
         print("Test 6: Integration with subscription service")
+
+        subscription_service = create_subscription_service(db)
 
         try:
             subscription_preview = subscription_service.get_billing_preview(

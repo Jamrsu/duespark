@@ -1,10 +1,19 @@
 import secrets
 import string
 from datetime import datetime
-from typing import Optional, Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
+
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
-from .models import User, Referral, SubscriptionCredit, Subscription, SubscriptionTier, SubscriptionStatus
+
+from .models import (
+    Referral,
+    Subscription,
+    SubscriptionCredit,
+    SubscriptionStatus,
+    SubscriptionTier,
+    User,
+)
 
 
 class ReferralService:
@@ -15,7 +24,7 @@ class ReferralService:
     def generate_referral_code(self) -> str:
         """Generate a unique referral code"""
         characters = string.ascii_uppercase + string.digits
-        return ''.join(secrets.choice(characters) for _ in range(self.code_length))
+        return "".join(secrets.choice(characters) for _ in range(self.code_length))
 
     def ensure_user_has_referral_code(self, user: User, db: Session) -> str:
         """Ensure user has a unique referral code"""
@@ -36,7 +45,9 @@ class ReferralService:
 
         raise Exception("Unable to generate unique referral code")
 
-    def validate_referral_code(self, code: str, referred_user: User, db: Session) -> Tuple[bool, str, Optional[User]]:
+    def validate_referral_code(
+        self, code: str, referred_user: User, db: Session
+    ) -> Tuple[bool, str, Optional[User]]:
         """
         Validate referral code and check for abuse
         Returns: (is_valid, error_message, referrer_user)
@@ -54,29 +65,38 @@ class ReferralService:
             return False, "Cannot use your own referral code", None
 
         # Check if user already used a referral code
-        existing_referral = db.query(Referral).filter(
-            Referral.referred_user_id == referred_user.id
-        ).first()
+        existing_referral = (
+            db.query(Referral)
+            .filter(Referral.referred_user_id == referred_user.id)
+            .first()
+        )
         if existing_referral:
             return False, "You have already used a referral code", None
 
         # Check for potential abuse - same email domain (simple check)
-        referrer_domain = referrer.email.split('@')[-1]
-        referred_domain = referred_user.email.split('@')[-1]
-        if referrer_domain == referred_domain and referrer_domain not in ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com']:
+        referrer_domain = referrer.email.split("@")[-1]
+        referred_domain = referred_user.email.split("@")[-1]
+        if referrer_domain == referred_domain and referrer_domain not in [
+            "gmail.com",
+            "yahoo.com",
+            "hotmail.com",
+            "outlook.com",
+        ]:
             # Log suspicious activity but don't block (could be legitimate company users)
             pass
 
         return True, "", referrer
 
-    def create_referral(self, referrer: User, referred_user: User, referral_code: str, db: Session) -> Referral:
+    def create_referral(
+        self, referrer: User, referred_user: User, referral_code: str, db: Session
+    ) -> Referral:
         """Create a referral record"""
         referral = Referral(
             referrer_user_id=referrer.id,
             referred_user_id=referred_user.id,
             referral_code_used=referral_code,
             reward_granted=False,
-            reward_months=self.reward_months
+            reward_months=self.reward_months,
         )
         db.add(referral)
         db.commit()
@@ -90,16 +110,21 @@ class ReferralService:
 
         # Get referrer's current subscription to determine credit amount
         from .pricing_service import pricing_service
+
         referrer = db.query(User).filter(User.id == referral.referrer_user_id).first()
         if not referrer:
             return False
 
         # Get referrer's current subscription tier
-        subscription = db.query(Subscription).filter(Subscription.user_id == referrer.id).first()
+        subscription = (
+            db.query(Subscription).filter(Subscription.user_id == referrer.id).first()
+        )
         referrer_tier = subscription.tier if subscription else SubscriptionTier.freemium
 
         # Calculate credit amount based on referrer's current tier
-        credit_amount_cents = pricing_service.calculate_referral_credit_cents(referrer_tier)
+        credit_amount_cents = pricing_service.calculate_referral_credit_cents(
+            referrer_tier
+        )
 
         # Create credit for referrer with both month and dollar amounts
         credit = SubscriptionCredit(
@@ -107,11 +132,11 @@ class ReferralService:
             credit_months=referral.reward_months,  # Keep for backward compatibility
             remaining_months=referral.reward_months,  # Keep for backward compatibility
             amount_cents=credit_amount_cents,  # New dollar-based field
-            currency='USD',
+            currency="USD",
             remaining_amount_cents=credit_amount_cents,  # New dollar-based field
-            source='referral',
+            source="referral",
             source_id=str(referral.id),
-            description=f'Referral reward for inviting user {referral.referred_user_id} (${credit_amount_cents/100:.2f})'
+            description=f"Referral reward for inviting user {referral.referred_user_id} (${credit_amount_cents/100:.2f})",
         )
         db.add(credit)
 
@@ -125,127 +150,188 @@ class ReferralService:
     def get_user_referral_stats(self, user_id: int, db: Session) -> Dict:
         """Get referral statistics for a user"""
         # Get referrals made by this user
-        referrals_made = db.query(Referral).filter(
-            Referral.referrer_user_id == user_id
-        ).all()
+        referrals_made = (
+            db.query(Referral).filter(Referral.referrer_user_id == user_id).all()
+        )
 
         # Count successful referrals (rewarded)
         successful_referrals = len([r for r in referrals_made if r.reward_granted])
 
         # Get total credits earned from referrals
-        total_credits = db.query(func.sum(SubscriptionCredit.credit_months)).filter(
-            SubscriptionCredit.user_id == user_id,
-            SubscriptionCredit.source == 'referral'
-        ).scalar() or 0
+        total_credits = (
+            db.query(func.sum(SubscriptionCredit.credit_months))
+            .filter(
+                SubscriptionCredit.user_id == user_id,
+                SubscriptionCredit.source == "referral",
+            )
+            .scalar()
+            or 0
+        )
 
         # Get remaining credits
-        remaining_credits = db.query(func.sum(SubscriptionCredit.remaining_months)).filter(
-            SubscriptionCredit.user_id == user_id,
-            SubscriptionCredit.source == 'referral'
-        ).scalar() or 0
+        remaining_credits = (
+            db.query(func.sum(SubscriptionCredit.remaining_months))
+            .filter(
+                SubscriptionCredit.user_id == user_id,
+                SubscriptionCredit.source == "referral",
+            )
+            .scalar()
+            or 0
+        )
 
         return {
-            'total_referrals': len(referrals_made),
-            'successful_referrals': successful_referrals,
-            'pending_referrals': len(referrals_made) - successful_referrals,
-            'total_credits_earned': total_credits,
-            'remaining_credits': remaining_credits,
-            'referrals': [
+            "total_referrals": len(referrals_made),
+            "successful_referrals": successful_referrals,
+            "pending_referrals": len(referrals_made) - successful_referrals,
+            "total_credits_earned": total_credits,
+            "remaining_credits": remaining_credits,
+            "referrals": [
                 {
-                    'id': r.id,
-                    'referred_user_email': self._get_masked_email(r.referred_user.email),
-                    'created_at': r.created_at.isoformat(),
-                    'reward_granted': r.reward_granted,
-                    'rewarded_at': r.rewarded_at.isoformat() if r.rewarded_at else None,
-                    'reward_months': r.reward_months
+                    "id": r.id,
+                    "referred_user_email": self._get_masked_email(
+                        r.referred_user.email
+                    ),
+                    "created_at": r.created_at.isoformat(),
+                    "reward_granted": r.reward_granted,
+                    "rewarded_at": r.rewarded_at.isoformat() if r.rewarded_at else None,
+                    "reward_months": r.reward_months,
                 }
                 for r in referrals_made
-            ]
+            ],
         }
 
     def get_user_credits_breakdown(self, user_id: int, db: Session) -> Dict:
         """Get detailed breakdown of user's subscription credits"""
-        credits = db.query(SubscriptionCredit).filter(
-            SubscriptionCredit.user_id == user_id,
-            SubscriptionCredit.remaining_months > 0
-        ).order_by(SubscriptionCredit.created_at.desc()).all()
+        credits = (
+            db.query(SubscriptionCredit)
+            .filter(
+                SubscriptionCredit.user_id == user_id,
+                SubscriptionCredit.remaining_months > 0,
+            )
+            .order_by(SubscriptionCredit.created_at.desc())
+            .all()
+        )
 
         total_remaining = sum(c.remaining_months for c in credits)
 
         return {
-            'total_remaining_months': total_remaining,
-            'credits': [
+            "total_remaining_months": total_remaining,
+            "credits": [
                 {
-                    'id': c.id,
-                    'source': c.source,
-                    'description': c.description,
-                    'credit_months': c.credit_months,
-                    'remaining_months': c.remaining_months,
-                    'created_at': c.created_at.isoformat(),
-                    'expires_at': c.expires_at.isoformat() if c.expires_at else None
+                    "id": c.id,
+                    "source": c.source,
+                    "description": c.description,
+                    "credit_months": c.credit_months,
+                    "remaining_months": c.remaining_months,
+                    "created_at": c.created_at.isoformat(),
+                    "expires_at": c.expires_at.isoformat() if c.expires_at else None,
                 }
                 for c in credits
-            ]
+            ],
         }
 
-    def consume_credits(self, user_id: int, months_to_consume: int, db: Session) -> bool:
+    def consume_credits(
+        self, user_id: int, months_to_consume: int, db: Session
+    ) -> bool:
         """
         Consume subscription credits for a user (backward compatibility method using months)
         DEPRECATED: Use consume_credits_cents for dollar-based consumption
         """
+        from math import ceil
         from .pricing_service import pricing_service
 
-        # Get user's current tier to convert months to cents
-        subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        if months_to_consume <= 0:
+            return True
+
+        subscription = (
+            db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        )
         user_tier = subscription.tier if subscription else SubscriptionTier.freemium
 
-        # Convert months to cents for consumption
-        amount_to_consume_cents = pricing_service.months_to_cents(months_to_consume, user_tier)
+        credits = (
+            db.query(SubscriptionCredit)
+            .filter(SubscriptionCredit.user_id == user_id)
+            .filter(SubscriptionCredit.remaining_months > 0)
+            .order_by(SubscriptionCredit.created_at.asc())
+            .all()
+        )
 
-        return self.consume_credits_cents(user_id, amount_to_consume_cents, db)
-
-    def consume_credits_cents(self, user_id: int, amount_cents: int, db: Session) -> bool:
-        """Consume subscription credits for a user (dollar-based)"""
-        credits = db.query(SubscriptionCredit).filter(
-            SubscriptionCredit.user_id == user_id,
-            SubscriptionCredit.remaining_amount_cents > 0
-        ).order_by(SubscriptionCredit.created_at.asc()).all()  # FIFO
-
-        remaining_to_consume = amount_cents
+        remaining_months = months_to_consume
+        amount_per_month = pricing_service.get_tier_price_cents(user_tier)
+        consumed_records: list[tuple[SubscriptionCredit, int, int]] = []
 
         for credit in credits:
-            if remaining_to_consume <= 0:
+            if remaining_months <= 0:
                 break
 
-            # Consume from dollar amounts
-            if credit.remaining_amount_cents >= remaining_to_consume:
-                credit.remaining_amount_cents -= remaining_to_consume
-                remaining_to_consume = 0
+            available = credit.remaining_months
+            if available <= 0:
+                continue
+
+            use_months = min(available, remaining_months)
+            remaining_months -= use_months
+            credit.remaining_months -= use_months
+
+            amount_used_cents = 0
+            if credit.amount_cents and credit.credit_months:
+                amount_per_credit_month = credit.amount_cents / credit.credit_months
+                amount_used_cents = int(round(amount_per_credit_month * use_months))
+                credit.remaining_amount_cents = max(
+                    0, credit.remaining_amount_cents - amount_used_cents
+                )
             else:
-                remaining_to_consume -= credit.remaining_amount_cents
-                credit.remaining_amount_cents = 0
-
-            # Also update month amounts for backward compatibility
-            # Calculate equivalent months consumed
-            from .pricing_service import pricing_service
-            subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-            user_tier = subscription.tier if subscription else SubscriptionTier.freemium
-
-            if credit.amount_cents > 0:
-                # Calculate proportion consumed
-                proportion_consumed = 1 - (credit.remaining_amount_cents / credit.amount_cents)
-                credit.remaining_months = int(credit.credit_months * (1 - proportion_consumed))
+                if amount_per_month > 0:
+                    amount_used_cents = pricing_service.months_to_cents(
+                        use_months, user_tier
+                    )
+                credit.remaining_amount_cents = max(
+                    0, credit.remaining_amount_cents - amount_used_cents
+                )
 
             credit.updated_at = datetime.utcnow()
+            consumed_records.append((credit, use_months, amount_used_cents))
 
-        if remaining_to_consume > 0:
-            # Not enough credits
+        if remaining_months > 0:
+            # Not enough months available; revert changes
+            for credit, use_months, amount_used_cents in consumed_records:
+                credit.remaining_months += use_months
+                credit.remaining_amount_cents += amount_used_cents
+            db.rollback()
             return False
 
         db.commit()
         return True
 
-    def admin_grant_credit(self, user_id: int, months: int, description: str, admin_user_id: int, db: Session, override_amount_cents: int = None) -> SubscriptionCredit:
+    def consume_credits_cents(
+        self, user_id: int, amount_cents: int, db: Session
+    ) -> bool:
+        """Consume subscription credits for a user (dollar-based)"""
+        if amount_cents <= 0:
+            return True
+
+        from math import ceil
+        from .pricing_service import pricing_service
+
+        subscription = (
+            db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        )
+        user_tier = subscription.tier if subscription else SubscriptionTier.freemium
+
+        months_equivalent = pricing_service.cents_to_months_equivalent(
+            amount_cents, user_tier
+        )
+        months_needed = max(1, int(ceil(months_equivalent)))
+        return self.consume_credits(user_id, months_needed, db)
+
+    def admin_grant_credit(
+        self,
+        user_id: int,
+        months: int,
+        description: str,
+        admin_user_id: int,
+        db: Session,
+        override_amount_cents: int = None,
+    ) -> SubscriptionCredit:
         """Admin function to grant credits to a user"""
         from .pricing_service import pricing_service
 
@@ -255,7 +341,9 @@ class ReferralService:
             raise ValueError(f"User with id {user_id} not found")
 
         # Get user's current subscription tier to calculate dollar amount
-        subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        subscription = (
+            db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        )
         user_tier = subscription.tier if subscription else SubscriptionTier.freemium
 
         # Calculate dollar amount based on user's current tier or override
@@ -269,11 +357,11 @@ class ReferralService:
             credit_months=months,  # Keep for backward compatibility
             remaining_months=months,  # Keep for backward compatibility
             amount_cents=credit_amount_cents,  # New dollar-based field
-            currency='USD',
+            currency="USD",
             remaining_amount_cents=credit_amount_cents,  # New dollar-based field
-            source='admin_grant',
+            source="admin_grant",
             source_id=str(admin_user_id),
-            description=f"{description} (${credit_amount_cents/100:.2f})"
+            description=f"{description} (${credit_amount_cents/100:.2f})",
         )
         db.add(credit)
         db.commit()
@@ -285,7 +373,9 @@ class ReferralService:
         Check if a user is eligible for referral reward (after 1 month of paid subscription)
         """
         # Get user's subscription
-        subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        subscription = (
+            db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        )
         if not subscription:
             return False
 
@@ -302,7 +392,9 @@ class ReferralService:
             return False
 
         # Check if they've maintained paid subscription for at least 30 days since first payment
-        days_since_first_payment = (datetime.utcnow() - subscription.first_payment_at).days
+        days_since_first_payment = (
+            datetime.utcnow() - subscription.first_payment_at
+        ).days
         if days_since_first_payment < 30:
             return False
 
@@ -314,9 +406,9 @@ class ReferralService:
         Returns the number of rewards granted
         """
         # Get all pending referrals
-        pending_referrals = db.query(Referral).filter(
-            Referral.reward_granted == False
-        ).all()
+        pending_referrals = (
+            db.query(Referral).filter(Referral.reward_granted == False).all()
+        )
 
         rewards_granted = 0
 
@@ -335,10 +427,13 @@ class ReferralService:
         Called when a user's subscription status changes
         """
         # Find any pending referral for this user
-        referral = db.query(Referral).filter(
-            Referral.referred_user_id == user_id,
-            Referral.reward_granted == False
-        ).first()
+        referral = (
+            db.query(Referral)
+            .filter(
+                Referral.referred_user_id == user_id, Referral.reward_granted == False
+            )
+            .first()
+        )
 
         if not referral:
             return False
@@ -354,20 +449,27 @@ class ReferralService:
         Revoke referral reward (e.g., due to refund or cancellation within 30 days)
         """
         # Find the referral
-        referral = db.query(Referral).filter(
-            Referral.referred_user_id == user_id,
-            Referral.reward_granted == True
-        ).first()
+        referral = (
+            db.query(Referral)
+            .filter(
+                Referral.referred_user_id == user_id, Referral.reward_granted == True
+            )
+            .first()
+        )
 
         if not referral:
             return False
 
         # Find and deactivate the credit
-        credit = db.query(SubscriptionCredit).filter(
-            SubscriptionCredit.user_id == referral.referrer_user_id,
-            SubscriptionCredit.source == 'referral',
-            SubscriptionCredit.source_id == str(referral.id)
-        ).first()
+        credit = (
+            db.query(SubscriptionCredit)
+            .filter(
+                SubscriptionCredit.user_id == referral.referrer_user_id,
+                SubscriptionCredit.source == "referral",
+                SubscriptionCredit.source_id == str(referral.id),
+            )
+            .first()
+        )
 
         if credit:
             # Mark credit as revoked by setting remaining months to 0
@@ -384,7 +486,7 @@ class ReferralService:
 
     def _get_masked_email(self, email: str) -> str:
         """Mask email for privacy"""
-        parts = email.split('@')
+        parts = email.split("@")
         if len(parts[0]) <= 2:
             return f"{parts[0][0]}*@{parts[1]}"
         return f"{parts[0][:2]}***@{parts[1]}"

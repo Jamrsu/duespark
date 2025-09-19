@@ -1,16 +1,20 @@
 """
 Comprehensive tests for the complete onboarding flow including all edge cases and scenarios
 """
-import pytest
+
 import json
 from datetime import datetime, timezone
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
+
+from app import auth, models
+from app.database import SessionLocal, get_db
 from app.main import app
-from app.database import get_db, SessionLocal
-from app import models, auth
 
 client = TestClient(app)
+
 
 @pytest.fixture
 def test_db():
@@ -27,14 +31,15 @@ def test_db():
     finally:
         db.close()
 
+
 def create_test_user(db: Session, email: str = "test@example.com", **kwargs):
     """Create a test user with specified attributes"""
     user_data = {
         "email": email,
-        "password_hash": auth.hash_password("password123"),
+        "password_hash": auth.hash_password("Password123!"),
         "onboarding_status": "not_started",
         "email_verified": False,
-        **kwargs
+        **kwargs,
     }
     user = models.User(**user_data)
     db.add(user)
@@ -42,10 +47,12 @@ def create_test_user(db: Session, email: str = "test@example.com", **kwargs):
     db.refresh(user)
     return user
 
+
 def get_auth_headers(user: models.User):
     """Get authentication headers for a user"""
     token = auth.create_access_token(sub=user.email)
     return {"Authorization": f"Bearer {token}"}
+
 
 class TestCompleteOnboardingFlow:
     """Test the complete onboarding flow from start to finish"""
@@ -57,12 +64,16 @@ class TestCompleteOnboardingFlow:
         headers = get_auth_headers(user)
 
         # Step 1: User starts onboarding
-        response = client.patch("/auth/me", json={"onboarding_status": "account_created"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"onboarding_status": "account_created"}, headers=headers
+        )
         assert response.status_code == 200
         assert response.json()["data"]["onboarding_status"] == "account_created"
 
         # Step 2: Email verification (simulated)
-        response = client.post("/auth/send-verification", json={"email": user.email}, headers=headers)
+        response = client.post(
+            "/auth/send-verification", json={"email": user.email}, headers=headers
+        )
         assert response.status_code == 200
 
         # Auto-verified in demo mode
@@ -70,16 +81,24 @@ class TestCompleteOnboardingFlow:
         assert user.email_verified is True
 
         # Update status to email verified
-        response = client.patch("/auth/me", json={"onboarding_status": "email_verified"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"onboarding_status": "email_verified"}, headers=headers
+        )
         assert response.status_code == 200
 
         # Step 3: Payment method configuration (manual)
-        response = client.patch("/auth/me", json={"payment_method": "manual"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"payment_method": "manual"}, headers=headers
+        )
         assert response.status_code == 200
         assert response.json()["data"]["payment_method"] == "manual"
 
         # Update status to payment configured
-        response = client.patch("/auth/me", json={"onboarding_status": "payment_configured"}, headers=headers)
+        response = client.patch(
+            "/auth/me",
+            json={"onboarding_status": "payment_configured"},
+            headers=headers,
+        )
         assert response.status_code == 200
 
         # Step 4: Create sample data
@@ -90,7 +109,9 @@ class TestCompleteOnboardingFlow:
         assert data["invoices_created"] == 6
 
         # Step 5: Complete onboarding
-        response = client.patch("/auth/me", json={"onboarding_status": "completed"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"onboarding_status": "completed"}, headers=headers
+        )
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["onboarding_status"] == "completed"
@@ -105,7 +126,9 @@ class TestCompleteOnboardingFlow:
 
         # Verify data was created
         clients = db.query(models.Client).filter(models.Client.user_id == user.id).all()
-        invoices = db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        invoices = (
+            db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        )
         assert len(clients) == 3
         assert len(invoices) == 6
 
@@ -116,19 +139,26 @@ class TestCompleteOnboardingFlow:
         headers = get_auth_headers(user)
 
         # Skip to payment configuration
-        client.patch("/auth/me", json={"onboarding_status": "email_verified"}, headers=headers)
+        client.patch(
+            "/auth/me", json={"onboarding_status": "email_verified"}, headers=headers
+        )
 
         # Try to get Stripe connect URL
         response = client.get("/integrations/stripe/connect", headers=headers)
         # This will fail without real Stripe credentials, but we can test the endpoint exists
         # and handles the request properly
-        assert response.status_code in [200, 400, 500]  # Any of these is acceptable for testing
+        assert response.status_code in [
+            200,
+            400,
+            500,
+        ]  # Any of these is acceptable for testing
 
         # Simulate successful Stripe connection (would be done via callback in real flow)
-        response = client.patch("/auth/me", json={
-            "payment_method": "stripe",
-            "stripe_account_id": "acct_test123"
-        }, headers=headers)
+        response = client.patch(
+            "/auth/me",
+            json={"payment_method": "stripe", "stripe_account_id": "acct_test123"},
+            headers=headers,
+        )
         assert response.status_code == 200
 
         db.refresh(user)
@@ -142,17 +172,27 @@ class TestCompleteOnboardingFlow:
         headers = get_auth_headers(user)
 
         # Complete onboarding without creating sample data
-        client.patch("/auth/me", json={"onboarding_status": "email_verified"}, headers=headers)
+        client.patch(
+            "/auth/me", json={"onboarding_status": "email_verified"}, headers=headers
+        )
         client.patch("/auth/me", json={"payment_method": "manual"}, headers=headers)
-        client.patch("/auth/me", json={"onboarding_status": "payment_configured"}, headers=headers)
+        client.patch(
+            "/auth/me",
+            json={"onboarding_status": "payment_configured"},
+            headers=headers,
+        )
 
         # Skip sample data creation
-        response = client.patch("/auth/me", json={"onboarding_status": "completed"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"onboarding_status": "completed"}, headers=headers
+        )
         assert response.status_code == 200
 
         # Verify no sample data was created
         clients = db.query(models.Client).filter(models.Client.user_id == user.id).all()
-        invoices = db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        invoices = (
+            db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        )
         assert len(clients) == 0
         assert len(invoices) == 0
 
@@ -163,14 +203,24 @@ class TestCompleteOnboardingFlow:
         headers = get_auth_headers(user)
 
         # Valid forward transitions
-        statuses = ["not_started", "account_created", "email_verified", "payment_configured", "completed"]
+        statuses = [
+            "not_started",
+            "account_created",
+            "email_verified",
+            "payment_configured",
+            "completed",
+        ]
         for status in statuses:
-            response = client.patch("/auth/me", json={"onboarding_status": status}, headers=headers)
+            response = client.patch(
+                "/auth/me", json={"onboarding_status": status}, headers=headers
+            )
             assert response.status_code == 200
             assert response.json()["data"]["onboarding_status"] == status
 
         # Should be able to go backwards too (reset onboarding)
-        response = client.patch("/auth/me", json={"onboarding_status": "not_started"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"onboarding_status": "not_started"}, headers=headers
+        )
         assert response.status_code == 200
         assert response.json()["data"]["onboarding_status"] == "not_started"
 
@@ -181,9 +231,11 @@ class TestCompleteOnboardingFlow:
         headers = get_auth_headers(user)
 
         # Try to verify different email
-        response = client.post("/auth/send-verification",
-                             json={"email": "different@example.com"},
-                             headers=headers)
+        response = client.post(
+            "/auth/send-verification",
+            json={"email": "different@example.com"},
+            headers=headers,
+        )
         assert response.status_code == 400
 
     def test_sample_data_creation_details(self, test_db):
@@ -198,7 +250,11 @@ class TestCompleteOnboardingFlow:
         # Verify specific clients were created
         clients = db.query(models.Client).filter(models.Client.user_id == user.id).all()
         client_names = [c.name for c in clients]
-        expected_names = ["Acme Corporation", "Tech Solutions Inc", "Global Enterprises Ltd"]
+        expected_names = [
+            "Acme Corporation",
+            "Tech Solutions Inc",
+            "Global Enterprises Ltd",
+        ]
         assert all(name in client_names for name in expected_names)
 
         # Verify client details
@@ -207,7 +263,9 @@ class TestCompleteOnboardingFlow:
         assert acme.timezone == "America/New_York"
 
         # Verify invoices have proper relationships
-        invoices = db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        invoices = (
+            db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        )
         assert len(invoices) == 6
 
         # Each client should have 2 invoices
@@ -220,6 +278,7 @@ class TestCompleteOnboardingFlow:
         assert "pending" in statuses
         assert "paid" in statuses
         assert "overdue" in statuses
+
 
 class TestOnboardingEdgeCases:
     """Test edge cases and error scenarios"""
@@ -243,7 +302,9 @@ class TestOnboardingEdgeCases:
             elif method == "PATCH":
                 response = client.patch(endpoint, json=json_data)
 
-            assert response.status_code == 401, f"Endpoint {method} {endpoint} should require auth"
+            assert (
+                response.status_code == 401
+            ), f"Endpoint {method} {endpoint} should require auth"
 
     def test_onboarding_concurrent_sample_data(self, test_db):
         """Test creating sample data multiple times"""
@@ -261,7 +322,9 @@ class TestOnboardingEdgeCases:
 
         # Should have double the data
         clients = db.query(models.Client).filter(models.Client.user_id == user.id).all()
-        invoices = db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        invoices = (
+            db.query(models.Invoice).filter(models.Invoice.user_id == user.id).all()
+        )
         assert len(clients) == 6  # 3 * 2
         assert len(invoices) == 12  # 6 * 2
 
@@ -273,9 +336,7 @@ class TestOnboardingEdgeCases:
 
         # Create a client manually first
         existing_client = models.Client(
-            user_id=user.id,
-            name="Existing Client",
-            email="existing@example.com"
+            user_id=user.id, name="Existing Client", email="existing@example.com"
         )
         db.add(existing_client)
         db.commit()
@@ -299,11 +360,17 @@ class TestOnboardingEdgeCases:
         headers = get_auth_headers(user)
 
         # Complete onboarding
-        client.patch("/auth/me", json={"onboarding_status": "completed", "payment_method": "manual"}, headers=headers)
+        client.patch(
+            "/auth/me",
+            json={"onboarding_status": "completed", "payment_method": "manual"},
+            headers=headers,
+        )
         client.post("/onboarding/sample-data", headers=headers)
 
         # Reset onboarding
-        response = client.patch("/auth/me", json={"onboarding_status": "not_started"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"onboarding_status": "not_started"}, headers=headers
+        )
         assert response.status_code == 200
 
         # User data should still exist but onboarding status reset
@@ -314,6 +381,7 @@ class TestOnboardingEdgeCases:
         # Sample data should still exist
         clients = db.query(models.Client).filter(models.Client.user_id == user.id).all()
         assert len(clients) == 3
+
 
 class TestOnboardingEventTracking:
     """Test event tracking throughout onboarding process"""
@@ -329,7 +397,7 @@ class TestOnboardingEventTracking:
             "entity_type": "user",
             "entity_id": user.id,
             "event_type": "onboarding_started",
-            "payload": {"step": "account_setup"}
+            "payload": {"step": "account_setup"},
         }
         response = client.post("/events", json=event_data, headers=headers)
         assert response.status_code == 200
@@ -339,7 +407,7 @@ class TestOnboardingEventTracking:
             "entity_type": "user",
             "entity_id": user.id,
             "event_type": "payment_method_selected",
-            "payload": {"method": "manual"}
+            "payload": {"method": "manual"},
         }
         response = client.post("/events", json=event_data, headers=headers)
         assert response.status_code == 200
@@ -349,7 +417,7 @@ class TestOnboardingEventTracking:
             "entity_type": "user",
             "entity_id": user.id,
             "event_type": "onboarding_completed",
-            "payload": {"completion_time": datetime.now(timezone.utc).isoformat()}
+            "payload": {"completion_time": datetime.now(timezone.utc).isoformat()},
         }
         response = client.post("/events", json=event_data, headers=headers)
         assert response.status_code == 200
@@ -378,7 +446,7 @@ class TestOnboardingEventTracking:
                 "entity_type": "user",
                 "entity_id": user.id,
                 "event_type": f"user_{user.id}_event",
-                "payload": {"test": True}
+                "payload": {"test": True},
             }
             response = client.post("/events", json=event_data, headers=headers)
             assert response.status_code == 200
@@ -394,6 +462,7 @@ class TestOnboardingEventTracking:
         assert len(events2) == 1
         assert events1[0]["event_type"] == f"user_{user1.id}_event"
         assert events2[0]["event_type"] == f"user_{user2.id}_event"
+
 
 class TestOnboardingIntegrations:
     """Test onboarding integration points"""
@@ -423,17 +492,20 @@ class TestOnboardingIntegrations:
         headers = get_auth_headers(user)
 
         # Test manual payment method
-        response = client.patch("/auth/me", json={"payment_method": "manual"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"payment_method": "manual"}, headers=headers
+        )
         assert response.status_code == 200
 
         db.refresh(user)
         assert user.payment_method == "manual"
 
         # Test Stripe payment method (simulation)
-        response = client.patch("/auth/me", json={
-            "payment_method": "stripe",
-            "stripe_account_id": "acct_test123"
-        }, headers=headers)
+        response = client.patch(
+            "/auth/me",
+            json={"payment_method": "stripe", "stripe_account_id": "acct_test123"},
+            headers=headers,
+        )
         assert response.status_code == 200
 
         db.refresh(user)
@@ -441,7 +513,9 @@ class TestOnboardingIntegrations:
         assert user.stripe_account_id == "acct_test123"
 
         # Test switching back to manual
-        response = client.patch("/auth/me", json={"payment_method": "manual"}, headers=headers)
+        response = client.patch(
+            "/auth/me", json={"payment_method": "manual"}, headers=headers
+        )
         assert response.status_code == 200
 
         db.refresh(user)

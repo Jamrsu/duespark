@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: duespark
-      POSTGRES_USER: duespark
-      POSTGRES_PASSWORD: duespark
+      POSTGRES_DB: ${POSTGRES_DB:-duespark}
+      POSTGRES_USER: ${POSTGRES_USER:-duespark}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment variable is required}
     ports:
       - "5432:5432"
     healthcheck:
@@ -20,23 +20,23 @@ services:
       context: .
       dockerfile: sic_backend_mvp_jwt_sqlite/Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg2://duespark:duespark@db:5432/duespark
-      SECRET_KEY: change-me
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-duespark}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@db:5432/${POSTGRES_DB:-duespark}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY environment variable is required}
       PYTHONPATH: /app
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_CLIENT_ID: ${STRIPE_CLIENT_ID:-}
-      STRIPE_REDIRECT_URI: ${STRIPE_REDIRECT_URI:-http://localhost:8000/integrations/stripe/callback}
+      STRIPE_REDIRECT_URI: ${STRIPE_REDIRECT_URI:-http://localhost:8005/integrations/stripe/callback}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_API_VERSION: ${STRIPE_API_VERSION:-2023-10-16}
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8005}
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "8000:8000"
-    command: sh -c "python init_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      - "8005:8005"
+    command: sh -c "python init_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8005"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8005/healthz || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -46,15 +46,15 @@ services:
       context: .
       dockerfile: sic_backend_mvp_jwt_sqlite/Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg2://duespark:duespark@db:5432/duespark
-      SECRET_KEY: change-me
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-duespark}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@db:5432/${POSTGRES_DB:-duespark}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY environment variable is required}
       PYTHONPATH: /app
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_CLIENT_ID: ${STRIPE_CLIENT_ID:-}
-      STRIPE_REDIRECT_URI: ${STRIPE_REDIRECT_URI:-http://localhost:8000/integrations/stripe/callback}
+      STRIPE_REDIRECT_URI: ${STRIPE_REDIRECT_URI:-http://localhost:8005/integrations/stripe/callback}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_API_VERSION: ${STRIPE_API_VERSION:-2023-10-16}
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8005}
     depends_on:
       db:
         condition: service_healthy

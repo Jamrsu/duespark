@@ -3,17 +3,18 @@ Phase 4: Scalable Infrastructure Service
 Redis caching, background job processing, API rate limiting, and performance optimization
 """
 
-from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-import json
-import hashlib
 import asyncio
-from functools import wraps
+import hashlib
+import json
+import logging
 import time
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from functools import wraps
+from typing import Any, Callable, Dict, List, Optional
+
 import redis
 from sqlalchemy.orm import Session
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheConfig:
     """Cache configuration"""
+
     ttl: int = 3600  # Time to live in seconds
     prefix: str = "duespark"
     serialize: bool = True
@@ -29,6 +31,7 @@ class CacheConfig:
 @dataclass
 class RateLimitConfig:
     """Rate limiting configuration"""
+
     requests_per_minute: int = 60
     requests_per_hour: int = 1000
     requests_per_day: int = 10000
@@ -38,6 +41,7 @@ class RateLimitConfig:
 @dataclass
 class BackgroundJob:
     """Background job definition"""
+
     job_id: str
     job_type: str
     payload: Dict[str, Any]
@@ -52,6 +56,7 @@ class BackgroundJob:
 @dataclass
 class PerformanceMetrics:
     """Performance monitoring metrics"""
+
     endpoint: str
     method: str
     response_time_ms: float
@@ -70,7 +75,9 @@ class CacheService:
             self.redis_client.ping()  # Test connection
             self.available = True
         except Exception as e:
-            logger.warning(f"Redis not available: {e}. Falling back to in-memory cache.")
+            logger.warning(
+                f"Redis not available: {e}. Falling back to in-memory cache."
+            )
             self.available = False
             self._memory_cache = {}
 
@@ -88,8 +95,8 @@ class CacheService:
             else:
                 # Fallback to memory cache
                 cache_entry = self._memory_cache.get(full_key)
-                if cache_entry and cache_entry['expires'] > datetime.now():
-                    return cache_entry['value']
+                if cache_entry and cache_entry["expires"] > datetime.now():
+                    return cache_entry["value"]
                 elif cache_entry:
                     del self._memory_cache[full_key]
                 return None
@@ -110,8 +117,8 @@ class CacheService:
             else:
                 # Fallback to memory cache
                 self._memory_cache[full_key] = {
-                    'value': value,
-                    'expires': datetime.now() + timedelta(seconds=config.ttl)
+                    "value": value,
+                    "expires": datetime.now() + timedelta(seconds=config.ttl),
                 }
                 return True
         except Exception as e:
@@ -148,7 +155,11 @@ class CacheService:
                 return 0
             else:
                 # Memory cache pattern invalidation
-                keys_to_delete = [k for k in self._memory_cache.keys() if full_pattern.replace('*', '') in k]
+                keys_to_delete = [
+                    k
+                    for k in self._memory_cache.keys()
+                    if full_pattern.replace("*", "") in k
+                ]
                 for key in keys_to_delete:
                     del self._memory_cache[key]
                 return len(keys_to_delete)
@@ -163,13 +174,17 @@ class RateLimitService:
     def __init__(self, cache_service: CacheService):
         self.cache = cache_service
 
-    def check_rate_limit(self, identifier: str, config: RateLimitConfig = None) -> Dict[str, Any]:
+    def check_rate_limit(
+        self, identifier: str, config: RateLimitConfig = None
+    ) -> Dict[str, Any]:
         """Check if request is within rate limits"""
         config = config or RateLimitConfig()
         current_time = datetime.now()
 
         # Check minute limit
-        minute_key = f"rate_limit:minute:{identifier}:{current_time.strftime('%Y%m%d%H%M')}"
+        minute_key = (
+            f"rate_limit:minute:{identifier}:{current_time.strftime('%Y%m%d%H%M')}"
+        )
         minute_count = self.cache.get(minute_key) or 0
 
         # Check hour limit
@@ -186,7 +201,9 @@ class RateLimitService:
 
         # Clean old burst timestamps
         cutoff_time = current_time - timedelta(minutes=1)
-        burst_timestamps = [ts for ts in burst_timestamps if datetime.fromisoformat(ts) > cutoff_time]
+        burst_timestamps = [
+            ts for ts in burst_timestamps if datetime.fromisoformat(ts) > cutoff_time
+        ]
 
         # Check limits
         limits_exceeded = []
@@ -217,13 +234,13 @@ class RateLimitService:
             "remaining": {
                 "minute": max(0, config.requests_per_minute - minute_count),
                 "hour": max(0, config.requests_per_hour - hour_count),
-                "day": max(0, config.requests_per_day - day_count)
+                "day": max(0, config.requests_per_day - day_count),
             },
             "reset_times": {
                 "minute": (current_time + timedelta(minutes=1)).isoformat(),
                 "hour": (current_time + timedelta(hours=1)).isoformat(),
-                "day": (current_time + timedelta(days=1)).isoformat()
-            }
+                "day": (current_time + timedelta(days=1)).isoformat(),
+            },
         }
 
 
@@ -254,17 +271,21 @@ class BackgroundJobService:
             "job_type": job.job_type,
             "payload": job.payload,
             "priority": job.priority,
-            "scheduled_for": job.scheduled_for.isoformat() if job.scheduled_for else None,
+            "scheduled_for": (
+                job.scheduled_for.isoformat() if job.scheduled_for else None
+            ),
             "max_retries": job.max_retries,
             "retry_count": job.retry_count,
             "created_at": job.created_at.isoformat(),
-            "status": job.status
+            "status": job.status,
         }
 
         # Add to priority queue
         try:
             if self.cache.available:
-                self.cache.redis_client.lpush(queue_key, json.dumps(job_data, default=str))
+                self.cache.redis_client.lpush(
+                    queue_key, json.dumps(job_data, default=str)
+                )
             else:
                 # Fallback to immediate execution
                 self._execute_job_immediately(job)
@@ -282,7 +303,9 @@ class BackgroundJobService:
     def _generate_job_id(self, job: BackgroundJob) -> str:
         """Generate unique job ID"""
         timestamp = str(int(time.time() * 1000))
-        payload_hash = hashlib.md5(json.dumps(job.payload, sort_keys=True).encode()).hexdigest()[:8]
+        payload_hash = hashlib.md5(
+            json.dumps(job.payload, sort_keys=True).encode(), usedforsecurity=False
+        ).hexdigest()[:8]
         return f"{job.job_type}_{timestamp}_{payload_hash}"
 
     def _execute_job_immediately(self, job: BackgroundJob):
@@ -311,7 +334,7 @@ class BackgroundJobService:
                     if self.cache.available:
                         job_data = self.cache.redis_client.brpop(queue_key, timeout=1)
                         if job_data:
-                            job_json = job_data[1].decode('utf-8')
+                            job_json = job_data[1].decode("utf-8")
                             await self._process_job(json.loads(job_json))
                     else:
                         # No Redis, just wait
@@ -365,13 +388,17 @@ class BackgroundJobService:
                 # Retry with backoff
                 job_data["retry_count"] = retry_count + 1
                 job_data["status"] = "pending"
-                retry_delay = 2 ** retry_count  # Exponential backoff
+                retry_delay = 2**retry_count  # Exponential backoff
 
                 # Re-queue with delay
                 queue_key = f"job_queue:priority_{job_data['priority']}"
-                self.cache.redis_client.lpush(queue_key, json.dumps(job_data, default=str))
+                self.cache.redis_client.lpush(
+                    queue_key, json.dumps(job_data, default=str)
+                )
 
-                logger.info(f"Job {job_id} requeued for retry {retry_count + 1}/{max_retries}")
+                logger.info(
+                    f"Job {job_id} requeued for retry {retry_count + 1}/{max_retries}"
+                )
             else:
                 # Mark as failed
                 job_data["status"] = "failed"
@@ -403,11 +430,13 @@ class PerformanceMonitoringService:
         # Store recent metrics in cache for real-time monitoring
         recent_key = f"metrics:recent:{metrics.endpoint}"
         recent_metrics = self.cache.get(recent_key) or []
-        recent_metrics.append({
-            "timestamp": metrics.timestamp.isoformat(),
-            "response_time_ms": metrics.response_time_ms,
-            "status_code": metrics.status_code
-        })
+        recent_metrics.append(
+            {
+                "timestamp": metrics.timestamp.isoformat(),
+                "response_time_ms": metrics.response_time_ms,
+                "status_code": metrics.status_code,
+            }
+        )
 
         # Keep only last 100 entries
         recent_metrics = recent_metrics[-100:]
@@ -435,16 +464,20 @@ class PerformanceMonitoringService:
                 endpoint_stats[metric.endpoint] = {
                     "request_count": 0,
                     "total_response_time": 0,
-                    "min_response_time": float('inf'),
+                    "min_response_time": float("inf"),
                     "max_response_time": 0,
-                    "error_count": 0
+                    "error_count": 0,
                 }
 
             stats = endpoint_stats[metric.endpoint]
             stats["request_count"] += 1
             stats["total_response_time"] += metric.response_time_ms
-            stats["min_response_time"] = min(stats["min_response_time"], metric.response_time_ms)
-            stats["max_response_time"] = max(stats["max_response_time"], metric.response_time_ms)
+            stats["min_response_time"] = min(
+                stats["min_response_time"], metric.response_time_ms
+            )
+            stats["max_response_time"] = max(
+                stats["max_response_time"], metric.response_time_ms
+            )
 
             if metric.status_code >= 400:
                 stats["error_count"] += 1
@@ -452,11 +485,17 @@ class PerformanceMonitoringService:
         # Calculate averages and store
         for endpoint, stats in endpoint_stats.items():
             if stats["request_count"] > 0:
-                stats["avg_response_time"] = stats["total_response_time"] / stats["request_count"]
-                stats["error_rate"] = (stats["error_count"] / stats["request_count"]) * 100
+                stats["avg_response_time"] = (
+                    stats["total_response_time"] / stats["request_count"]
+                )
+                stats["error_rate"] = (
+                    stats["error_count"] / stats["request_count"]
+                ) * 100
 
             # Store aggregated stats
-            stats_key = f"metrics:aggregated:{endpoint}:{datetime.now().strftime('%Y%m%d%H')}"
+            stats_key = (
+                f"metrics:aggregated:{endpoint}:{datetime.now().strftime('%Y%m%d%H')}"
+            )
             self.cache.set(stats_key, stats, CacheConfig(ttl=86400))
 
     def get_performance_dashboard(self) -> Dict[str, Any]:
@@ -467,7 +506,7 @@ class PerformanceMonitoringService:
                 "overview": self._get_overview_metrics(),
                 "endpoints": self._get_endpoint_metrics(),
                 "alerts": self._get_performance_alerts(),
-                "trends": self._get_performance_trends()
+                "trends": self._get_performance_trends(),
             }
 
             return dashboard_data
@@ -478,7 +517,7 @@ class PerformanceMonitoringService:
 
     def _get_overview_metrics(self) -> Dict[str, Any]:
         """Get overview performance metrics"""
-        current_hour = datetime.now().strftime('%Y%m%d%H')
+        current_hour = datetime.now().strftime("%Y%m%d%H")
 
         # This would typically query aggregated data
         return {
@@ -486,7 +525,7 @@ class PerformanceMonitoringService:
             "avg_response_time": 245.5,
             "error_rate": 2.1,
             "p95_response_time": 800.0,
-            "uptime_percentage": 99.9
+            "uptime_percentage": 99.9,
         }
 
     def _get_endpoint_metrics(self) -> List[Dict[str, Any]]:
@@ -498,15 +537,15 @@ class PerformanceMonitoringService:
                 "request_count": 450,
                 "avg_response_time": 180.5,
                 "error_rate": 1.2,
-                "p95_response_time": 650.0
+                "p95_response_time": 650.0,
             },
             {
                 "endpoint": "/api/clients",
                 "request_count": 320,
                 "avg_response_time": 120.8,
                 "error_rate": 0.8,
-                "p95_response_time": 400.0
-            }
+                "p95_response_time": 400.0,
+            },
         ]
 
     def _get_performance_alerts(self) -> List[Dict[str, Any]]:
@@ -523,7 +562,7 @@ class PerformanceMonitoringService:
         return {
             "response_time_trend": [],
             "error_rate_trend": [],
-            "request_volume_trend": []
+            "request_volume_trend": [],
         }
 
 
@@ -578,11 +617,12 @@ class InfrastructureService:
 # Utility decorators
 def cached(ttl: int = 3600, prefix: str = "duespark"):
     """Decorator for caching function results"""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Generate cache key from function name and arguments
-            cache_key = f"func:{func.__name__}:{hashlib.md5(str(args).encode()).hexdigest()}"
+            cache_key = f"func:{func.__name__}:{hashlib.md5(str(args).encode(), usedforsecurity=False).hexdigest()}"
 
             # Try to get from cache
             # Note: This requires access to cache service instance
@@ -594,24 +634,30 @@ def cached(ttl: int = 3600, prefix: str = "duespark"):
                 # cache.set(cache_key, result, CacheConfig(ttl=ttl, prefix=prefix))
 
             return result
+
         return wrapper
+
     return decorator
 
 
 def rate_limited(requests_per_minute: int = 60):
     """Decorator for rate limiting API endpoints"""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Extract user identifier (would need request context)
             # In real implementation, would check rate limits
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
 # Global infrastructure service instance
 infrastructure_service = None
+
 
 def get_infrastructure_service() -> InfrastructureService:
     """Get infrastructure service singleton"""

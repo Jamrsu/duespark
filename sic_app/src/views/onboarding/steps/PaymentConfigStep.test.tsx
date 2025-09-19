@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PaymentConfigStep } from './PaymentConfigStep'
 import { apiClient } from '@/api/client'
+import { createMockUser } from '@/test/mockUtils'
 
 // Mock the API
 vi.mock('@/api/client', () => ({
@@ -46,26 +47,26 @@ describe('PaymentConfigStep', () => {
   const mockOnNext = vi.fn()
   const mockOnBack = vi.fn()
 
-  const mockUser = {
-    id: 1,
-    email: 'test@example.com',
-    stripe_account_id: null,
-    payment_method: null
-  }
+  const mockUser = createMockUser({
+    email_verified: true,
+    onboarding_status: 'payment_setup_pending',
+    payment_method: null,
+    stripe_account_id: null
+  })
 
-  const mockStripeUser = {
-    id: 1,
-    email: 'test@example.com',
-    stripe_account_id: 'acct_123',
-    payment_method: 'stripe'
-  }
+  const mockStripeUser = createMockUser({
+    email_verified: true,
+    onboarding_status: 'payment_setup_pending',
+    payment_method: 'stripe',
+    stripe_account_id: 'acct_123'
+  })
 
-  const mockManualUser = {
-    id: 1,
-    email: 'test@example.com',
-    stripe_account_id: null,
-    payment_method: 'manual'
-  }
+  const mockManualUser = createMockUser({
+    email_verified: true,
+    onboarding_status: 'payment_setup_pending',
+    payment_method: 'manual',
+    stripe_account_id: null
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()

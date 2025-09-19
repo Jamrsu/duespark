@@ -124,10 +124,10 @@ test.describe('Client List Features', () => {
       const uniqueClientName = `E2E Test Client ${timestamp}`
       const uniqueEmail = `test${timestamp}@example.com`
       
-      await page.getByLabelText(/client name/i).fill(uniqueClientName)
-      await page.getByLabelText(/email/i).fill(uniqueEmail)
-      await page.getByLabelText(/contact name/i).fill('E2E Test Contact')
-      await page.getByLabelText(/phone number/i).fill('+1 (555) 999-0001')
+      await page.locator('input[name="name"]').fill(uniqueClientName)
+      await page.locator('input[name="email"]').fill(uniqueEmail)
+      await page.locator('input[name="contact_name"]').fill('E2E Test Contact')
+      await page.locator('input[name="contact_phone"]').fill('+1 (555) 999-0001')
       
       // Submit the form
       await page.getByRole('button', { name: /create client/i }).click()
@@ -170,7 +170,7 @@ test.describe('Client List Features', () => {
       // Update name
       const timestamp = Date.now()
       const updatedName = `${originalName} - Updated ${timestamp}`
-      await page.getByLabelText(/client name/i).fill(updatedName)
+      await page.locator('input[name="name"]').fill(updatedName)
       
       // Submit update
       await page.getByRole('button', { name: /update client/i }).click()

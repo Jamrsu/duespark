@@ -1,4 +1,5 @@
 import json
+
 from app.email_provider import PostmarkProvider
 
 
@@ -7,6 +8,7 @@ class FakeResp:
         self.status_code = status_code
         self._json = json_data or {}
         self.text = text
+
     def json(self):
         return self._json
 
@@ -15,11 +17,14 @@ class FakeClient:
     def __init__(self, sequence):
         self.sequence = list(sequence)
         self.calls = []
+
     def post(self, url, json=None, headers=None):
         self.calls.append({"url": url, "json": json, "headers": headers})
         return self.sequence.pop(0)
+
     def __enter__(self):
         return self
+
     def __exit__(self, *args):
         return False
 
@@ -33,9 +38,12 @@ def test_postmark_payload_and_retry(monkeypatch):
     fp = FakeClient(sequence)
 
     import httpx
+
     monkeypatch.setattr(httpx, "Client", lambda timeout: fp)
 
-    p = PostmarkProvider(server_token="tok", from_email="DueSpark <no-reply@example.com>")
+    p = PostmarkProvider(
+        server_token="tok", from_email="DueSpark <no-reply@example.com>"
+    )
     res = p.send(
         to_email="dest@example.com",
         subject="Subj",
@@ -61,8 +69,11 @@ def test_postmark_no_retry_on_4xx(monkeypatch):
     sequence = [FakeResp(422, {"ErrorCode": 300, "Message": "Invalid"})]
     fp = FakeClient(sequence)
     import httpx
+
     monkeypatch.setattr(httpx, "Client", lambda timeout: fp)
-    p = PostmarkProvider(server_token="tok", from_email="DueSpark <no-reply@example.com>")
+    p = PostmarkProvider(
+        server_token="tok", from_email="DueSpark <no-reply@example.com>"
+    )
     try:
         p.send(to_email="dest@example.com", subject="s", html="<b>h</b>", text="h")
         assert False, "Expected exception"
@@ -70,4 +81,3 @@ def test_postmark_no_retry_on_4xx(monkeypatch):
         assert "Invalid" in str(e)
     # Only one attempt
     assert len(fp.calls) == 1
-

@@ -3,28 +3,35 @@ Phase 4: Enterprise Security & Compliance Service
 Advanced security features, audit logging, GDPR compliance, and enterprise-grade authentication
 """
 
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
-from fastapi import Depends
 import hashlib
-import secrets
 import json
 import re
+import secrets
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
-from app.models import User
-from app.enterprise_models import (
-    Organization, AuditLog, AuditEventType, SSO_Configuration,
-    ComplianceProfile, DataExport, TeamRole
-)
+from fastapi import Depends
+from sqlalchemy import desc, func
+from sqlalchemy.orm import Session
+
 from app.database import get_db
+from app.enterprise_models import (
+    AuditEventType,
+    AuditLog,
+    ComplianceProfile,
+    DataExport,
+    Organization,
+    SSO_Configuration,
+    TeamRole,
+)
+from app.models import User
 
 
 class SecurityLevel(str, Enum):
     """Security classification levels"""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -33,6 +40,7 @@ class SecurityLevel(str, Enum):
 
 class DataClassification(str, Enum):
     """Data classification for GDPR compliance"""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     PERSONAL = "personal"
@@ -43,6 +51,7 @@ class DataClassification(str, Enum):
 @dataclass
 class SecurityEvent:
     """Security event for monitoring and alerting"""
+
     event_type: str
     severity: str  # "low", "medium", "high", "critical"
     description: str
@@ -56,6 +65,7 @@ class SecurityEvent:
 @dataclass
 class AccessAttempt:
     """Access attempt tracking for security analysis"""
+
     user_id: Optional[int]
     ip_address: str
     user_agent: str
@@ -68,6 +78,7 @@ class AccessAttempt:
 @dataclass
 class ComplianceReport:
     """GDPR/compliance report"""
+
     report_type: str
     organization_id: int
     data_subjects: int
@@ -86,11 +97,18 @@ class EnterpriseSecurityService:
     def __init__(self, db: Session):
         self.db = db
 
-    def log_audit_event(self, organization_id: int, user_id: Optional[int],
-                       event_type: AuditEventType, resource_type: str,
-                       resource_id: Optional[int], description: str,
-                       metadata: Dict = None, ip_address: str = None,
-                       user_agent: str = None) -> AuditLog:
+    def log_audit_event(
+        self,
+        organization_id: int,
+        user_id: Optional[int],
+        event_type: AuditEventType,
+        resource_type: str,
+        resource_id: Optional[int],
+        description: str,
+        metadata: Dict = None,
+        ip_address: str = None,
+        user_agent: str = None,
+    ) -> AuditLog:
         """Log enterprise audit event for compliance"""
 
         # Calculate risk score based on event type and context
@@ -107,7 +125,7 @@ class EnterpriseSecurityService:
             ip_address=ip_address,
             user_agent=user_agent,
             risk_score=risk_score,
-            session_id=metadata.get('session_id') if metadata else None
+            session_id=metadata.get("session_id") if metadata else None,
         )
 
         self.db.add(audit_log)
@@ -130,17 +148,17 @@ class EnterpriseSecurityService:
             AuditEventType.export_data: 50,
             AuditEventType.import_data: 45,
             AuditEventType.system_configuration: 70,
-            AuditEventType.security_event: 80
+            AuditEventType.security_event: 80,
         }
 
         risk_score = base_scores.get(event_type, 30)
 
         # Increase risk for sensitive data access
-        if metadata.get('data_classification') in ['sensitive', 'critical']:
+        if metadata.get("data_classification") in ["sensitive", "critical"]:
             risk_score += 20
 
         # Increase risk for bulk operations
-        if metadata.get('bulk_operation'):
+        if metadata.get("bulk_operation"):
             risk_score += 15
 
         # Increase risk for off-hours access
@@ -149,7 +167,7 @@ class EnterpriseSecurityService:
             risk_score += 10
 
         # Increase risk for unusual IP addresses
-        if metadata.get('new_ip_address'):
+        if metadata.get("new_ip_address"):
             risk_score += 15
 
         return min(100, risk_score)
@@ -160,9 +178,15 @@ class EnterpriseSecurityService:
         # For now, we'll just log it
         print(f"SECURITY ALERT: High-risk event detected - {audit_log.description}")
 
-    def track_access_attempt(self, organization_id: int, user_id: Optional[int],
-                           ip_address: str, user_agent: str, success: bool,
-                           failure_reason: Optional[str] = None) -> AccessAttempt:
+    def track_access_attempt(
+        self,
+        organization_id: int,
+        user_id: Optional[int],
+        ip_address: str,
+        user_agent: str,
+        success: bool,
+        failure_reason: Optional[str] = None,
+    ) -> AccessAttempt:
         """Track login/access attempts for security monitoring"""
 
         access_attempt = AccessAttempt(
@@ -172,24 +196,26 @@ class EnterpriseSecurityService:
             success=success,
             failure_reason=failure_reason,
             timestamp=datetime.now(),
-            location=self._get_ip_location(ip_address)
+            location=self._get_ip_location(ip_address),
         )
 
         # Log as audit event
         self.log_audit_event(
             organization_id=organization_id,
             user_id=user_id,
-            event_type=AuditEventType.user_login if success else AuditEventType.security_event,
+            event_type=(
+                AuditEventType.user_login if success else AuditEventType.security_event
+            ),
             resource_type="authentication",
             resource_id=user_id,
             description=f"Login {'successful' if success else 'failed'}: {failure_reason or 'Success'}",
             metadata={
-                'ip_address': ip_address,
-                'user_agent': user_agent,
-                'location': access_attempt.location
+                "ip_address": ip_address,
+                "user_agent": user_agent,
+                "location": access_attempt.location,
             },
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
         # Check for suspicious patterns
@@ -201,25 +227,27 @@ class EnterpriseSecurityService:
         """Get approximate location from IP address"""
         # In a real implementation, this would use a GeoIP service
         # For demo purposes, return mock data
-        return {
-            "country": "Unknown",
-            "city": "Unknown",
-            "region": "Unknown"
-        }
+        return {"country": "Unknown", "city": "Unknown", "region": "Unknown"}
 
-    def _analyze_access_patterns(self, organization_id: int, user_id: Optional[int], ip_address: str):
+    def _analyze_access_patterns(
+        self, organization_id: int, user_id: Optional[int], ip_address: str
+    ):
         """Analyze access patterns for security threats"""
         if not user_id:
             return
 
         # Check for rapid failed login attempts
-        recent_failures = self.db.query(AuditLog).filter(
-            AuditLog.organization_id == organization_id,
-            AuditLog.user_id == user_id,
-            AuditLog.event_type == AuditEventType.security_event,
-            AuditLog.created_at >= datetime.now() - timedelta(minutes=15),
-            AuditLog.description.contains("failed")
-        ).count()
+        recent_failures = (
+            self.db.query(AuditLog)
+            .filter(
+                AuditLog.organization_id == organization_id,
+                AuditLog.user_id == user_id,
+                AuditLog.event_type == AuditEventType.security_event,
+                AuditLog.created_at >= datetime.now() - timedelta(minutes=15),
+                AuditLog.description.contains("failed"),
+            )
+            .count()
+        )
 
         if recent_failures >= 5:
             self.log_audit_event(
@@ -229,21 +257,27 @@ class EnterpriseSecurityService:
                 resource_type="security",
                 resource_id=None,
                 description=f"Potential brute force attack detected - {recent_failures} failed attempts",
-                metadata={'attack_type': 'brute_force', 'attempt_count': recent_failures},
-                ip_address=ip_address
+                metadata={
+                    "attack_type": "brute_force",
+                    "attempt_count": recent_failures,
+                },
+                ip_address=ip_address,
             )
 
-    def validate_data_access(self, user: User, resource_type: str,
-                           resource_id: int, operation: str) -> Tuple[bool, str]:
+    def validate_data_access(
+        self, user: User, resource_type: str, resource_id: int, operation: str
+    ) -> Tuple[bool, str]:
         """Validate data access permissions with enterprise controls"""
 
         # Get user's organization and compliance profile
         if not user.organization_id:
             return False, "User not associated with an organization"
 
-        compliance_profile = self.db.query(ComplianceProfile).filter(
-            ComplianceProfile.organization_id == user.organization_id
-        ).first()
+        compliance_profile = (
+            self.db.query(ComplianceProfile)
+            .filter(ComplianceProfile.organization_id == user.organization_id)
+            .first()
+        )
 
         # Check if MFA is required
         if compliance_profile and compliance_profile.mfa_required:
@@ -253,7 +287,9 @@ class EnterpriseSecurityService:
 
         # Check session timeout
         if compliance_profile and compliance_profile.session_timeout_minutes:
-            if not self._check_session_validity(user.id, compliance_profile.session_timeout_minutes):
+            if not self._check_session_validity(
+                user.id, compliance_profile.session_timeout_minutes
+            ):
                 return False, "Session expired - please re-authenticate"
 
         # Log data access for audit
@@ -264,7 +300,7 @@ class EnterpriseSecurityService:
             resource_type=resource_type,
             resource_id=resource_id,
             description=f"Data access: {operation} on {resource_type}#{resource_id}",
-            metadata={'operation': operation}
+            metadata={"operation": operation},
         )
 
         return True, "Access granted"
@@ -279,9 +315,14 @@ class EnterpriseSecurityService:
         # In a real implementation, this would check session timestamps
         return True  # Demo mode - assume session is valid
 
-    def encrypt_sensitive_data(self, data: str, classification: DataClassification) -> str:
+    def encrypt_sensitive_data(
+        self, data: str, classification: DataClassification
+    ) -> str:
         """Encrypt sensitive data based on classification level"""
-        if classification in [DataClassification.SENSITIVE, DataClassification.CRITICAL]:
+        if classification in [
+            DataClassification.SENSITIVE,
+            DataClassification.CRITICAL,
+        ]:
             # In a real implementation, use proper encryption (AES-256, etc.)
             # For demo, use simple hash
             return hashlib.sha256(data.encode()).hexdigest()
@@ -289,16 +330,20 @@ class EnterpriseSecurityService:
 
     def generate_compliance_report(self, organization_id: int) -> ComplianceReport:
         """Generate GDPR/compliance report for organization"""
-        organization = self.db.query(Organization).filter(
-            Organization.id == organization_id
-        ).first()
+        organization = (
+            self.db.query(Organization)
+            .filter(Organization.id == organization_id)
+            .first()
+        )
 
         if not organization:
             raise ValueError("Organization not found")
 
-        compliance_profile = self.db.query(ComplianceProfile).filter(
-            ComplianceProfile.organization_id == organization_id
-        ).first()
+        compliance_profile = (
+            self.db.query(ComplianceProfile)
+            .filter(ComplianceProfile.organization_id == organization_id)
+            .first()
+        )
 
         # Analyze compliance status
         findings = []
@@ -307,16 +352,26 @@ class EnterpriseSecurityService:
         # Check data retention compliance
         retention_compliance = True
         if compliance_profile:
-            old_data_cutoff = datetime.now() - timedelta(days=compliance_profile.data_retention_days)
-            old_audit_logs = self.db.query(AuditLog).filter(
-                AuditLog.organization_id == organization_id,
-                AuditLog.created_at < old_data_cutoff
-            ).count()
+            old_data_cutoff = datetime.now() - timedelta(
+                days=compliance_profile.data_retention_days
+            )
+            old_audit_logs = (
+                self.db.query(AuditLog)
+                .filter(
+                    AuditLog.organization_id == organization_id,
+                    AuditLog.created_at < old_data_cutoff,
+                )
+                .count()
+            )
 
             if old_audit_logs > 0:
                 retention_compliance = False
-                findings.append(f"Found {old_audit_logs} audit logs exceeding retention period")
-                recommendations.append("Implement automated data purging for old audit logs")
+                findings.append(
+                    f"Found {old_audit_logs} audit logs exceeding retention period"
+                )
+                recommendations.append(
+                    "Implement automated data purging for old audit logs"
+                )
 
         # Check encryption compliance
         encryption_compliance = True
@@ -324,13 +379,19 @@ class EnterpriseSecurityService:
             if not compliance_profile.encryption_at_rest:
                 encryption_compliance = False
                 findings.append("Encryption at rest not enabled")
-                recommendations.append("Enable encryption at rest for all sensitive data")
+                recommendations.append(
+                    "Enable encryption at rest for all sensitive data"
+                )
 
         # Check access log compliance
-        recent_audit_logs = self.db.query(AuditLog).filter(
-            AuditLog.organization_id == organization_id,
-            AuditLog.created_at >= datetime.now() - timedelta(days=30)
-        ).count()
+        recent_audit_logs = (
+            self.db.query(AuditLog)
+            .filter(
+                AuditLog.organization_id == organization_id,
+                AuditLog.created_at >= datetime.now() - timedelta(days=30),
+            )
+            .count()
+        )
 
         access_log_compliance = recent_audit_logs > 0
 
@@ -339,9 +400,9 @@ class EnterpriseSecurityService:
             recommendations.append("Ensure all data access is being logged")
 
         # Count data subjects (users in organization)
-        data_subjects = self.db.query(User).filter(
-            User.organization_id == organization_id
-        ).count()
+        data_subjects = (
+            self.db.query(User).filter(User.organization_id == organization_id).count()
+        )
 
         return ComplianceReport(
             report_type="gdpr_compliance",
@@ -353,11 +414,12 @@ class EnterpriseSecurityService:
             access_log_compliance=access_log_compliance,
             findings=findings,
             recommendations=recommendations,
-            generated_at=datetime.now()
+            generated_at=datetime.now(),
         )
 
-    def request_data_export(self, organization_id: int, user_id: int,
-                          export_type: str, format: str = "json") -> DataExport:
+    def request_data_export(
+        self, organization_id: int, user_id: int, export_type: str, format: str = "json"
+    ) -> DataExport:
         """Request data export for GDPR compliance"""
 
         # Generate secure filename
@@ -373,7 +435,7 @@ class EnterpriseSecurityService:
             status="pending",
             filename=filename,
             encryption_key=secrets.token_urlsafe(32),
-            expires_at=datetime.now() + timedelta(days=7)
+            expires_at=datetime.now() + timedelta(days=7),
         )
 
         self.db.add(data_export)
@@ -388,10 +450,10 @@ class EnterpriseSecurityService:
             resource_id=data_export.id,
             description=f"Data export requested: {export_type} in {format} format",
             metadata={
-                'export_type': export_type,
-                'format': format,
-                'filename': filename
-            }
+                "export_type": export_type,
+                "format": format,
+                "filename": filename,
+            },
         )
 
         # In a real implementation, trigger background job to generate export
@@ -401,9 +463,9 @@ class EnterpriseSecurityService:
 
     def _process_data_export(self, export_id: int):
         """Process data export request (background job)"""
-        data_export = self.db.query(DataExport).filter(
-            DataExport.id == export_id
-        ).first()
+        data_export = (
+            self.db.query(DataExport).filter(DataExport.id == export_id).first()
+        )
 
         if not data_export:
             return
@@ -426,7 +488,7 @@ class EnterpriseSecurityService:
                 resource_type="data_export",
                 resource_id=data_export.id,
                 description=f"Data export completed: {data_export.filename}",
-                metadata={'status': 'completed', 'file_size': data_export.file_size}
+                metadata={"status": "completed", "file_size": data_export.file_size},
             )
 
         except Exception as e:
@@ -440,14 +502,18 @@ class EnterpriseSecurityService:
                 resource_type="data_export",
                 resource_id=data_export.id,
                 description=f"Data export failed: {str(e)}",
-                metadata={'status': 'failed', 'error': str(e)}
+                metadata={"status": "failed", "error": str(e)},
             )
 
-    def validate_password_policy(self, password: str, organization_id: int) -> Tuple[bool, List[str]]:
+    def validate_password_policy(
+        self, password: str, organization_id: int
+    ) -> Tuple[bool, List[str]]:
         """Validate password against organization policy"""
-        compliance_profile = self.db.query(ComplianceProfile).filter(
-            ComplianceProfile.organization_id == organization_id
-        ).first()
+        compliance_profile = (
+            self.db.query(ComplianceProfile)
+            .filter(ComplianceProfile.organization_id == organization_id)
+            .first()
+        )
 
         if not compliance_profile or not compliance_profile.password_policy:
             # Default policy
@@ -457,7 +523,7 @@ class EnterpriseSecurityService:
                 "require_lowercase": True,
                 "require_numbers": True,
                 "require_special": True,
-                "prevent_reuse": 5
+                "prevent_reuse": 5,
             }
         else:
             policy = compliance_profile.password_policy
@@ -466,22 +532,26 @@ class EnterpriseSecurityService:
 
         # Check minimum length
         if len(password) < policy.get("min_length", 8):
-            errors.append(f"Password must be at least {policy.get('min_length', 8)} characters long")
+            errors.append(
+                f"Password must be at least {policy.get('min_length', 8)} characters long"
+            )
 
         # Check uppercase requirement
-        if policy.get("require_uppercase", False) and not re.search(r'[A-Z]', password):
+        if policy.get("require_uppercase", False) and not re.search(r"[A-Z]", password):
             errors.append("Password must contain at least one uppercase letter")
 
         # Check lowercase requirement
-        if policy.get("require_lowercase", False) and not re.search(r'[a-z]', password):
+        if policy.get("require_lowercase", False) and not re.search(r"[a-z]", password):
             errors.append("Password must contain at least one lowercase letter")
 
         # Check numbers requirement
-        if policy.get("require_numbers", False) and not re.search(r'[0-9]', password):
+        if policy.get("require_numbers", False) and not re.search(r"[0-9]", password):
             errors.append("Password must contain at least one number")
 
         # Check special characters requirement
-        if policy.get("require_special", False) and not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        if policy.get("require_special", False) and not re.search(
+            r'[!@#$%^&*(),.?":{}|<>]', password
+        ):
             errors.append("Password must contain at least one special character")
 
         return len(errors) == 0, errors
@@ -490,30 +560,48 @@ class EnterpriseSecurityService:
         """Get security dashboard data for organization"""
 
         # Get recent security events
-        recent_events = self.db.query(AuditLog).filter(
-            AuditLog.organization_id == organization_id,
-            AuditLog.created_at >= datetime.now() - timedelta(days=7),
-            AuditLog.risk_score > 50
-        ).order_by(desc(AuditLog.created_at)).limit(10).all()
+        recent_events = (
+            self.db.query(AuditLog)
+            .filter(
+                AuditLog.organization_id == organization_id,
+                AuditLog.created_at >= datetime.now() - timedelta(days=7),
+                AuditLog.risk_score > 50,
+            )
+            .order_by(desc(AuditLog.created_at))
+            .limit(10)
+            .all()
+        )
 
         # Calculate security metrics
-        total_events = self.db.query(AuditLog).filter(
-            AuditLog.organization_id == organization_id,
-            AuditLog.created_at >= datetime.now() - timedelta(days=30)
-        ).count()
+        total_events = (
+            self.db.query(AuditLog)
+            .filter(
+                AuditLog.organization_id == organization_id,
+                AuditLog.created_at >= datetime.now() - timedelta(days=30),
+            )
+            .count()
+        )
 
-        high_risk_events = self.db.query(AuditLog).filter(
-            AuditLog.organization_id == organization_id,
-            AuditLog.created_at >= datetime.now() - timedelta(days=30),
-            AuditLog.risk_score > 70
-        ).count()
+        high_risk_events = (
+            self.db.query(AuditLog)
+            .filter(
+                AuditLog.organization_id == organization_id,
+                AuditLog.created_at >= datetime.now() - timedelta(days=30),
+                AuditLog.risk_score > 70,
+            )
+            .count()
+        )
 
         # Get compliance status
-        compliance_profile = self.db.query(ComplianceProfile).filter(
-            ComplianceProfile.organization_id == organization_id
-        ).first()
+        compliance_profile = (
+            self.db.query(ComplianceProfile)
+            .filter(ComplianceProfile.organization_id == organization_id)
+            .first()
+        )
 
-        compliance_score = self._calculate_compliance_score(organization_id, compliance_profile)
+        compliance_score = self._calculate_compliance_score(
+            organization_id, compliance_profile
+        )
 
         return {
             "security_score": max(0, 100 - (high_risk_events * 10)),
@@ -527,20 +615,31 @@ class EnterpriseSecurityService:
                     "description": event.description,
                     "risk_score": event.risk_score,
                     "timestamp": event.created_at.isoformat(),
-                    "user_id": event.user_id
+                    "user_id": event.user_id,
                 }
                 for event in recent_events
             ],
             "compliance_features": {
-                "gdpr_enabled": compliance_profile.gdpr_enabled if compliance_profile else False,
-                "sox_enabled": compliance_profile.sox_enabled if compliance_profile else False,
-                "mfa_required": compliance_profile.mfa_required if compliance_profile else False,
-                "encryption_enabled": compliance_profile.encryption_at_rest if compliance_profile else False
-            }
+                "gdpr_enabled": (
+                    compliance_profile.gdpr_enabled if compliance_profile else False
+                ),
+                "sox_enabled": (
+                    compliance_profile.sox_enabled if compliance_profile else False
+                ),
+                "mfa_required": (
+                    compliance_profile.mfa_required if compliance_profile else False
+                ),
+                "encryption_enabled": (
+                    compliance_profile.encryption_at_rest
+                    if compliance_profile
+                    else False
+                ),
+            },
         }
 
-    def _calculate_compliance_score(self, organization_id: int,
-                                  compliance_profile: Optional[ComplianceProfile]) -> int:
+    def _calculate_compliance_score(
+        self, organization_id: int, compliance_profile: Optional[ComplianceProfile]
+    ) -> int:
         """Calculate overall compliance score"""
         score = 0
 
@@ -558,10 +657,14 @@ class EnterpriseSecurityService:
                 score += 10
 
         # Audit log coverage
-        recent_logs = self.db.query(AuditLog).filter(
-            AuditLog.organization_id == organization_id,
-            AuditLog.created_at >= datetime.now() - timedelta(days=30)
-        ).count()
+        recent_logs = (
+            self.db.query(AuditLog)
+            .filter(
+                AuditLog.organization_id == organization_id,
+                AuditLog.created_at >= datetime.now() - timedelta(days=30),
+            )
+            .count()
+        )
 
         if recent_logs > 100:
             score += 20
@@ -570,6 +673,8 @@ class EnterpriseSecurityService:
 
 
 # Dependency injection
-def get_enterprise_security_service(db: Session = Depends(get_db)) -> EnterpriseSecurityService:
+def get_enterprise_security_service(
+    db: Session = Depends(get_db),
+) -> EnterpriseSecurityService:
     """Get enterprise security service"""
     return EnterpriseSecurityService(db)

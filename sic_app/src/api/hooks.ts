@@ -297,7 +297,7 @@ export function useReminders(params?: { limit?: number; offset?: number }) {
 
 export function useCreateReminder() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (data: CreateReminderRequest): Promise<Reminder> => {
       const response = await apiClient.post<Reminder>('/reminders', data)
@@ -306,6 +306,35 @@ export function useCreateReminder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.reminders })
       toast.success('Reminder created successfully!')
+    },
+  })
+}
+
+export function useUpdateReminder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateReminderRequest> }): Promise<Reminder> => {
+      const response = await apiClient.put<Reminder>(`/reminders/${id}`, data)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.reminders })
+      toast.success('Reminder updated successfully!')
+    },
+  })
+}
+
+export function useDeleteReminder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number): Promise<void> => {
+      await apiClient.delete(`/reminders/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.reminders })
+      toast.success('Reminder deleted successfully!')
     },
   })
 }

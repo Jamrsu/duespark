@@ -1,12 +1,20 @@
 import os
-import httpx
-from typing import Any, Dict
 import typing as _t
+from typing import Any, Dict
+
+import httpx
 
 
 class EmailProvider:
-    def send(self, *, to_email: str, subject: str, html: str, text: str,
-             headers: Dict[str, str] | None = None) -> Dict[str, Any]:
+    def send(
+        self,
+        *,
+        to_email: str,
+        subject: str,
+        html: str,
+        text: str,
+        headers: Dict[str, str] | None = None,
+    ) -> Dict[str, Any]:
         """Send an email and return a normalized result.
         Return shape: { "message_id": str, "provider": str, "tracking_links": dict | None }
         """
@@ -24,8 +32,15 @@ class PostmarkProvider(EmailProvider):
         self.server_token = server_token
         self.from_email = from_email
 
-    def send(self, *, to_email: str, subject: str, html: str, text: str,
-             headers: Dict[str, str] | None = None) -> Dict[str, Any]:
+    def send(
+        self,
+        *,
+        to_email: str,
+        subject: str,
+        html: str,
+        text: str,
+        headers: Dict[str, str] | None = None,
+    ) -> Dict[str, Any]:
         base_headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -61,7 +76,11 @@ class PostmarkProvider(EmailProvider):
                 status = resp.status_code
                 if 200 <= status < 300:
                     data = resp.json()
-                    return {"message_id": data.get("MessageID"), "provider": "postmark", "tracking_links": None}
+                    return {
+                        "message_id": data.get("MessageID"),
+                        "provider": "postmark",
+                        "tracking_links": None,
+                    }
                 if 400 <= status < 500:
                     # no retry
                     try:
@@ -73,6 +92,7 @@ class PostmarkProvider(EmailProvider):
                 last_exc = RuntimeError(f"Postmark 5xx: {status}")
                 if attempt < max_attempts:
                     import time
+
                     time.sleep(backoff_base * (2 ** (attempt - 1)))
             # exhausted
             if last_exc:
@@ -82,12 +102,14 @@ class PostmarkProvider(EmailProvider):
 
 def get_email_provider() -> EmailProvider:
     provider = (os.getenv("EMAIL_PROVIDER") or "postmark").lower()
+
     def _from_addr() -> str:
         name = os.getenv("MAIL_FROM_NAME")
         addr = os.getenv("MAIL_FROM") or os.getenv("EMAIL_FROM") or ""
         if name and addr and "<" not in addr:
             return f"{name} <{addr}>"
         return addr
+
     if provider == "postmark":
         return PostmarkProvider(
             server_token=os.getenv("POSTMARK_SERVER_TOKEN", ""),
@@ -103,7 +125,9 @@ def get_email_provider() -> EmailProvider:
 
 
 class SESProvider(EmailProvider):
-    def __init__(self, region: str, from_email: str, configuration_set: str | None = None):
+    def __init__(
+        self, region: str, from_email: str, configuration_set: str | None = None
+    ):
         if not from_email:
             raise ValueError("EMAIL_FROM is required")
         self.region = region or "us-east-1"
@@ -112,10 +136,18 @@ class SESProvider(EmailProvider):
 
     def _client(self):
         import boto3  # boto3 uses env/instance credentials
+
         return boto3.client("sesv2", region_name=self.region)
 
-    def send(self, *, to_email: str, subject: str, html: str, text: str,
-             headers: Dict[str, str] | None = None) -> Dict[str, Any]:
+    def send(
+        self,
+        *,
+        to_email: str,
+        subject: str,
+        html: str,
+        text: str,
+        headers: Dict[str, str] | None = None,
+    ) -> Dict[str, Any]:
         # Note: SES doesn't natively track links; `track_*` are stored as metadata only.
         client = self._client()
         content: Dict[str, Any] = {

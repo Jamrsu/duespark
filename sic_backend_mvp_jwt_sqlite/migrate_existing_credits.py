@@ -3,6 +3,7 @@
 Migration script to populate dollar amounts for existing subscription credits.
 This ensures backward compatibility by calculating dollar values from existing month-based credits.
 """
+import logging
 import os
 import sys
 from sqlalchemy import create_engine
@@ -13,6 +14,20 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app.models import SubscriptionCredit, Subscription, SubscriptionTier
 from app.pricing_service import pricing_service
+
+
+logger = logging.getLogger("duespark.migrate_existing_credits")
+
+
+def configure_logging() -> None:
+    if logging.getLogger().handlers:
+        return
+
+    logging.basicConfig(
+        level=os.getenv("DUESPARK_LOG_LEVEL", "INFO"),
+        format='{"timestamp":"%(asctime)s","logger":"%(name)s","level":"%(levelname)s","message":"%(message)s"}'
+    )
+
 
 def migrate_existing_credits():
     """Populate dollar amounts for existing credits that don't have them."""
@@ -30,7 +45,7 @@ def migrate_existing_credits():
             SubscriptionCredit.amount_cents == 0
         ).all()
 
-        print(f"Found {len(credits_to_update)} credits to update with dollar amounts")
+        logger.info("credits requiring update", extra={"count": len(credits_to_update)})
 
         for credit in credits_to_update:
             # Get the user's subscription to determine their tier at credit time
@@ -50,26 +65,37 @@ def migrate_existing_credits():
             credit.remaining_amount_cents = remaining_amount_cents
             credit.currency = 'USD'
 
-            print(f"Updated credit ID {credit.id}: {credit.credit_months} months -> ${credit_amount_cents/100:.2f}")
+            logger.info(
+                "updated credit",
+                extra={
+                    "credit_id": credit.id,
+                    "credit_months": credit.credit_months,
+                    "amount_usd": credit_amount_cents / 100.0,
+                    "remaining_months": credit.remaining_months,
+                    "tier": user_tier.value if hasattr(user_tier, "value") else str(user_tier)
+                }
+            )
 
         # Commit changes
         db.commit()
-        print(f"Successfully updated {len(credits_to_update)} credits")
+        logger.info("credits updated successfully", extra={"count": len(credits_to_update)})
 
-    except Exception as e:
+    except Exception:
         db.rollback()
-        print(f"Error during migration: {e}")
+        logger.exception("migration failed")
         return False
     finally:
         db.close()
 
     return True
 
+
 if __name__ == "__main__":
-    print("Starting migration of existing credits...")
+    configure_logging()
+    logger.info("starting migration of existing credits")
     success = migrate_existing_credits()
     if success:
-        print("Migration completed successfully!")
+        logger.info("migration completed successfully")
     else:
-        print("Migration failed!")
+        logger.error("migration failed")
         sys.exit(1)

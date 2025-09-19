@@ -4,14 +4,19 @@ Stripe Connect, QuickBooks/Xero, Zapier, and webhook management
 """
 
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, HttpUrl
 
-from app.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, HttpUrl
+from sqlalchemy.orm import Session
+
 from app.auth import get_current_user
+from app.database import get_db
+from app.integration_service import (
+    IntegrationService,
+    IntegrationType,
+    get_integration_service,
+)
 from app.models import User
-from app.integration_service import get_integration_service, IntegrationService, IntegrationType
 
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
@@ -39,50 +44,41 @@ class SyncRequest(BaseModel):
 
 @router.get("/")
 async def get_user_integrations(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get all available integrations for user based on subscription tier"""
     try:
         integration_service = get_integration_service(db)
         integrations = integration_service.get_user_integrations(current_user)
 
-        return {
-            "success": True,
-            "data": integrations
-        }
+        return {"success": True, "data": integrations}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get integrations: {str(e)}"
+            detail=f"Failed to get integrations: {str(e)}",
         )
 
 
 @router.post("/stripe/connect")
 async def initiate_stripe_connect(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Initiate Stripe Connect onboarding process"""
     try:
         integration_service = get_integration_service(db)
         result = integration_service.initiate_stripe_connect(current_user)
 
-        return {
-            "success": result["success"],
-            "data": result
-        }
+        return {"success": result["success"], "data": result}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to initiate Stripe Connect: {str(e)}"
+            detail=f"Failed to initiate Stripe Connect: {str(e)}",
         )
 
 
 @router.post("/quickbooks/setup")
 async def setup_quickbooks_integration(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Setup QuickBooks Online integration"""
     try:
@@ -90,26 +86,26 @@ async def setup_quickbooks_integration(
         result = integration_service.setup_quickbooks_integration(current_user)
 
         if not result["success"]:
-            status_code = status.HTTP_403_FORBIDDEN if result.get("error") == "upgrade_required" else status.HTTP_400_BAD_REQUEST
+            status_code = (
+                status.HTTP_403_FORBIDDEN
+                if result.get("error") == "upgrade_required"
+                else status.HTTP_400_BAD_REQUEST
+            )
             raise HTTPException(status_code=status_code, detail=result["message"])
 
-        return {
-            "success": True,
-            "data": result
-        }
+        return {"success": True, "data": result}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to setup QuickBooks integration: {str(e)}"
+            detail=f"Failed to setup QuickBooks integration: {str(e)}",
         )
 
 
 @router.post("/xero/setup")
 async def setup_xero_integration(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Setup Xero accounting integration"""
     try:
@@ -117,26 +113,26 @@ async def setup_xero_integration(
         result = integration_service.setup_xero_integration(current_user)
 
         if not result["success"]:
-            status_code = status.HTTP_403_FORBIDDEN if result.get("error") == "upgrade_required" else status.HTTP_400_BAD_REQUEST
+            status_code = (
+                status.HTTP_403_FORBIDDEN
+                if result.get("error") == "upgrade_required"
+                else status.HTTP_400_BAD_REQUEST
+            )
             raise HTTPException(status_code=status_code, detail=result["message"])
 
-        return {
-            "success": True,
-            "data": result
-        }
+        return {"success": True, "data": result}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to setup Xero integration: {str(e)}"
+            detail=f"Failed to setup Xero integration: {str(e)}",
         )
 
 
 @router.post("/zapier/setup")
 async def setup_zapier_integration(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Setup Zapier integration for workflow automation"""
     try:
@@ -144,19 +140,20 @@ async def setup_zapier_integration(
         result = integration_service.setup_zapier_integration(current_user)
 
         if not result["success"]:
-            status_code = status.HTTP_403_FORBIDDEN if result.get("error") == "upgrade_required" else status.HTTP_400_BAD_REQUEST
+            status_code = (
+                status.HTTP_403_FORBIDDEN
+                if result.get("error") == "upgrade_required"
+                else status.HTTP_400_BAD_REQUEST
+            )
             raise HTTPException(status_code=status_code, detail=result["message"])
 
-        return {
-            "success": True,
-            "data": result
-        }
+        return {"success": True, "data": result}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to setup Zapier integration: {str(e)}"
+            detail=f"Failed to setup Zapier integration: {str(e)}",
         )
 
 
@@ -164,7 +161,7 @@ async def setup_zapier_integration(
 async def setup_webhook_endpoints(
     webhook_request: WebhookSetupRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Setup custom webhook endpoints"""
     try:
@@ -175,27 +172,30 @@ async def setup_webhook_endpoints(
             {
                 "url": str(endpoint.url),
                 "events": endpoint.events,
-                "description": endpoint.description
+                "description": endpoint.description,
             }
             for endpoint in webhook_request.endpoints
         ]
 
-        result = integration_service.setup_webhook_endpoints(current_user, endpoints_data)
+        result = integration_service.setup_webhook_endpoints(
+            current_user, endpoints_data
+        )
 
         if not result["success"]:
-            status_code = status.HTTP_403_FORBIDDEN if result.get("error") == "upgrade_required" else status.HTTP_400_BAD_REQUEST
+            status_code = (
+                status.HTTP_403_FORBIDDEN
+                if result.get("error") == "upgrade_required"
+                else status.HTTP_400_BAD_REQUEST
+            )
             raise HTTPException(status_code=status_code, detail=result["message"])
 
-        return {
-            "success": True,
-            "data": result
-        }
+        return {"success": True, "data": result}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to setup webhooks: {str(e)}"
+            detail=f"Failed to setup webhooks: {str(e)}",
         )
 
 
@@ -203,7 +203,7 @@ async def setup_webhook_endpoints(
 async def sync_invoice_to_accounting(
     sync_request: SyncRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Manually sync invoice to accounting system"""
     try:
@@ -211,15 +211,19 @@ async def sync_invoice_to_accounting(
 
         # Get invoice and verify ownership
         from app.models import Invoice
-        invoice = db.query(Invoice).filter(
-            Invoice.id == sync_request.invoice_id,
-            Invoice.user_id == current_user.id
-        ).first()
+
+        invoice = (
+            db.query(Invoice)
+            .filter(
+                Invoice.id == sync_request.invoice_id,
+                Invoice.user_id == current_user.id,
+            )
+            .first()
+        )
 
         if not invoice:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invoice not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found"
             )
 
         # Perform sync
@@ -227,37 +231,30 @@ async def sync_invoice_to_accounting(
             invoice, sync_request.integration_type
         )
 
-        return {
-            "success": result["success"],
-            "data": result
-        }
+        return {"success": result["success"], "data": result}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to sync invoice: {str(e)}"
+            detail=f"Failed to sync invoice: {str(e)}",
         )
 
 
 @router.get("/analytics")
 async def get_integration_analytics(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get analytics and usage data for user's integrations"""
     try:
         integration_service = get_integration_service(db)
         analytics = integration_service.get_integration_analytics(current_user)
 
-        return {
-            "success": True,
-            "data": analytics
-        }
+        return {"success": True, "data": analytics}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get integration analytics: {str(e)}"
+            detail=f"Failed to get integration analytics: {str(e)}",
         )
 
 
@@ -265,7 +262,7 @@ async def get_integration_analytics(
 async def handle_integration_callback(
     integration_type: str,
     callback_request: IntegrationCallbackRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Handle OAuth callbacks from integration providers"""
     try:
@@ -276,7 +273,7 @@ async def handle_integration_callback(
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid state parameter"
+                detail="Invalid state parameter",
             )
 
         # Mock callback processing - in production, exchange code for tokens
@@ -289,7 +286,7 @@ async def handle_integration_callback(
                 "integration": "stripe_connect",
                 "status": "connected",
                 "account_id": f"acct_{callback_request.code[-8:]}",
-                "message": "Stripe Connect successfully configured"
+                "message": "Stripe Connect successfully configured",
             }
         elif integration_type == "quickbooks":
             # Process QuickBooks callback
@@ -298,7 +295,7 @@ async def handle_integration_callback(
                 "integration": "quickbooks",
                 "status": "connected",
                 "company_id": f"qb_{callback_request.code[-8:]}",
-                "message": "QuickBooks integration successfully configured"
+                "message": "QuickBooks integration successfully configured",
             }
         elif integration_type == "xero":
             # Process Xero callback
@@ -307,27 +304,24 @@ async def handle_integration_callback(
                 "integration": "xero",
                 "status": "connected",
                 "tenant_id": f"xero_{callback_request.code[-8:]}",
-                "message": "Xero integration successfully configured"
+                "message": "Xero integration successfully configured",
             }
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported integration type: {integration_type}"
+                detail=f"Unsupported integration type: {integration_type}",
             )
 
-        return {
-            "success": True,
-            "data": result
-        }
+        return {"success": True, "data": result}
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid state parameter format"
+            detail="Invalid state parameter format",
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process callback: {str(e)}"
+            detail=f"Failed to process callback: {str(e)}",
         )
 
 
@@ -335,7 +329,7 @@ async def handle_integration_callback(
 async def disconnect_integration(
     integration_type: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Disconnect an integration"""
     try:
@@ -348,25 +342,21 @@ async def disconnect_integration(
             "cleanup_performed": [
                 "Tokens revoked",
                 "Webhook endpoints removed",
-                "Sync settings cleared"
-            ]
+                "Sync settings cleared",
+            ],
         }
 
-        return {
-            "success": True,
-            "data": result
-        }
+        return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to disconnect integration: {str(e)}"
+            detail=f"Failed to disconnect integration: {str(e)}",
         )
 
 
 @router.get("/marketplace")
 async def get_integration_marketplace(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get integration marketplace with available integrations"""
     try:
@@ -385,7 +375,7 @@ async def get_integration_marketplace(
                     "installs": "10M+",
                     "tier_required": "freemium",
                     "available": True,
-                    "setup_time": "5 minutes"
+                    "setup_time": "5 minutes",
                 },
                 {
                     "id": "quickbooks",
@@ -397,40 +387,81 @@ async def get_integration_marketplace(
                     "installs": "5M+",
                     "tier_required": "professional",
                     "available": tier.value in ["professional", "agency"],
-                    "setup_time": "10 minutes"
-                }
+                    "setup_time": "10 minutes",
+                },
             ],
             "by_category": {
                 "Payments": [
-                    {"id": "stripe_connect", "name": "Stripe Connect", "available": True},
-                    {"id": "paypal", "name": "PayPal", "available": False, "coming_soon": True}
+                    {
+                        "id": "stripe_connect",
+                        "name": "Stripe Connect",
+                        "available": True,
+                    },
+                    {
+                        "id": "paypal",
+                        "name": "PayPal",
+                        "available": False,
+                        "coming_soon": True,
+                    },
                 ],
                 "Accounting": [
-                    {"id": "quickbooks", "name": "QuickBooks Online", "available": tier.value in ["professional", "agency"]},
-                    {"id": "xero", "name": "Xero", "available": tier.value in ["professional", "agency"]},
-                    {"id": "freshbooks", "name": "FreshBooks", "available": False, "coming_soon": True}
+                    {
+                        "id": "quickbooks",
+                        "name": "QuickBooks Online",
+                        "available": tier.value in ["professional", "agency"],
+                    },
+                    {
+                        "id": "xero",
+                        "name": "Xero",
+                        "available": tier.value in ["professional", "agency"],
+                    },
+                    {
+                        "id": "freshbooks",
+                        "name": "FreshBooks",
+                        "available": False,
+                        "coming_soon": True,
+                    },
                 ],
                 "Automation": [
-                    {"id": "zapier", "name": "Zapier", "available": tier.value == "agency"},
-                    {"id": "webhooks", "name": "Custom Webhooks", "available": tier.value in ["professional", "agency"]}
+                    {
+                        "id": "zapier",
+                        "name": "Zapier",
+                        "available": tier.value == "agency",
+                    },
+                    {
+                        "id": "webhooks",
+                        "name": "Custom Webhooks",
+                        "available": tier.value in ["professional", "agency"],
+                    },
                 ],
                 "CRM": [
-                    {"id": "hubspot", "name": "HubSpot", "available": False, "coming_soon": True},
-                    {"id": "salesforce", "name": "Salesforce", "available": False, "coming_soon": True}
-                ]
+                    {
+                        "id": "hubspot",
+                        "name": "HubSpot",
+                        "available": False,
+                        "coming_soon": True,
+                    },
+                    {
+                        "id": "salesforce",
+                        "name": "Salesforce",
+                        "available": False,
+                        "coming_soon": True,
+                    },
+                ],
             },
             "user_tier": tier.value,
-            "upgrade_message": "Upgrade to Professional for accounting integrations" if tier.value == "freemium" else None
+            "upgrade_message": (
+                "Upgrade to Professional for accounting integrations"
+                if tier.value == "freemium"
+                else None
+            ),
         }
 
-        return {
-            "success": True,
-            "data": marketplace
-        }
+        return {"success": True, "data": marketplace}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get marketplace: {str(e)}"
+            detail=f"Failed to get marketplace: {str(e)}",
         )
 
 
@@ -445,8 +476,8 @@ async def integration_health():
             "stripe": "operational",
             "quickbooks": "operational",
             "xero": "operational",
-            "zapier": "operational"
+            "zapier": "operational",
         },
         "webhook_delivery": "99.8%",
-        "avg_response_time": "120ms"
+        "avg_response_time": "120ms",
     }

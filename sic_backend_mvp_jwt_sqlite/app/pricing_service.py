@@ -1,8 +1,10 @@
 """
 Pricing service for subscription tiers and credit calculations.
 """
+
 import os
 from typing import Dict
+
 from .models import SubscriptionTier
 
 
@@ -14,8 +16,8 @@ class PricingService:
         # Default pricing in cents (USD)
         self.default_prices = {
             SubscriptionTier.freemium: 0,
-            SubscriptionTier.professional: 2900,   # $29.00
-            SubscriptionTier.agency: 9900         # $99.00
+            SubscriptionTier.professional: 2900,  # $29.00
+            SubscriptionTier.agency: 9900,  # $99.00
         }
 
         # Allow environment variable overrides for flexibility
@@ -97,7 +99,9 @@ class PricingService:
         else:
             return f"{dollars:.2f} {currency}"
 
-    def cents_to_months_equivalent(self, amount_cents: int, tier: SubscriptionTier) -> float:
+    def cents_to_months_equivalent(
+        self, amount_cents: int, tier: SubscriptionTier
+    ) -> float:
         """
         Convert dollar amount to equivalent months for a given tier.
         Useful for backward compatibility calculations.
@@ -141,11 +145,11 @@ class PricingService:
         for tier in SubscriptionTier:
             cents = self.get_tier_price_cents(tier)
             result[tier.value] = {
-                'tier': tier.value,
-                'price_cents': cents,
-                'price_dollars': cents / 100.0,
-                'price_display': self.format_price_display(cents),
-                'is_free': cents == 0
+                "tier": tier.value,
+                "price_cents": cents,
+                "price_dollars": cents / 100.0,
+                "price_display": self.format_price_display(cents),
+                "is_free": cents == 0,
             }
 
         return result

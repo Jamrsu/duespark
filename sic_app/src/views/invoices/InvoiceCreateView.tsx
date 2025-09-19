@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -8,10 +8,15 @@ import { CreateInvoiceRequest } from '@/types/api'
 
 export function InvoiceCreateView() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { data: clientsData, isLoading: clientsLoading } = useClients({ limit: 100, offset: 0 })
   const createInvoice = useCreateInvoice()
 
   const clients = clientsData?.data || []
+
+  // Get client_id from URL parameters for pre-selection
+  const clientIdFromUrl = searchParams.get('client_id')
+  const selectedClient = clientIdFromUrl ? clients.find(c => c.id.toString() === clientIdFromUrl) : null
 
   const handleCreateInvoice = async (data: CreateInvoiceRequest) => {
     try {
@@ -104,9 +109,17 @@ export function InvoiceCreateView() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Create New Invoice
+            {selectedClient && (
+              <span className="text-lg font-normal text-gray-500 dark:text-gray-400">
+                {' '}for {selectedClient.name}
+              </span>
+            )}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Create a new invoice for your client
+            {selectedClient
+              ? `Creating an invoice for ${selectedClient.name} (${selectedClient.email})`
+              : 'Create a new invoice for your client'
+            }
           </p>
         </div>
       </div>
@@ -118,6 +131,7 @@ export function InvoiceCreateView() {
             clients={clients}
             onSubmit={handleCreateInvoice}
             isLoading={createInvoice.isPending}
+            defaultValues={clientIdFromUrl ? { client_id: parseInt(clientIdFromUrl) } : undefined}
           />
         </div>
 

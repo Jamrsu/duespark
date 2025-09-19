@@ -111,6 +111,9 @@ celerybeat.pid
 
 # Environments
 .env
+/secrets/
+!secrets/*.enc.yaml
+!secrets/README.md
 .venv
 env/
 venv/
@@ -389,22 +392,73 @@ temp/
 .temp/
 
 # ============================================================================
-# Security and Secrets
+# Security and Secrets (CRITICAL - Never commit these)
 # ============================================================================
 
-# Environment files with secrets
+# Environment files with secrets - NEVER COMMIT THESE
+.env
+.env.local
 .env.production
+.env.production.local
 .env.staging
+.env.staging.local
+.env.development
+.env.development.local
 .env.secrets
+.env.test.local
+
+# Backend specific environment files
+sic_backend_mvp_jwt_sqlite/.env
+sic_backend_mvp_jwt_sqlite/.env.local
+sic_backend_mvp_jwt_sqlite/.env.production
+sic_backend_mvp_jwt_sqlite/.env.staging
+
+# Frontend specific environment files
+sic_app/.env.local
+sic_app/.env.production.local
+sic_app/.env.staging.local
+
+# Certificate and key files
 *.pem
 *.key
 *.crt
 *.p12
 *.pfx
+*.keystore
+*.jks
 
 # Secret management
-secrets/
+/secrets/
 .secrets/
+secrets.json
+secrets.yaml
+secrets.yml
+
+# Authentication tokens and API keys
+.token
+.tokens
+*.token
+api-keys.json
+credentials.json
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# GPG keys
+*.gpg
+*.asc
+
+# Cloud provider credentials
+.aws/
+.gcp/
+.azure/
+
+# Database backups with potential secrets
+*.sql
+*.dump
 
 # ============================================================================
 # CI/CD and Build Artifacts

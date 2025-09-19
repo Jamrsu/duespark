@@ -7,9 +7,10 @@ import { LoadingButton, ProcessStatus } from '@/components/ui/LoadingStates'
 import { apiClient } from '@/api/client'
 import { toast } from 'react-hot-toast'
 import { displayError } from '@/utils/errorHandling'
+import type { User, StripeConnectResponse } from '@/types/api'
 
 interface PaymentConfigStepProps {
-  user: any
+  user: User | undefined
   onNext: () => void
   onBack: () => void
   isLoading: boolean
@@ -25,15 +26,15 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
   const [statusMessage, setStatusMessage] = useState<string>('')
 
   // Configure payment method
-  const configurePaymentMutation = useMutation({
+  const configurePaymentMutation = useMutation<StripeConnectResponse | User, unknown, PaymentMethod>({
     mutationFn: async (method: PaymentMethod) => {
       if (method === 'stripe') {
         // Get Stripe OAuth URL
-        const response = await apiClient.get('/integrations/stripe/connect')
+        const response = await apiClient.get<StripeConnectResponse>('/integrations/stripe/connect')
         return response.data
       } else {
         // Configure manual payment
-        const response = await apiClient.put('/auth/me', {
+        const response = await apiClient.put<User>('/auth/me', {
           payment_method: 'manual'
         })
         return response.data
@@ -50,19 +51,23 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
     },
     onSuccess: (data, method) => {
       if (method === 'stripe') {
+        const stripeData = data as StripeConnectResponse
         // Handle Stripe connection response
-        if (data.error || data.demo_mode) {
+        if (stripeData.error || stripeData.demo_mode) {
+          const message = stripeData.message || stripeData.error || 'Stripe connection not available'
           setProcessStatus('error')
-          setStatusMessage(data.message || 'Stripe connection not available')
+          setStatusMessage(message)
           setStripeConnecting(false)
-          displayError(new Error(data.error || data.message), {
+          displayError(new Error(message), {
             operation: 'stripe_connect',
             component: 'PaymentConfigStep'
           })
           return
         }
 
-        if (data.url) {
+        const { url } = stripeData
+
+        if (url) {
           setProcessStatus('success')
           setStatusMessage('Redirecting to Stripe...')
 
@@ -71,12 +76,12 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
             entity_type: 'user',
             entity_id: user?.id,
             event_type: 'stripe_connect_initiated',
-            payload: { authorization_url: data.url }
+            payload: { authorization_url: url }
           })
 
           // Redirect to Stripe after a short delay to show success state
           setTimeout(() => {
-            window.location.href = data.url
+            window.location.href = url
           }, 1000)
         } else {
           setProcessStatus('error')
@@ -84,6 +89,7 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
           setStripeConnecting(false)
         }
       } else if (method === 'manual') {
+        void (data as User)
         setProcessStatus('success')
         setStatusMessage('Manual payment method configured!')
 
@@ -99,7 +105,7 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
         setTimeout(() => onNext(), 1500)
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       setProcessStatus('error')
       setStatusMessage('Failed to configure payment method')
       setStripeConnecting(false)
@@ -145,7 +151,7 @@ export function PaymentConfigStep({ user, onNext, isLoading }: PaymentConfigStep
 
       // Update server in background
       configurePaymentMutation.mutate('manual')
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Manual payment error:', error)
       // Fallback: still try the API call
       configurePaymentMutation.mutate('manual')

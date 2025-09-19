@@ -3,12 +3,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Mail, User, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
+import { Mail, User as UserIcon, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { LoadingButton, ProcessStatus } from '@/components/ui/LoadingStates'
 import { apiClient } from '@/api/client'
 import { toast } from 'react-hot-toast'
 import { displayError } from '@/utils/errorHandling'
+import type { User as UserType, MessageResponse } from '@/types/api'
 
 const profileSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -17,7 +18,7 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>
 
 interface AccountCreationStepProps {
-  user: any
+  user: UserType | undefined
   onNext: () => void
   onBack: () => void
   isLoading: boolean
@@ -64,10 +65,10 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
   }, [resendCooldown])
 
   // Send verification email
-  const sendVerificationMutation = useMutation({
+  const sendVerificationMutation = useMutation<MessageResponse, unknown, string>({
     mutationFn: async (email: string) => {
-      const response = await apiClient.post('/auth/send-verification', { email })
-      return response.data
+      const { data } = await apiClient.post<MessageResponse>('/auth/send-verification', { email })
+      return data
     },
     onSuccess: (data) => {
       setVerificationSent(true)
@@ -96,7 +97,7 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
         }
       })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       displayError(error, {
         operation: 'send_verification_email',
         component: 'AccountCreationStep'
@@ -105,10 +106,10 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
   })
 
   // Check verification status
-  const checkVerificationMutation = useMutation({
+  const checkVerificationMutation = useMutation<UserType>({
     mutationFn: async () => {
-      const response = await apiClient.get('/auth/me')
-      return response.data
+      const { data } = await apiClient.get<UserType>('/auth/me')
+      return data
     },
     onSuccess: (data) => {
       setVerificationAttempts(prev => prev + 1)
@@ -137,11 +138,11 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
             { duration: 6000 }
           )
         } else {
-          toast.info('Email not verified yet. Please click the link in the email first.', { duration: 4000 })
+          toast('Email not verified yet. Please click the link in the email first.', { duration: 4000 })
         }
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       displayError(error, {
         operation: 'check_verification_status',
         component: 'AccountCreationStep'
@@ -155,8 +156,11 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
 
   const handleCheckVerification = async () => {
     setIsCheckingVerification(true)
-    await checkVerificationMutation.mutateAsync()
-    setIsCheckingVerification(false)
+    try {
+      await checkVerificationMutation.mutateAsync()
+    } finally {
+      setIsCheckingVerification(false)
+    }
   }
 
   const isEmailVerified = user?.email_verified
@@ -164,7 +168,7 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <User className="h-12 w-12 text-primary-600 mx-auto mb-4" />
+        <UserIcon className="h-12 w-12 text-primary-600 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           Complete Your Account
         </h3>
@@ -227,7 +231,6 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
 
           <div className="flex flex-col sm:flex-row gap-3">
             <LoadingButton
-              type="submit"
               isLoading={sendVerificationMutation.isPending}
               loadingText="Sending verification email..."
               disabled={verificationSent}
@@ -285,11 +288,16 @@ export function AccountCreationStep({ user, onNext, isLoading }: AccountCreation
               </div>
             ) : (
               <LoadingButton
-                onClick={() => sendVerificationMutation.mutate(user?.email)}
+                onClick={() => {
+                  if (user?.email) {
+                    sendVerificationMutation.mutate(user.email)
+                  }
+                }}
                 isLoading={sendVerificationMutation.isPending}
                 loadingText="Sending again..."
                 variant="ghost"
                 size="sm"
+                disabled={!user?.email}
                 className="text-primary-600 hover:text-primary-700 underline"
               >
                 Didn't receive the email? Send again

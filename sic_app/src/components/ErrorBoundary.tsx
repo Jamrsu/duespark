@@ -2,11 +2,13 @@ import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react'
 import { Button } from './ui/Button'
 
-interface Props {
+export type ErrorBoundaryLevel = 'page' | 'component' | 'critical'
+
+export interface ErrorBoundaryProps {
   children: ReactNode
   fallback?: ReactNode
   onError?: (error: Error, errorInfo: ErrorInfo) => void
-  level?: 'page' | 'component' | 'critical'
+  level?: ErrorBoundaryLevel
 }
 
 interface State {
@@ -16,8 +18,8 @@ interface State {
   errorId: string
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
+  constructor(props: ErrorBoundaryProps) {
     super(props)
 
     this.state = {
@@ -235,7 +237,7 @@ export class ErrorBoundary extends Component<Props, State> {
 // Higher-order component for wrapping components with error boundaries
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
+  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PaymentConfigStep } from '../PaymentConfigStep'
 import { apiClient } from '@/api/client'
+import { createMockUser } from '@/test/mockUtils'
 
 // Mock the API client
 vi.mock('@/api/client', () => ({
@@ -37,8 +38,8 @@ Object.defineProperty(window, 'location', {
 
 // Create a setter for href to track assignments
 Object.defineProperty(mockLocation, 'href', {
-  get: () => mockLocation._href || '',
-  set: (value) => { mockLocation._href = value },
+  get: () => (mockLocation as any)._href || '',
+  set: (value) => { (mockLocation as any)._href = value },
   configurable: true
 })
 
@@ -60,12 +61,10 @@ const createWrapper = () => {
 }
 
 describe('PaymentConfigStep', () => {
-  const mockUser = {
-    id: 1,
-    email: 'test@example.com',
-    payment_method: null,
-    stripe_account_id: null,
-  }
+  const mockUser = createMockUser({
+    email_verified: true,
+    onboarding_status: 'payment_setup_pending'
+  })
 
   const defaultProps = {
     user: mockUser,

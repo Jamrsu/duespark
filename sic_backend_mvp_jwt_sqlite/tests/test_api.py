@@ -1,5 +1,7 @@
 import uuid
+
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 client = TestClient(app)
@@ -7,7 +9,7 @@ client = TestClient(app)
 
 def make_user():
     email = f"test_{uuid.uuid4().hex[:8]}@example.com"
-    password = "secret123"
+    password = "Secret123!"
     r = client.post("/auth/register", json={"email": email, "password": password})
     assert r.status_code in (200, 409)
     # login
@@ -21,7 +23,9 @@ def test_crud_and_pagination_flow():
     headers = make_user()
 
     # Create clients
-    r = client.post("/clients", headers=headers, json={"name": "Acme", "email": "acme@example.com"})
+    r = client.post(
+        "/clients", headers=headers, json={"name": "Acme", "email": "acme@example.com"}
+    )
     assert r.status_code == 200
     client_id = r.json()["data"]["id"]
 
@@ -34,17 +38,23 @@ def test_crud_and_pagination_flow():
     assert {"limit", "offset", "total"}.issubset(body["meta"].keys())
 
     # Update client
-    r = client.put(f"/clients/{client_id}", headers=headers, json={"timezone": "Europe/London"})
+    r = client.put(
+        f"/clients/{client_id}", headers=headers, json={"timezone": "Europe/London"}
+    )
     assert r.status_code == 200
     assert r.json()["data"]["timezone"] == "Europe/London"
 
     # Create invoice
-    r = client.post("/invoices", headers=headers, json={
-        "client_id": client_id,
-        "amount_cents": 12345,
-        "currency": "USD",
-        "due_date": "2030-01-01"
-    })
+    r = client.post(
+        "/invoices",
+        headers=headers,
+        json={
+            "client_id": client_id,
+            "amount_cents": 12345,
+            "currency": "USD",
+            "due_date": "2025-12-01",
+        },
+    )
     assert r.status_code == 200
     invoice_id = r.json()["data"]["id"]
 
@@ -54,13 +64,17 @@ def test_crud_and_pagination_flow():
     assert "data" in r.json() and "meta" in r.json()
 
     # Create reminder
-    r = client.post("/reminders", headers=headers, json={
-        "invoice_id": invoice_id,
-        "send_at": "2030-01-01T09:00:00Z",
-        "channel": "email",
-        "subject": "Reminder",
-        "body": "Please pay"
-    })
+    r = client.post(
+        "/reminders",
+        headers=headers,
+        json={
+            "invoice_id": invoice_id,
+            "send_at": "2025-11-30T09:00:00Z",
+            "channel": "email",
+            "subject": "Reminder",
+            "body": "Please pay",
+        },
+    )
     assert r.status_code == 200
     reminder_id = r.json()["data"]["id"]
 
@@ -70,7 +84,9 @@ def test_crud_and_pagination_flow():
     assert "data" in r.json() and "meta" in r.json()
 
     # Update reminder
-    r = client.put(f"/reminders/{reminder_id}", headers=headers, json={"subject": "New Subject"})
+    r = client.put(
+        f"/reminders/{reminder_id}", headers=headers, json={"subject": "New Subject"}
+    )
     assert r.status_code == 200
     assert r.json()["data"]["subject"] == "New Subject"
 
@@ -90,36 +106,57 @@ def test_crud_and_pagination_flow():
     assert r.json()["data"]["id"] == client_id
 
     # Pagination behavior: create 2 clients and fetch with limit=1 offset=1
-    _ = client.post("/clients", headers=headers, json={"name": "C1", "email": f"c1-{uuid.uuid4().hex[:6]}@example.com"})
-    _ = client.post("/clients", headers=headers, json={"name": "C2", "email": f"c2-{uuid.uuid4().hex[:6]}@example.com"})
+    _ = client.post(
+        "/clients",
+        headers=headers,
+        json={"name": "C1", "email": f"c1-{uuid.uuid4().hex[:6]}@example.com"},
+    )
+    _ = client.post(
+        "/clients",
+        headers=headers,
+        json={"name": "C2", "email": f"c2-{uuid.uuid4().hex[:6]}@example.com"},
+    )
     r = client.get("/clients?limit=1&offset=1", headers=headers)
     assert r.status_code == 200
     body = r.json()
     assert len(body["data"]) == 1
     assert body["meta"]["limit"] == 1 and body["meta"]["offset"] == 1
 
+
 def test_templates_preview_and_events():
     headers = make_user()
     # Create minimal client+invoice for preview
-    rc = client.post("/clients", headers=headers, json={"name": "ACo", "email": f"{uuid.uuid4().hex[:6]}@ex.com"})
+    rc = client.post(
+        "/clients",
+        headers=headers,
+        json={"name": "ACo", "email": f"{uuid.uuid4().hex[:6]}@ex.com"},
+    )
     assert rc.status_code == 200
     cid = rc.json()["data"]["id"]
-    ri = client.post("/invoices", headers=headers, json={
-        "client_id": cid,
-        "amount_cents": 2000,
-        "currency": "USD",
-        "due_date": "2030-01-02"
-    })
+    ri = client.post(
+        "/invoices",
+        headers=headers,
+        json={
+            "client_id": cid,
+            "amount_cents": 2000,
+            "currency": "USD",
+            "due_date": "2025-12-02",
+        },
+    )
     assert ri.status_code == 200
     inv_id = ri.json()["data"]["id"]
 
     # Create a template
-    rt = client.post("/templates", headers=headers, json={
-        "name": "Friendly",
-        "tone": "friendly",
-        "subject": "Hello {{client_name}}",
-        "body_markdown": "Invoice {{invoice_id}} due {{due_date}}"
-    })
+    rt = client.post(
+        "/templates",
+        headers=headers,
+        json={
+            "name": "Friendly",
+            "tone": "friendly",
+            "subject": "Hello {{client_name}}",
+            "body_markdown": "Invoice {{invoice_id}} due {{due_date}}",
+        },
+    )
     assert rt.status_code == 200
     tid = rt.json()["data"]["id"]
 
@@ -129,7 +166,11 @@ def test_templates_preview_and_events():
     assert "data" in rt2.json() and "meta" in rt2.json()
 
     # Preview using template
-    rp = client.post("/reminders/preview", headers=headers, json={"invoice_id": inv_id, "template_id": tid})
+    rp = client.post(
+        "/reminders/preview",
+        headers=headers,
+        json={"invoice_id": inv_id, "template_id": tid},
+    )
     assert rp.status_code == 200
     pv = rp.json()["data"]
     assert str(inv_id) in pv["html"]

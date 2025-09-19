@@ -37,7 +37,7 @@ check_backend() {
     local attempt=1
 
     while [ $attempt -le $max_attempts ]; do
-        if curl -f --silent --max-time 5 "${BACKEND_URL:-http://localhost:8000}/healthz" > /dev/null; then
+        if curl -f --silent --max-time 5 "${BACKEND_URL:-http://localhost:8005}/healthz" > /dev/null; then
             log_success "Backend is running"
             return 0
         fi
@@ -99,7 +99,7 @@ run_tests() {
 
     # Set environment variables
     export PLAYWRIGHT_BASE_URL="${FRONTEND_URL:-http://localhost:5173}"
-    export API_BASE_URL="${BACKEND_URL:-http://localhost:8000}"
+    export API_BASE_URL="${BACKEND_URL:-http://localhost:8005}"
 
     local cmd="npx playwright test"
 
@@ -120,7 +120,7 @@ run_tests() {
             cmd="$cmd auth.spec.ts"
             ;;
         "mobile")
-            cmd="$cmd mobile-navigation.spec.ts"
+            cmd="$cmd mobile-navigation.spec.ts happy-path.spec.ts"
             ;;
         "smoke")
             cmd="$cmd --grep '@smoke'"
@@ -188,7 +188,7 @@ start_services() {
         export ENCRYPTION_KEY="test-encryption-key-for-e2e"
 
         # Start backend
-        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8005 &
         BACKEND_PID=$!
 
         cd ../sic_app
@@ -205,7 +205,7 @@ start_services() {
         log_info "Starting frontend..."
 
         # Set test environment
-        export VITE_API_BASE_URL="http://localhost:8000"
+        export VITE_API_BASE_URL="http://localhost:8005"
         export VITE_APP_ENV="test"
 
         # Start frontend
@@ -371,7 +371,7 @@ show_usage() {
     echo ""
     echo "Environment Variables:"
     echo "  FRONTEND_URL    Frontend URL (default: http://localhost:5173)"
-    echo "  BACKEND_URL     Backend URL (default: http://localhost:8000)"
+    echo "  BACKEND_URL     Backend URL (default: http://localhost:8005)"
     echo "  SKIP_BACKEND_START    Skip starting backend service"
     echo "  SKIP_FRONTEND_START   Skip starting frontend service"
     echo "  RETRY_COUNT     Number of test retries (default: 2)"

@@ -1,0 +1,11 @@
+# SOPS configuration (placeholder values).
+# Update the KMS/age entries once the encryption backend is finalised.
+creation_rules:
+  - path_regex: secrets/.*\.enc\.yaml$
+    kms: []  # e.g., arn:aws:kms:region:acct:key-id once available
+    age: []  # or age public keys
+    gcp_kms: []
+    azure_keyvault: []
+    pgp: []
+    encrypted_regex: '^(data|stringData)$'
+    mac: true

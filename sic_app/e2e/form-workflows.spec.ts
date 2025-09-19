@@ -99,24 +99,24 @@ test.describe('Form Workflows', () => {
       await page.goto('/invoices/new')
       
       // Verify form elements are visible
-      await expect(page.getByLabelText(/client/i)).toBeVisible()
-      await expect(page.getByLabelText(/amount/i)).toBeVisible()
-      await expect(page.getByLabelText(/currency/i)).toBeVisible()
-      await expect(page.getByLabelText(/due date/i)).toBeVisible()
-      await expect(page.getByLabelText(/status/i)).toBeVisible()
+      await expect(page.locator('select[name="client_id"]')).toBeVisible()
+      await expect(page.locator('input[name="amount"]')).toBeVisible()
+      await expect(page.locator('select[name="currency"]')).toBeVisible()
+      await expect(page.locator('input[name="due_date"]')).toBeVisible()
+      await expect(page.locator('select[name="status"]')).toBeVisible()
       
       // Fill out invoice form
-      await page.getByLabelText(/client/i).selectOption({ index: 1 }) // Select first available client
-      await page.getByLabelText(/amount/i).fill('250.00')
-      await page.getByLabelText(/currency/i).selectOption('USD')
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 }) // Select first available client
+      await page.locator('input[name="amount"]').fill('250.00')
+      await page.locator('select[name="currency"]').selectOption('USD')
       
       // Set due date to next month
       const nextMonth = new Date()
       nextMonth.setMonth(nextMonth.getMonth() + 1)
       const dueDateStr = nextMonth.toISOString().split('T')[0]
-      await page.getByLabelText(/due date/i).fill(dueDateStr)
+      await page.locator('input[name="due_date"]').fill(dueDateStr)
       
-      await page.getByLabelText(/status/i).selectOption('pending')
+      await page.locator('select[name="status"]').selectOption('pending')
       
       // Verify amount preview is shown
       await expect(page.getByText('Invoice total: $250.00')).toBeVisible()
@@ -144,13 +144,13 @@ test.describe('Form Workflows', () => {
       await page.goto('/invoices/new')
       
       // Try zero amount
-      await page.getByLabelText(/amount/i).fill('0')
+      await page.locator('input[name="amount"]').fill('0')
       await page.getByRole('button', { name: /create invoice/i }).click()
       
       await expect(page.getByText(/amount must be greater than/i)).toBeVisible()
       
       // Try negative amount
-      await page.getByLabelText(/amount/i).fill('-10')
+      await page.locator('input[name="amount"]').fill('-10')
       await page.getByRole('button', { name: /create invoice/i }).click()
       
       await expect(page.getByText(/amount must be greater than/i)).toBeVisible()
@@ -160,7 +160,7 @@ test.describe('Form Workflows', () => {
       await page.goto('/invoices/new')
       
       // Select a client
-      await page.getByLabelText(/client/i).selectOption({ index: 1 })
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 })
       
       // Should show client preview
       await expect(page.getByText(/invoice will be created for:/i)).toBeVisible()
@@ -172,8 +172,8 @@ test.describe('Form Workflows', () => {
       await page.goto('/clients/new')
       
       // Fill out minimum required fields
-      await page.getByLabelText(/client name/i).fill('Loading Test Client')
-      await page.getByLabelText(/email/i).fill('loading@test.com')
+      await page.locator('input[name="name"]').fill('Loading Test Client')
+      await page.locator('input[name="email"]').fill('loading@test.com')
       
       // Submit form and immediately check for loading state
       await page.getByRole('button', { name: /create client/i }).click()
@@ -182,7 +182,7 @@ test.describe('Form Workflows', () => {
       await expect(page.getByRole('button', { name: /creating/i })).toBeVisible()
       
       // Form fields should be disabled during loading
-      await expect(page.getByLabelText(/client name/i)).toBeDisabled()
+      await expect(page.locator('input[name="name"]')).toBeDisabled()
     })
   })
 
@@ -191,32 +191,32 @@ test.describe('Form Workflows', () => {
       await page.goto('/clients/new')
       
       // Fill out some fields
-      await page.getByLabelText(/client name/i).fill('Test Company')
-      await page.getByLabelText(/email/i).fill('test@company.com')
-      await page.getByLabelText(/contact name/i).fill('John Doe')
+      await page.locator('input[name="name"]').fill('Test Company')
+      await page.locator('input[name="email"]').fill('test@company.com')
+      await page.locator('input[name="contact_name"]').fill('John Doe')
       
       // Click reset button
       await page.getByRole('button', { name: /reset form/i }).click()
       
       // Fields should be cleared
-      await expect(page.getByLabelText(/client name/i)).toHaveValue('')
-      await expect(page.getByLabelText(/email/i)).toHaveValue('')
-      await expect(page.getByLabelText(/contact name/i)).toHaveValue('')
+      await expect(page.locator('input[name="name"]')).toHaveValue('')
+      await expect(page.locator('input[name="email"]')).toHaveValue('')
+      await expect(page.locator('input[name="contact_name"]')).toHaveValue('')
     })
 
     test('should reset invoice form when reset button is clicked', async ({ page }) => {
       await page.goto('/invoices/new')
       
       // Fill out some fields
-      await page.getByLabelText(/client/i).selectOption({ index: 1 })
-      await page.getByLabelText(/amount/i).fill('100.00')
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 })
+      await page.locator('input[name="amount"]').fill('100.00')
       
       // Click reset button
       await page.getByRole('button', { name: /reset form/i }).click()
       
       // Fields should be cleared
-      await expect(page.getByLabelText(/client/i)).toHaveValue('')
-      await expect(page.getByLabelText(/amount/i)).toHaveValue('')
+      await expect(page.locator('select[name="client_id"]')).toHaveValue('')
+      await expect(page.locator('input[name="amount"]')).toHaveValue('')
     })
   })
 
@@ -259,16 +259,16 @@ test.describe('Form Workflows', () => {
       await page.goto('/invoices/new')
       
       // Fill form top to bottom to ensure scrolling works
-      await page.getByLabelText(/client/i).selectOption({ index: 1 })
-      await page.getByLabelText(/amount/i).fill('150.00')
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 })
+      await page.locator('input[name="amount"]').fill('150.00')
       
       // Scroll to bottom fields
-      await page.getByLabelText(/due date/i).scrollIntoViewIfNeeded()
+      await page.locator('input[name="due_date"]').scrollIntoViewIfNeeded()
       
       const nextMonth = new Date()
       nextMonth.setMonth(nextMonth.getMonth() + 1)
       const dueDateStr = nextMonth.toISOString().split('T')[0]
-      await page.getByLabelText(/due date/i).fill(dueDateStr)
+      await page.locator('input[name="due_date"]').fill(dueDateStr)
       
       // Submit button should be accessible
       const submitButton = page.getByRole('button', { name: /create invoice/i })

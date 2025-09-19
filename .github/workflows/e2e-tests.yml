@@ -89,17 +89,17 @@ jobs:
           export STRIPE_SECRET_KEY="sk_test_fake_key_for_testing"
           export POSTMARK_SERVER_TOKEN="test-token"
           export EMAIL_FROM="test@duespark.com"
-          python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          python -m uvicorn app.main:app --host 0.0.0.0 --port 8005 &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
 
       - name: Wait for backend to be ready
         run: |
-          timeout 60 bash -c 'while ! curl -f http://localhost:8000/healthz; do sleep 2; done'
+          timeout 60 bash -c 'while ! curl -f http://localhost:8005/healthz; do sleep 2; done'
 
       - name: Build frontend
         run: |
           cd sic_app
-          export VITE_API_BASE_URL="http://localhost:8000"
+          export VITE_API_BASE_URL="http://localhost:8005"
           export VITE_APP_ENV="test"
           npm run build
 
@@ -117,7 +117,7 @@ jobs:
         run: |
           cd sic_app
           export PLAYWRIGHT_BASE_URL="http://localhost:5173"
-          export API_BASE_URL="http://localhost:8000"
+          export API_BASE_URL="http://localhost:8005"
           ./e2e/scripts/ci-commands.sh ${{ matrix.test-suite }} --browser ${{ matrix.browser }}
 
       - name: Upload test results
@@ -217,7 +217,7 @@ jobs:
       - name: Build frontend
         run: |
           cd sic_app
-          export VITE_API_BASE_URL="http://localhost:8000"
+          export VITE_API_BASE_URL="http://localhost:8005"
           npm run build
 
       - name: Start frontend service
@@ -245,7 +245,7 @@ jobs:
   # Mobile testing job
   mobile-tests:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule'
     timeout-minutes: 25
 
     strategy:
@@ -279,8 +279,6 @@ jobs:
       - name: Run mobile E2E tests
         run: |
           cd sic_app
-          export SKIP_BACKEND_START=true
-          export SKIP_FRONTEND_START=true
           ./e2e/scripts/ci-commands.sh mobile --browser ${{ matrix.device }}
 
       - name: Upload mobile test results

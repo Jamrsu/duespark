@@ -23,6 +23,7 @@ import { TestHelpers } from './utils/test-helpers'
 import { testUsers, testRegistrations, mockEmailVerificationToken } from './fixtures/users'
 import { testClients, testInvoices } from './fixtures/invoices'
 import { testReminders, mockEmailWebhooks } from './fixtures/reminders'
+import { mobileViewportPresets, TOUCH_TARGET_MIN_HEIGHT } from './fixtures/mobile'
 
 test.describe('DueSpark Happy Path E2E', () => {
   let apiMocker: ApiMocker
@@ -306,7 +307,8 @@ test.describe('DueSpark Happy Path E2E', () => {
   // Test mobile responsiveness during critical flows
   test('critical flows work on mobile', async ({ page }) => {
     // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 })
+    const mobileViewport = mobileViewportPresets.iphoneSE
+    await page.setViewportSize({ width: mobileViewport.width, height: mobileViewport.height })
 
     await test.step('Mobile registration flow', async () => {
       await helpers.registerUser(testRegistrations.valid)
@@ -315,7 +317,7 @@ test.describe('DueSpark Happy Path E2E', () => {
       // Check responsive layout
       const submitButton = page.locator('button[type="submit"]')
       const buttonBox = await submitButton.boundingBox()
-      expect(buttonBox?.height).toBeGreaterThanOrEqual(44) // Touch target size
+      expect(buttonBox?.height).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN_HEIGHT)
     })
 
     await test.step('Mobile dashboard navigation', async () => {
@@ -331,7 +333,7 @@ test.describe('DueSpark Happy Path E2E', () => {
       for (let i = 0; i < count; i++) {
         const item = navItems.nth(i)
         const boundingBox = await item.boundingBox()
-        expect(boundingBox?.height).toBeGreaterThanOrEqual(48)
+        expect(boundingBox?.height).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN_HEIGHT + 4)
       }
     })
   })

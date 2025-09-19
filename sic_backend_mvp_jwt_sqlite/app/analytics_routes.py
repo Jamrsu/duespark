@@ -4,14 +4,15 @@ Advanced analytics, insights, and AI-powered recommendations
 """
 
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
-from app.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.analytics_service import AnalyticsService, get_analytics_service
 from app.auth import get_current_user
+from app.database import get_db
 from app.models import User
-from app.analytics_service import get_analytics_service, AnalyticsService
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -36,22 +37,18 @@ class FeatureUsageEvent(BaseModel):
 async def get_analytics_dashboard(
     period: str = Query("30d", description="Analysis period: 7d, 30d, 90d, 1y"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get comprehensive analytics dashboard"""
     try:
         analytics_service = get_analytics_service(db)
         dashboard_data = analytics_service.get_user_analytics(current_user)
 
-        return {
-            "success": True,
-            "data": dashboard_data,
-            "period": period
-        }
+        return {"success": True, "data": dashboard_data, "period": period}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get analytics dashboard: {str(e)}"
+            detail=f"Failed to get analytics dashboard: {str(e)}",
         )
 
 
@@ -59,7 +56,7 @@ async def get_analytics_dashboard(
 async def get_client_insights(
     limit: int = Query(10, le=50, description="Number of clients to analyze"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get detailed insights for user's clients"""
     try:
@@ -69,18 +66,28 @@ async def get_client_insights(
         # Convert insights to serializable format
         insights_data = []
         for insight in client_insights:
-            insights_data.append({
-                "client_id": insight.client_id,
-                "client_name": insight.client_name,
-                "payment_behavior": insight.payment_behavior.value,
-                "avg_payment_delay": round(insight.avg_payment_delay, 1),
-                "risk_level": insight.risk_level.value,
-                "predicted_payment_date": insight.predicted_payment_date.isoformat() if insight.predicted_payment_date else None,
-                "lifetime_value": round(insight.lifetime_value, 2),
-                "last_payment": insight.last_payment.isoformat() if insight.last_payment else None,
-                "overdue_count": insight.overdue_count,
-                "recommendations": insight.recommendations
-            })
+            insights_data.append(
+                {
+                    "client_id": insight.client_id,
+                    "client_name": insight.client_name,
+                    "payment_behavior": insight.payment_behavior.value,
+                    "avg_payment_delay": round(insight.avg_payment_delay, 1),
+                    "risk_level": insight.risk_level.value,
+                    "predicted_payment_date": (
+                        insight.predicted_payment_date.isoformat()
+                        if insight.predicted_payment_date
+                        else None
+                    ),
+                    "lifetime_value": round(insight.lifetime_value, 2),
+                    "last_payment": (
+                        insight.last_payment.isoformat()
+                        if insight.last_payment
+                        else None
+                    ),
+                    "overdue_count": insight.overdue_count,
+                    "recommendations": insight.recommendations,
+                }
+            )
 
         return {
             "success": True,
@@ -88,16 +95,36 @@ async def get_client_insights(
                 "client_insights": insights_data,
                 "total_analyzed": len(insights_data),
                 "summary": {
-                    "high_risk_clients": len([c for c in insights_data if c["risk_level"] in ["high", "critical"]]),
-                    "excellent_payers": len([c for c in insights_data if c["payment_behavior"] == "excellent"]),
-                    "avg_delay_all_clients": round(sum(c["avg_payment_delay"] for c in insights_data) / len(insights_data), 1) if insights_data else 0
-                }
-            }
+                    "high_risk_clients": len(
+                        [
+                            c
+                            for c in insights_data
+                            if c["risk_level"] in ["high", "critical"]
+                        ]
+                    ),
+                    "excellent_payers": len(
+                        [
+                            c
+                            for c in insights_data
+                            if c["payment_behavior"] == "excellent"
+                        ]
+                    ),
+                    "avg_delay_all_clients": (
+                        round(
+                            sum(c["avg_payment_delay"] for c in insights_data)
+                            / len(insights_data),
+                            1,
+                        )
+                        if insights_data
+                        else 0
+                    ),
+                },
+            },
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get client insights: {str(e)}"
+            detail=f"Failed to get client insights: {str(e)}",
         )
 
 
@@ -105,12 +132,14 @@ async def get_client_insights(
 async def get_cash_flow_prediction(
     days_ahead: int = Query(30, le=365, description="Days to predict ahead"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get AI-powered cash flow predictions"""
     try:
         analytics_service = get_analytics_service(db)
-        cash_flow_prediction = analytics_service.predict_cash_flow(current_user, days_ahead)
+        cash_flow_prediction = analytics_service.predict_cash_flow(
+            current_user, days_ahead
+        )
 
         prediction_data = {
             "period_start": cash_flow_prediction.period_start.isoformat(),
@@ -119,25 +148,24 @@ async def get_cash_flow_prediction(
             "confidence_score": round(cash_flow_prediction.confidence_score * 100, 1),
             "breakdown_by_week": cash_flow_prediction.breakdown_by_week,
             "risk_factors": cash_flow_prediction.risk_factors,
-            "opportunities": cash_flow_prediction.opportunities
+            "opportunities": cash_flow_prediction.opportunities,
         }
 
-        return {
-            "success": True,
-            "data": prediction_data
-        }
+        return {"success": True, "data": prediction_data}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to predict cash flow: {str(e)}"
+            detail=f"Failed to predict cash flow: {str(e)}",
         )
 
 
 @router.get("/recommendations")
 async def get_ai_recommendations(
-    category: Optional[str] = Query(None, description="Filter by recommendation category"),
+    category: Optional[str] = Query(
+        None, description="Filter by recommendation category"
+    ),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get AI-powered business recommendations"""
     try:
@@ -154,20 +182,21 @@ async def get_ai_recommendations(
                 "recommendations": recommendations,
                 "total_count": len(recommendations),
                 "categories": list(set(r.get("type") for r in recommendations)),
-                "high_priority_count": len([r for r in recommendations if r.get("priority", 0) >= 8])
-            }
+                "high_priority_count": len(
+                    [r for r in recommendations if r.get("priority", 0) >= 8]
+                ),
+            },
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get recommendations: {str(e)}"
+            detail=f"Failed to get recommendations: {str(e)}",
         )
 
 
 @router.get("/performance")
 async def get_performance_metrics(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get detailed performance and efficiency metrics"""
     try:
@@ -181,9 +210,21 @@ async def get_performance_metrics(
 
         # Add benchmarking (compare against typical users)
         benchmarks = {
-            "payment_rate": {"user": performance_data.get("payment_rate", 0), "average": 78.5, "top_10_percent": 92.0},
-            "collection_time": {"user": performance_data.get("avg_collection_time", 0), "average": 21.3, "top_10_percent": 12.0},
-            "efficiency_score": {"user": performance_data.get("efficiency_score", 0), "average": 68.2, "top_10_percent": 87.5}
+            "payment_rate": {
+                "user": performance_data.get("payment_rate", 0),
+                "average": 78.5,
+                "top_10_percent": 92.0,
+            },
+            "collection_time": {
+                "user": performance_data.get("avg_collection_time", 0),
+                "average": 21.3,
+                "top_10_percent": 12.0,
+            },
+            "efficiency_score": {
+                "user": performance_data.get("efficiency_score", 0),
+                "average": 68.2,
+                "top_10_percent": 87.5,
+            },
         }
 
         return {
@@ -198,21 +239,27 @@ async def get_performance_metrics(
                         "metric": "payment_rate",
                         "current": performance_data.get("payment_rate", 0),
                         "target": 85.0,
-                        "suggestions": ["Implement automated reminders", "Improve payment terms clarity"]
+                        "suggestions": [
+                            "Implement automated reminders",
+                            "Improve payment terms clarity",
+                        ],
                     },
                     {
                         "metric": "collection_time",
                         "current": performance_data.get("avg_collection_time", 0),
                         "target": 15.0,
-                        "suggestions": ["Offer early payment incentives", "Use multiple reminder channels"]
-                    }
-                ]
-            }
+                        "suggestions": [
+                            "Offer early payment incentives",
+                            "Use multiple reminder channels",
+                        ],
+                    },
+                ],
+            },
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get performance metrics: {str(e)}"
+            detail=f"Failed to get performance metrics: {str(e)}",
         )
 
 
@@ -220,21 +267,20 @@ async def get_performance_metrics(
 async def track_feature_usage(
     usage_event: FeatureUsageEvent,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Track feature usage for analytics"""
     try:
         analytics_service = get_analytics_service(db)
-        analytics_service.track_feature_usage(current_user, usage_event.feature, usage_event.metadata)
+        analytics_service.track_feature_usage(
+            current_user, usage_event.feature, usage_event.metadata
+        )
 
-        return {
-            "success": True,
-            "message": "Feature usage tracked successfully"
-        }
+        return {"success": True, "message": "Feature usage tracked successfully"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to track feature usage: {str(e)}"
+            detail=f"Failed to track feature usage: {str(e)}",
         )
 
 
@@ -242,7 +288,7 @@ async def track_feature_usage(
 async def export_analytics_csv(
     period: str = Query("30d", description="Export period: 7d, 30d, 90d, 1y"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Export analytics data as CSV"""
     try:
@@ -256,26 +302,25 @@ async def export_analytics_csv(
             "period": period,
             "summary": user_analytics.get("overview", {}),
             "performance": user_analytics.get("performance", {}),
-            "download_url": f"/api/analytics/exports/download/{current_user.id}_{period}.csv"
+            "download_url": f"/api/analytics/exports/download/{current_user.id}_{period}.csv",
         }
 
-        return {
-            "success": True,
-            "data": csv_data
-        }
+        return {"success": True, "data": csv_data}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export analytics: {str(e)}"
+            detail=f"Failed to export analytics: {str(e)}",
         )
 
 
 @router.get("/trends")
 async def get_trend_analysis(
-    metric: str = Query("revenue", description="Metric to analyze: revenue, invoices, clients"),
+    metric: str = Query(
+        "revenue", description="Metric to analyze: revenue, invoices, clients"
+    ),
     period: str = Query("6m", description="Period for trend analysis: 3m, 6m, 1y"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get trend analysis for key business metrics"""
     try:
@@ -294,22 +339,19 @@ async def get_trend_analysis(
             "monthly_data": growth_data.get("monthly_data", []),
             "predictions": {
                 "next_month_estimate": "Data insufficient for prediction",
-                "confidence": "Low"
+                "confidence": "Low",
             },
             "recommendations": [
                 "Continue monitoring trends monthly",
-                "Focus on client retention strategies"
-            ]
+                "Focus on client retention strategies",
+            ],
         }
 
-        return {
-            "success": True,
-            "data": trend_insights
-        }
+        return {"success": True, "data": trend_insights}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get trend analysis: {str(e)}"
+            detail=f"Failed to get trend analysis: {str(e)}",
         )
 
 
@@ -325,6 +367,6 @@ async def analytics_health():
             "predictions": True,
             "recommendations": True,
             "client_insights": True,
-            "performance_metrics": True
-        }
+            "performance_metrics": True,
+        },
     }

@@ -391,6 +391,12 @@ Tests run in parallel across:
 3. Ensure backwards compatibility
 4. Test with CI pipeline
 
+### Mobile QA Cadence
+
+- Leverage shared viewport and touch-target data in `fixtures/mobile.ts` for any mobile-first assertions.
+- Run `./scripts/ci-commands.sh mobile` each week to cover `mobile-navigation.spec.ts` and the mobile flows embedded in `happy-path.spec.ts`.
+- When backend response contracts change, refresh the fixture constants and rerun the mobile suite to guard against regressions.
+
 ### Extending Utilities
 
 1. Add to appropriate utility file

@@ -10,6 +10,7 @@ import { PaymentConfigStep } from './steps/PaymentConfigStep'
 import { InvoiceImportStep } from './steps/InvoiceImportStep'
 import { apiClient } from '@/api/client'
 import { toast } from 'react-hot-toast'
+import type { User } from '@/types/api'
 
 export type OnboardingStatus =
   | 'not_started'
@@ -36,7 +37,7 @@ export function OnboardingView() {
   const { data: user, isLoading } = useQuery({
     queryKey: ['user', 'profile'],
     queryFn: async () => {
-      const response = await apiClient.get('/auth/me')
+      const response = await apiClient.get<User>('/auth/me')
       return response.data
     }
   })

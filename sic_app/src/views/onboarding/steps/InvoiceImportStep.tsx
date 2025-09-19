@@ -7,9 +7,10 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { apiClient } from '@/api/client'
 import { toast } from 'react-hot-toast'
 import { displayError } from '@/utils/errorHandling'
+import type { User, ImportResponse } from '@/types/api'
 
 interface InvoiceImportStepProps {
-  user: any
+  user: User | undefined
   onNext: () => void
   onBack: () => void
   isLoading: boolean
@@ -22,7 +23,7 @@ export function InvoiceImportStep({ user, onNext, isLoading }: InvoiceImportStep
   // Import sample data
   const importSampleMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiClient.post('/onboarding/sample-data')
+      const response = await apiClient.post<ImportResponse>('/onboarding/sample-data')
       return response.data
     },
     onSuccess: (data) => {

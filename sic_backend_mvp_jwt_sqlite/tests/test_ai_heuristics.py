@@ -2,25 +2,27 @@
 Tests for AI heuristics module: tone presets and schedule optimization.
 """
 
+from datetime import date, datetime, timedelta, timezone, time
+
 import pytest
-from datetime import datetime, date, timezone, timedelta
 from sqlalchemy.orm import Session
-from app.models import Client, Invoice, InvoiceStatus, TemplateTone
+
 from app.ai_heuristics import (
-    choose_tone,
-    analyze_payment_behavior,
-    next_send_times,
-    get_tone_predictor,
-    get_schedule_predictor,
+    SchedulePredictor,
     TonePredictor,
-    SchedulePredictor
+    analyze_payment_behavior,
+    choose_tone,
+    get_schedule_predictor,
+    get_tone_predictor,
+    next_send_times,
 )
+from app.models import Client, Invoice, InvoiceStatus, TemplateTone
 
 
 @pytest.fixture
 def test_db():
     """Provide a fresh database session for each test"""
-    from app.database import Base, engine, SessionLocal
+    from app.database import Base, SessionLocal, engine
 
     # Clean all tables before each test
     Base.metadata.drop_all(bind=engine)
@@ -32,6 +34,7 @@ def test_db():
     finally:
         db.close()
 
+
 @pytest.fixture
 def sample_client(test_db: Session):
     """Create a test client with specific timezone."""
@@ -39,7 +42,7 @@ def sample_client(test_db: Session):
         name="Test Client",
         email="test@example.com",
         timezone="America/New_York",
-        user_id=1
+        user_id=1,
     )
     test_db.add(client)
     test_db.flush()
@@ -50,16 +53,22 @@ def sample_client(test_db: Session):
 def sample_invoices(test_db: Session, sample_client):
     """Create test invoices with payment history."""
     invoices = []
-    base_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    # Anchor to the upcoming Friday to keep behavior deterministic but within the analysis window
+    today = datetime.now(timezone.utc).date()
+    days_until_friday = (4 - today.weekday()) % 7
+    anchor = datetime.combine(
+        today + timedelta(days=days_until_friday),
+        time(hour=19, minute=0),
+        tzinfo=timezone.utc,
+    )
 
-    # Create invoices with different payment patterns
+    # (due_date, paid_at) pairs yield lateness: -2, -1, +4, +2, +1 (avg = 0.8)
     payment_patterns = [
-        # (due_date, paid_at, days_late, weekday, hour)
-        (date(2024, 1, 10), datetime(2024, 1, 8, 14, 30, tzinfo=timezone.utc)),   # Early: -2 days, Tuesday 2:30 PM
-        (date(2024, 1, 20), datetime(2024, 1, 19, 15, 0, tzinfo=timezone.utc)),   # Early: -1 day, Friday 3 PM
-        (date(2024, 2, 1), datetime(2024, 2, 5, 14, 15, tzinfo=timezone.utc)),    # Late: +4 days, Monday 2:15 PM
-        (date(2024, 2, 15), datetime(2024, 2, 16, 14, 45, tzinfo=timezone.utc)),  # Late: +1 day, Friday 2:45 PM
-        (date(2024, 3, 1), datetime(2024, 3, 1, 15, 30, tzinfo=timezone.utc)),    # On time: 0 days, Friday 3:30 PM
+        (anchor.date() + timedelta(days=2), anchor.replace(minute=30)),  # Early by 2 days
+        (anchor.date() + timedelta(days=1), anchor.replace(hour=18, minute=0)),  # Early by 1 day
+        (anchor.date() - timedelta(days=4), anchor.replace(hour=17, minute=0)),  # Late by 4 days
+        (anchor.date() - timedelta(days=2), anchor.replace(hour=20, minute=15)),  # Late by 2 days
+        (anchor.date() - timedelta(days=1), anchor.replace(hour=21, minute=45)),  # Late by 1 day
     ]
 
     for i, (due_date, paid_at) in enumerate(payment_patterns):
@@ -71,7 +80,7 @@ def sample_invoices(test_db: Session, sample_client):
             due_date=due_date,
             status=InvoiceStatus.paid,
             paid_at=paid_at,
-            external_id=f"test-{i}"
+            external_id=f"test-{i}",
         )
         test_db.add(invoice)
         invoices.append(invoice)
@@ -82,9 +91,9 @@ def sample_invoices(test_db: Session, sample_client):
         user_id=1,
         amount_cents=15000,
         currency="USD",
-        due_date=date.today() + timedelta(days=5),
+        due_date=(datetime.now(timezone.utc) + timedelta(days=5)).date(),
         status=InvoiceStatus.pending,
-        external_id="unpaid-test"
+        external_id="unpaid-test",
     )
     test_db.add(unpaid_invoice)
     invoices.append(unpaid_invoice)
@@ -147,7 +156,9 @@ class TestToneSelection:
 class TestPaymentBehaviorAnalysis:
     """Test payment pattern analysis."""
 
-    def test_basic_behavior_analysis(self, test_db: Session, sample_client, sample_invoices):
+    def test_basic_behavior_analysis(
+        self, test_db: Session, sample_client, sample_invoices
+    ):
         """Test basic payment behavior calculation."""
         behavior = analyze_payment_behavior(sample_client.id, test_db)
 
@@ -161,8 +172,8 @@ class TestPaymentBehaviorAnalysis:
         # Should have analyzed 5 paid invoices
         assert behavior["payment_count"] == 5
 
-        # Average lateness: (-2 + -1 + 4 + 1 + 0) / 5 = 0.4 days
-        assert abs(behavior["avg_days_late"] - 0.4) < 0.1
+        # Average lateness: (-2 + -1 + 4 + 2 + 1) / 5 = 0.8 days
+        assert abs(behavior["avg_days_late"] - 0.8) < 0.1
 
         # Friday should be most common (3 out of 5 payments)
         assert behavior["modal_day_of_week"] == 4  # Friday
@@ -171,9 +182,11 @@ class TestPaymentBehaviorAnalysis:
     def test_behavior_analysis_no_history(self, test_db: Session):
         """Test behavior analysis with no payment history."""
         # Create client with no invoices
-        client = Client(name="No History", email="none@test.com", timezone="UTC", user_id=1)
-        db.add(client)
-        db.flush()
+        client = Client(
+            name="No History", email="none@test.com", timezone="UTC", user_id=1
+        )
+        test_db.add(client)
+        test_db.flush()
 
         behavior = analyze_payment_behavior(client.id, test_db)
 
@@ -195,12 +208,16 @@ class TestPaymentBehaviorAnalysis:
 class TestScheduleOptimization:
     """Test reminder scheduling optimization."""
 
-    def test_next_send_times_generation(self, test_db: Session, sample_client, sample_invoices):
+    def test_next_send_times_generation(
+        self, test_db: Session, sample_client, sample_invoices
+    ):
         """Test generation of optimal reminder times."""
         # Get the unpaid invoice
-        unpaid_invoice = [inv for inv in sample_invoices if inv.status == InvoiceStatus.pending][0]
+        unpaid_invoice = [
+            inv for inv in sample_invoices if inv.status == InvoiceStatus.pending
+        ][0]
 
-        send_times = next_send_times(unpaid_invoice.id, db, reminder_count=3)
+        send_times = next_send_times(unpaid_invoice.id, test_db, reminder_count=3)
 
         assert len(send_times) == 3
 
@@ -213,14 +230,19 @@ class TestScheduleOptimization:
         for i in range(len(send_times) - 1):
             assert send_times[i] <= send_times[i + 1]
 
-    def test_send_times_client_timezone_handling(self, test_db: Session, sample_client, sample_invoices):
+    def test_send_times_client_timezone_handling(
+        self, test_db: Session, sample_client, sample_invoices
+    ):
         """Test that send times respect client timezone preferences."""
-        unpaid_invoice = [inv for inv in sample_invoices if inv.status == InvoiceStatus.pending][0]
+        unpaid_invoice = [
+            inv for inv in sample_invoices if inv.status == InvoiceStatus.pending
+        ][0]
 
-        send_times = next_send_times(unpaid_invoice.id, db, reminder_count=2)
+        send_times = next_send_times(unpaid_invoice.id, test_db, reminder_count=2)
 
         # Convert back to client timezone to check hour
         from zoneinfo import ZoneInfo
+
         ny_tz = ZoneInfo("America/New_York")
 
         for send_time in send_times:
@@ -250,7 +272,9 @@ class TestModularInterface:
         # Test training interface (should not raise error)
         predictor.train([])
 
-    def test_schedule_predictor_interface(self, test_db: Session, sample_client, sample_invoices):
+    def test_schedule_predictor_interface(
+        self, test_db: Session, sample_client, sample_invoices
+    ):
         """Test SchedulePredictor interface."""
         predictor = get_schedule_predictor()
         assert isinstance(predictor, SchedulePredictor)
@@ -261,7 +285,9 @@ class TestModularInterface:
         assert behavior["payment_count"] > 0
 
         # Test schedule prediction
-        unpaid_invoice = [inv for inv in sample_invoices if inv.status == InvoiceStatus.pending][0]
+        unpaid_invoice = [
+            inv for inv in sample_invoices if inv.status == InvoiceStatus.pending
+        ][0]
         schedule = predictor.predict(unpaid_invoice.id, test_db)
         assert isinstance(schedule, list)
         assert len(schedule) > 0
@@ -288,10 +314,10 @@ class TestEdgeCases:
             name="Bad TZ Client",
             email="badtz@test.com",
             timezone="Invalid/Timezone",
-            user_id=1
+            user_id=1,
         )
-        db.add(client)
-        db.flush()
+        test_db.add(client)
+        test_db.flush()
 
         # Should handle gracefully
         behavior = analyze_payment_behavior(client.id, test_db)
@@ -300,14 +326,15 @@ class TestEdgeCases:
     def test_large_payment_delays(self, test_db: Session, sample_client):
         """Test handling of extremely late payments."""
         # Create invoice with very late payment
+        base_date = datetime.now(timezone.utc) - timedelta(days=30)
         invoice = Invoice(
             client_id=sample_client.id,
             user_id=1,
             amount_cents=5000,
             currency="USD",
-            due_date=date(2024, 1, 1),
+            due_date=(base_date - timedelta(days=60)).date(),
             status=InvoiceStatus.paid,
-            paid_at=datetime(2024, 3, 1, 12, 0, tzinfo=timezone.utc)  # ~60 days late
+            paid_at=base_date,  # ~60 days late
         )
         test_db.add(invoice)
         test_db.flush()
@@ -320,13 +347,16 @@ class TestEdgeCases:
 
     def test_early_payments_handling(self, test_db: Session):
         """Test handling of consistently early payments."""
-        client = Client(name="Early Payer", email="early@test.com", timezone="UTC", user_id=1)
-        db.add(client)
-        db.flush()
+        client = Client(
+            name="Early Payer", email="early@test.com", timezone="UTC", user_id=1
+        )
+        test_db.add(client)
+        test_db.flush()
 
         # Create invoices with early payments
+        base_date = datetime.now(timezone.utc) - timedelta(days=30)
         for i in range(3):
-            due_date = date.today() + timedelta(days=i*10)
+            due_date = (base_date + timedelta(days=i * 10)).date()
             paid_date = due_date - timedelta(days=5)  # Always 5 days early
 
             invoice = Invoice(
@@ -336,11 +366,13 @@ class TestEdgeCases:
                 currency="USD",
                 due_date=due_date,
                 status=InvoiceStatus.paid,
-                paid_at=datetime.combine(paid_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+                paid_at=datetime.combine(paid_date, datetime.min.time()).replace(
+                    tzinfo=timezone.utc
+                ),
             )
-            db.add(invoice)
+            test_db.add(invoice)
 
-        db.flush()
+        test_db.flush()
 
         behavior = analyze_payment_behavior(client.id, test_db)
 
@@ -359,7 +391,9 @@ class TestIntegration:
         assert behavior["payment_count"] > 0
 
         # Generate schedule
-        unpaid_invoice = [inv for inv in sample_invoices if inv.status == InvoiceStatus.pending][0]
+        unpaid_invoice = [
+            inv for inv in sample_invoices if inv.status == InvoiceStatus.pending
+        ][0]
         schedule = next_send_times(unpaid_invoice.id, test_db)
         assert len(schedule) > 0
 

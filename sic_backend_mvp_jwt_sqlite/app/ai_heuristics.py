@@ -10,24 +10,26 @@ The approach uses simple heuristics that can be easily replaced with
 learned models as more data becomes available.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
-from sqlalchemy.orm import Session
-from app.models import Client, Invoice, TemplateTone
-from zoneinfo import ZoneInfo
 import logging
+from datetime import datetime, timedelta, timezone, time
+from typing import Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
+
+from sqlalchemy.orm import Session
+
+from app.models import Client, Invoice, TemplateTone
 
 logger = logging.getLogger(__name__)
 
 # Configuration constants - can be moved to environment variables
 DEFAULT_TONE_THRESHOLDS = {
-    "friendly": 0,      # 0-2 days overdue
-    "neutral": 3,       # 3-9 days overdue
-    "firm": 10          # 10+ days overdue
+    "friendly": 0,  # 0-2 days overdue
+    "neutral": 3,  # 3-9 days overdue
+    "firm": 10,  # 10+ days overdue
 }
 
 DEFAULT_REMINDER_OFFSET_DAYS = 1  # Send reminders 1 day before due date by default
-ADAPTIVE_WINDOW_DAYS = 90        # Look at last 90 days for behavior analysis
+ADAPTIVE_WINDOW_DAYS = 90  # Look at last 90 days for behavior analysis
 
 
 def choose_tone(client_id: int, overdue_days: int, db: Session) -> TemplateTone:
@@ -109,12 +111,16 @@ def analyze_payment_behavior(client_id: int, db: Session) -> Dict[str, any]:
         # Get paid invoices within adaptive window
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=ADAPTIVE_WINDOW_DAYS)
 
-        paid_invoices = db.query(Invoice).filter(
-            Invoice.client_id == client_id,
-            Invoice.paid_at.isnot(None),
-            Invoice.due_date.isnot(None),
-            Invoice.paid_at >= cutoff_date
-        ).all()
+        paid_invoices = (
+            db.query(Invoice)
+            .filter(
+                Invoice.client_id == client_id,
+                Invoice.paid_at.isnot(None),
+                Invoice.due_date.isnot(None),
+                Invoice.paid_at >= cutoff_date,
+            )
+            .all()
+        )
 
         if not paid_invoices:
             logger.info(f"No payment history found for client {client_id}")
@@ -138,14 +144,22 @@ def analyze_payment_behavior(client_id: int, db: Session) -> Dict[str, any]:
 
         # Find modal payment day and hour
         modal_day, modal_hour = _find_modal_time(payment_times)
-        weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        weekday_names = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
 
         result = {
-            'avg_days_late': round(avg_late, 2),
-            'modal_day_of_week': modal_day,
-            'modal_hour': modal_hour,
-            'payment_count': len(paid_invoices),
-            'preferred_weekday_name': weekday_names[modal_day]
+            "avg_days_late": round(avg_late, 2),
+            "modal_day_of_week": modal_day,
+            "modal_hour": modal_hour,
+            "payment_count": len(paid_invoices),
+            "preferred_weekday_name": weekday_names[modal_day],
         }
 
         logger.info(f"Payment behavior for client {client_id}: {result}")
@@ -156,8 +170,9 @@ def analyze_payment_behavior(client_id: int, db: Session) -> Dict[str, any]:
         return _default_behavior()
 
 
-def next_send_times(invoice_id: int, db: Session,
-                   reminder_count: int = 3) -> List[datetime]:
+def next_send_times(
+    invoice_id: int, db: Session, reminder_count: int = 3
+) -> List[datetime]:
     """
     Generate optimal reminder send times for an invoice based on client behavior.
 
@@ -196,10 +211,10 @@ def next_send_times(invoice_id: int, db: Session,
         # Calculate optimal reminder schedule
         send_times = []
         due_date = invoice.due_date
-        preferred_hour = behavior['modal_hour']
+        preferred_hour = behavior["modal_hour"]
 
         # Adjust for client's payment lateness pattern
-        avg_late = behavior['avg_days_late']
+        avg_late = behavior["avg_days_late"]
 
         # Schedule reminders around due date, adjusted for client behavior
         reminder_offsets = _calculate_reminder_offsets(avg_late, reminder_count)
@@ -207,26 +222,19 @@ def next_send_times(invoice_id: int, db: Session,
         for offset_days in reminder_offsets:
             reminder_date = due_date + timedelta(days=offset_days)
 
-            # Set time to client's preferred hour in their timezone
-            reminder_datetime = datetime.combine(
-                reminder_date,
-                datetime.min.time().replace(hour=preferred_hour)
-            )
-
-            # Convert to timezone-aware datetime in client timezone, then to UTC
-            try:
-                local_dt = client_tz.localize(reminder_datetime)
-                utc_dt = local_dt.astimezone(timezone.utc)
-            except Exception:
-                # Fallback: create UTC datetime directly
-                utc_dt = reminder_datetime.replace(tzinfo=timezone.utc)
+            # Set time to client's preferred hour and convert to UTC
+            local_dt = datetime.combine(reminder_date, time(hour=preferred_hour))
+            local_dt = local_dt.replace(tzinfo=client_tz)
+            utc_dt = local_dt.astimezone(timezone.utc)
 
             send_times.append(utc_dt)
 
         # Sort chronologically
         send_times.sort()
 
-        logger.info(f"Generated {len(send_times)} reminder times for invoice {invoice_id}")
+        logger.info(
+            f"Generated {len(send_times)} reminder times for invoice {invoice_id}"
+        )
         return send_times
 
     except Exception as e:
@@ -236,24 +244,25 @@ def next_send_times(invoice_id: int, db: Session,
 
 # Helper functions
 
+
 def _default_behavior() -> Dict[str, any]:
     """Return default behavior when no payment history exists."""
     return {
-        'avg_days_late': 0.0,
-        'modal_day_of_week': 4,  # Friday
-        'modal_hour': 14,        # 2 PM
-        'payment_count': 0,
-        'preferred_weekday_name': 'Friday'
+        "avg_days_late": 0.0,
+        "modal_day_of_week": 4,  # Friday
+        "modal_hour": 14,  # 2 PM
+        "payment_count": 0,
+        "preferred_weekday_name": "Friday",
     }
 
 
 def _get_client_timezone(client: Client) -> ZoneInfo:
     """Get client timezone, defaulting to UTC if invalid."""
     try:
-        return ZoneInfo(client.timezone or 'UTC')
+        return ZoneInfo(client.timezone or "UTC")
     except Exception:
         logger.warning(f"Invalid timezone {client.timezone} for client {client.id}")
-        return ZoneInfo('UTC')
+        return ZoneInfo("UTC")
 
 
 def _to_client_timezone(dt: datetime, client_tz: ZoneInfo) -> datetime:
@@ -309,6 +318,7 @@ def _calculate_reminder_offsets(avg_late: float, reminder_count: int) -> List[in
 
 # Modular interface for future ML integration
 
+
 class TonePredictor:
     """
     Modular interface for tone prediction.
@@ -346,6 +356,7 @@ class SchedulePredictor:
 
 
 # Factory functions for easy model swapping
+
 
 def get_tone_predictor() -> TonePredictor:
     """Get tone predictor instance. Can be configured to return ML models."""

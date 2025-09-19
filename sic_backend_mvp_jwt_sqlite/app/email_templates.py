@@ -2,50 +2,54 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Tuple, Dict
-from jinja2 import Environment, BaseLoader, StrictUndefined
-import markdown as md
+from typing import Dict, Tuple
+
 import bleach
+import markdown as md
+from jinja2 import BaseLoader, Environment, StrictUndefined, select_autoescape
 
-
-TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates', 'email')
+TEMPLATES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "templates", "email"
+)
 
 
 def _parse_frontmatter(text: str) -> tuple[Dict[str, str], str]:
     # Minimal frontmatter parser supporting simple key: value and folded scalars (">-" or "|")
-    if not text.startswith('---'):
+    if not text.startswith("---"):
         return {}, text
-    parts = text.split('\n', 1)[1]
-    fm, rest = parts.split('\n---', 1)
+    parts = text.split("\n", 1)[1]
+    fm, rest = parts.split("\n---", 1)
     lines = fm.splitlines()
     meta: Dict[str, str] = {}
     i = 0
     while i < len(lines):
         raw = lines[i]
-        ln = raw.rstrip('\n')
+        ln = raw.rstrip("\n")
         if not ln.strip():
             i += 1
             continue
-        if ':' in ln:
-            k, v = ln.split(':', 1)
+        if ":" in ln:
+            k, v = ln.split(":", 1)
             key = k.strip()
             val = v.strip()
             # Handle folded scalar values (subject: >- ; next indented lines contain the value)
-            if val in ('>-', '>', '|', '|-'):
+            if val in (">-", ">", "|", "|-"):
                 i += 1
                 buf: list[str] = []
-                while i < len(lines) and (lines[i].startswith(' ') or lines[i].startswith('\t')):
+                while i < len(lines) and (
+                    lines[i].startswith(" ") or lines[i].startswith("\t")
+                ):
                     buf.append(lines[i].lstrip())
                     i += 1
                 # Join with spaces to emulate YAML folded style
-                meta[key] = ' '.join(buf).strip()
+                meta[key] = " ".join(buf).strip()
                 continue
             else:
                 # Simple inline value
                 meta[key] = val.strip()
         i += 1
     # Trim leading newlines from the remainder for cleaner markdown body
-    while rest and rest.startswith('\n'):
+    while rest and rest.startswith("\n"):
         rest = rest[1:]
     return meta, rest
 
@@ -54,20 +58,31 @@ def load_markdown_template(name: str) -> tuple[str, str]:
     path = os.path.join(TEMPLATES_DIR, f"{name}.md")
     if not os.path.exists(path):
         raise FileNotFoundError(f"Template not found: {name}")
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         raw = f.read()
     meta, body_md = _parse_frontmatter(raw)
-    subject_tpl = meta.get('subject', '{{ subject }}')
+    subject_tpl = meta.get("subject", "{{ subject }}")
     return subject_tpl, body_md
 
 
-def discover_missing_vars(subject_tpl: str, body_md_tpl: str, provided: dict) -> list[str]:
-    names = set(re.findall(r"\{\{\s*([a-zA-Z_][\w]*)\s*\}\}", subject_tpl + "\n" + body_md_tpl))
+def discover_missing_vars(
+    subject_tpl: str, body_md_tpl: str, provided: dict
+) -> list[str]:
+    names = set(
+        re.findall(r"\{\{\s*([a-zA-Z_][\w]*)\s*\}\}", subject_tpl + "\n" + body_md_tpl)
+    )
     return sorted([n for n in names if n not in provided])
 
 
-def render_markdown_template(subject_tpl: str, body_md_tpl: str, vars: dict) -> tuple[str, str, str]:
-    env = Environment(loader=BaseLoader(), undefined=StrictUndefined, autoescape=False)
+def render_markdown_template(
+    subject_tpl: str, body_md_tpl: str, vars: dict
+) -> tuple[str, str, str]:
+    # Enable autoescaping explicitly; select_autoescape ensures strings are escaped by default
+    env = Environment(
+        loader=BaseLoader(),
+        undefined=StrictUndefined,
+        autoescape=select_autoescape(default_for_string=True, default=True),
+    )
     subj = env.from_string(subject_tpl).render(**vars)
     body_md = env.from_string(body_md_tpl).render(**vars)
     body_html = md.markdown(body_md, extensions=["extra", "sane_lists", "smarty"])  # type: ignore
@@ -80,11 +95,21 @@ def render_markdown_template(subject_tpl: str, body_md_tpl: str, vars: dict) -> 
 
 def sanitize_html(html: str) -> str:
     allowed_tags = [
-        'a', 'p', 'strong', 'em', 'b', 'i', 'br', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre'
+        "a",
+        "p",
+        "strong",
+        "em",
+        "b",
+        "i",
+        "br",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "code",
+        "pre",
     ]
-    allowed_attrs = {
-        'a': ['href', 'title', 'target', 'rel']
-    }
+    allowed_attrs = {"a": ["href", "title", "target", "rel"]}
     return bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
 
 

@@ -23,6 +23,7 @@ const DashboardView = React.lazy(() => import('./views/dashboard/DashboardView')
 const InvoicesView = React.lazy(() => import('./views/invoices/InvoicesView').then(module => ({ default: module.InvoicesView })))
 const InvoiceDetailView = React.lazy(() => import('./views/invoices/InvoiceDetailView').then(module => ({ default: module.InvoiceDetailView })))
 const InvoiceCreateView = React.lazy(() => import('./views/invoices/InvoiceCreateView').then(module => ({ default: module.InvoiceCreateView })))
+const InvoiceEditView = React.lazy(() => import('./views/invoices/InvoiceEditView').then(module => ({ default: module.InvoiceEditView })))
 const ClientsView = React.lazy(() => import('./views/clients/ClientsView').then(module => ({ default: module.ClientsView })))
 const ClientDetailView = React.lazy(() => import('./views/clients/ClientDetailView').then(module => ({ default: module.ClientDetailView })))
 const ClientCreateView = React.lazy(() => import('./views/clients/ClientCreateView').then(module => ({ default: module.ClientCreateView })))
@@ -221,6 +222,14 @@ export default function App() {
                           element={
                             <ErrorBoundary level="component">
                               <InvoiceDetailView />
+                            </ErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="invoices/:id/edit"
+                          element={
+                            <ErrorBoundary level="component">
+                              <InvoiceEditView />
                             </ErrorBoundary>
                           }
                         />

@@ -1,22 +1,117 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Clock } from 'lucide-react'
+import { ArrowLeft, Mail, Clock, Edit } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ReminderScheduleTimeline } from '@/components/common/ReminderScheduleTimeline'
-import { useInvoice, useReminders } from '@/api/hooks'
+import { useInvoice, useReminders, useCreateReminder, useUpdateReminder, useDeleteReminder } from '@/api/hooks'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 export function InvoiceDetailView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const invoiceId = parseInt(id || '0')
-  
+  const [isCreatingReminder, setIsCreatingReminder] = useState(false)
+  const [editingReminder, setEditingReminder] = useState<number | null>(null)
+
   const { data: invoice, isLoading } = useInvoice(invoiceId)
-  const { data: remindersData } = useReminders({ limit: 10, offset: 0 })
-  
-  // Filter reminders for this invoice (simplified)
+  const { data: remindersData } = useReminders({ limit: 100, offset: 0 })
+  const createReminder = useCreateReminder()
+  const updateReminder = useUpdateReminder()
+  const deleteReminder = useDeleteReminder()
+
+  // Filter reminders for this invoice
   const reminders = (remindersData?.data || []).filter(r => r.invoice_id === invoiceId)
+
+  const handleSendReminder = async () => {
+    if (!invoice) return
+
+    // Check for existing pending reminders
+    const pendingReminders = reminders.filter(r => r.status === 'pending')
+    if (pendingReminders.length > 0) {
+      toast.error('There are already pending reminders scheduled for this invoice. Please edit or delete existing reminders instead of creating duplicates.')
+      return
+    }
+
+    setIsCreatingReminder(true)
+    try {
+      // Create a reminder for tomorrow
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(9, 0, 0, 0) // 9 AM tomorrow
+
+      await createReminder.mutateAsync({
+        invoice_id: invoiceId,
+        send_at: tomorrow.toISOString(),
+        channel: 'email',
+        subject: `Payment Reminder - Invoice #${invoice.id}`,
+        body: `Hello,\n\nThis is a friendly reminder that your invoice #${invoice.id} for ${formatCurrency(invoice.amount_cents, invoice.currency)} is due on ${formatDate(invoice.due_date)}.\n\nThank you for your business.`
+      })
+
+      toast.success('Reminder scheduled successfully!')
+    } catch (error) {
+      console.error('Failed to create reminder:', error)
+      toast.error('Failed to schedule reminder. Please try again.')
+    } finally {
+      setIsCreatingReminder(false)
+    }
+  }
+
+  const handleEditInvoice = () => {
+    navigate(`/invoices/${invoiceId}/edit`)
+  }
+
+  const handleEditReminder = async (reminder: any) => {
+    // For now, just prompt for a new date and update the reminder
+    const newDateStr = prompt('Enter new reminder date (YYYY-MM-DD HH:MM):',
+      reminder.send_at.split('T')[0] + ' ' + reminder.send_at.split('T')[1].substring(0, 5)
+    )
+
+    if (!newDateStr) return
+
+    try {
+      setEditingReminder(reminder.id)
+      const newDate = new Date(newDateStr)
+
+      if (isNaN(newDate.getTime())) {
+        toast.error('Invalid date format. Please use YYYY-MM-DD HH:MM')
+        return
+      }
+
+      await updateReminder.mutateAsync({
+        id: reminder.id,
+        data: {
+          send_at: newDate.toISOString(),
+          subject: reminder.subject,
+          body: reminder.body,
+          channel: reminder.channel
+        }
+      })
+
+      toast.success('Reminder updated successfully!')
+    } catch (error) {
+      console.error('Failed to update reminder:', error)
+      toast.error('Failed to update reminder. Please try again.')
+    } finally {
+      setEditingReminder(null)
+    }
+  }
+
+  const handleDeleteReminder = async (reminderId: number) => {
+    if (!confirm('Are you sure you want to delete this reminder?')) {
+      return
+    }
+
+    try {
+      await deleteReminder.mutateAsync(reminderId)
+      toast.success('Reminder deleted successfully!')
+    } catch (error) {
+      console.error('Failed to delete reminder:', error)
+      toast.error('Failed to delete reminder. Please try again.')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -122,11 +217,20 @@ export function InvoiceDetailView() {
                 )}
                 
                 <div className="flex gap-2 pt-4">
-                  <Button size="sm">
+                  <Button
+                    size="sm"
+                    onClick={handleSendReminder}
+                    disabled={isCreatingReminder || invoice.status === 'paid'}
+                  >
                     <Mail className="h-4 w-4 mr-2" />
-                    Send Reminder
+                    {isCreatingReminder ? 'Scheduling...' : 'Send Reminder'}
                   </Button>
-                  <Button variant="secondary" size="sm">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleEditInvoice}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
                     Edit Invoice
                   </Button>
                 </div>
@@ -138,8 +242,9 @@ export function InvoiceDetailView() {
           <ReminderScheduleTimeline
             reminders={reminders}
             onSendNow={(id) => console.log('Send reminder', id)}
-            onEditReminder={(reminder) => console.log('Edit reminder', reminder)}
-            onDeleteReminder={(id) => console.log('Delete reminder', id)}
+            onEditReminder={handleEditReminder}
+            onDeleteReminder={handleDeleteReminder}
+            isLoading={editingReminder !== null || deleteReminder.isPending}
           />
         </div>
 

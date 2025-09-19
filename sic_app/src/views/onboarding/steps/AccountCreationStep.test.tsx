@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AccountCreationStep } from './AccountCreationStep'
 import { apiClient } from '@/api/client'
+import { createMockUser } from '@/test/mockUtils'
 
 // Mock the API
 vi.mock('@/api/client', () => ({
@@ -36,26 +37,23 @@ describe('AccountCreationStep', () => {
   const mockOnNext = vi.fn()
   const mockOnBack = vi.fn()
 
-  const mockUser = {
-    id: 1,
-    email: 'test@example.com',
+  const mockUser = createMockUser({
     email_verified: false,
-    email_verification_token: null
-  }
+    email_verification_token: null,
+    onboarding_status: 'account_creation'
+  })
 
-  const mockVerifiedUser = {
-    id: 1,
-    email: 'test@example.com',
+  const mockVerifiedUser = createMockUser({
     email_verified: true,
-    email_verification_token: 'some-token'
-  }
+    email_verification_token: 'some-token',
+    onboarding_status: 'completed'
+  })
 
-  const mockUserWithToken = {
-    id: 1,
-    email: 'test@example.com',
+  const mockUserWithToken = createMockUser({
     email_verified: false,
-    email_verification_token: 'verification-token-123'
-  }
+    email_verification_token: 'verification-token-123',
+    onboarding_status: 'account_creation'
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()

@@ -13,13 +13,16 @@ import {
   Monitor,
   Crown,
   Gift,
-  HelpCircle
+  HelpCircle,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/api/client'
 import { Button } from '../ui/Button'
 import { cn } from '@/lib/utils'
 import { useNavigationSwipes, isTouchDevice } from '@/hooks/useSwipeGestures'
+import { withErrorBoundary } from '@/components/ErrorBoundary'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -35,7 +38,7 @@ const navigation = [
   { name: 'Help & FAQ', href: '/help/faq', icon: HelpCircle },
 ]
 
-export function AppLayout({ children }: AppLayoutProps) {
+function AppLayoutBase({ children }: AppLayoutProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const { logout } = useAuth()
@@ -268,3 +271,36 @@ export function AppLayout({ children }: AppLayoutProps) {
     </div>
   )
 }
+
+function AppLayoutFallback(): JSX.Element {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 px-6">
+      <div className="max-w-lg w-full bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 text-center space-y-4">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+        </div>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+          Something went wrong loading the dashboard shell
+        </h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Try reloading the page. If the issue persists, visit the help center or contact support so we can help restore your workspace.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reload dashboard
+          </Button>
+          <Button variant="outline" onClick={() => window.location.assign('/help/faq')}>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Visit help center
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export const AppLayout = withErrorBoundary(AppLayoutBase, {
+  level: 'page',
+  fallback: <AppLayoutFallback />
+})

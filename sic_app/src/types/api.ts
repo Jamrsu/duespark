@@ -1,7 +1,7 @@
 export interface Envelope<T> {
-  success: boolean
+  success?: boolean
   data: T
-  meta: {
+  meta?: {
     total?: number
     limit?: number
     offset?: number
@@ -40,11 +40,15 @@ export interface User {
   id: number
   email: string
   email_verified: boolean
+  email_verification_token?: string | null
   onboarding_status: string
   payment_method?: string | null
   stripe_account_id?: string | null
   created_at: string
   updated_at: string
+  theme?: string
+  email_notifications?: boolean
+  payment_reminders?: boolean
 }
 
 // Client types
@@ -94,6 +98,10 @@ export interface CreateInvoiceRequest {
 }
 
 export interface UpdateInvoiceRequest {
+  client_id?: number
+  amount_cents?: number
+  currency?: string
+  due_date?: string
   status?: InvoiceStatus
   paid_at?: string | null
 }
@@ -190,4 +198,24 @@ export interface EmailPreviewRequest {
   invoice_id: number
   template_id?: number
   tone?: string
+}
+
+// Additional response types for common API patterns
+export interface MessageResponse {
+  message: string
+  demo_auto_verified?: boolean
+}
+
+export interface ImportResponse {
+  clients_created: number
+  invoices_created: number
+  message?: string
+}
+
+export interface StripeConnectResponse {
+  authorization_url?: string
+  url?: string
+  error?: string
+  demo_mode?: boolean
+  message?: string
 }

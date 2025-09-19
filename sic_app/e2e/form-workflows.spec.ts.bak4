@@ -1,0 +1,279 @@
+import { test, expect } from '@playwright/test'
+
+test.describe('Form Workflows', () => {
+  test.describe('Client Management Forms', () => {
+    test('should create a new client with all fields', async ({ page }) => {
+      await page.goto('/clients/new')
+      
+      // Verify form elements are visible
+      await expect(page.locator('label:has-text("Client Name") + * input')).toBeVisible()
+      await expect(page.locator('label:has-text("Email") + * input')).toBeVisible()
+      await expect(page.locator('label:has-text("Contact Name") + * input')).toBeVisible()
+      await expect(page.locator('label:has-text("Phone Number") + * input')).toBeVisible()
+      await expect(page.locator('label:has-text("Timezone") + * select')).toBeVisible()
+      
+      // Fill out form with complete data
+      await page.locator('input[name="name"]').fill('Test Company Ltd')
+      await page.locator('input[name="email"]').fill('contact@testcompany.com')
+      await page.locator('input[name="contact_name"]').fill('Jane Smith')
+      await page.locator('input[name="contact_phone"]').fill('+1 (555) 123-4567')
+      await page.locator('select[name="timezone"]').selectOption('America/New_York')
+      
+      // Submit form
+      await page.getByRole('button', { name: /create client/i }).click()
+      
+      // Should redirect to client detail view
+      await expect(page).toHaveURL(/\/clients\/\d+/)
+      
+      // Verify client data is displayed
+      await expect(page.getByText('Test Company Ltd')).toBeVisible()
+      await expect(page.getByText('contact@testcompany.com')).toBeVisible()
+      await expect(page.getByText('Jane Smith')).toBeVisible()
+      await expect(page.getByText('+1 (555) 123-4567')).toBeVisible()
+    })
+
+    test('should validate required fields on client creation', async ({ page }) => {
+      await page.goto('/clients/new')
+      
+      // Try to submit empty form
+      await page.getByRole('button', { name: /create client/i }).click()
+      
+      // Should show validation errors
+      await expect(page.getByText(/client name is required/i)).toBeVisible()
+      await expect(page.getByText(/email is required/i)).toBeVisible()
+    })
+
+    test('should validate email format', async ({ page }) => {
+      await page.goto('/clients/new')
+      
+      // Fill invalid email
+      await page.locator('input[name="name"]').fill('Test Company')
+      await page.locator('input[name="email"]').fill('invalid-email')
+      
+      await page.getByRole('button', { name: /create client/i }).click()
+      
+      // Should show email validation error
+      await expect(page.getByText(/please enter a valid email address/i)).toBeVisible()
+    })
+
+    test('should edit an existing client', async ({ page }) => {
+      // First, go to clients list to find a client to edit
+      await page.goto('/clients')
+      
+      // Wait for clients to load and click on the first client
+      await page.waitForSelector('[data-testid="client-card"]', { timeout: 10000 })
+      const firstClient = page.locator('[data-testid="client-card"]').first()
+      await firstClient.click()
+      
+      // Should be on client detail page
+      await expect(page).toHaveURL(/\/clients\/\d+/)
+      
+      // Click edit button
+      await page.getByRole('button', { name: /edit client/i }).click()
+      
+      // Should be on edit page
+      await expect(page).toHaveURL(/\/clients\/\d+\/edit/)
+      
+      // Form should be pre-populated
+      const nameField = page.locator('input[name="name"]')
+      await expect(nameField).not.toHaveValue('')
+
+      // Update the client name
+      const originalName = await nameField.inputValue()
+      const newName = `${originalName} - Updated`
+      await nameField.fill(newName)
+
+      // Submit the update
+      await page.getByRole('button', { name: /save client/i }).click()
+      
+      // Should redirect back to client detail
+      await expect(page).toHaveURL(/\/clients\/\d+$/)
+      
+      // Should show updated name
+      await expect(page.getByText(newName)).toBeVisible()
+    })
+  })
+
+  test.describe('Invoice Creation Form', () => {
+    test('should create a new invoice with client selection', async ({ page }) => {
+      await page.goto('/invoices/new')
+      
+      // Verify form elements are visible
+      await expect(page.locator('select[name="client_id"]')).toBeVisible()
+      await expect(page.locator('input[name="amount"]')).toBeVisible()
+      await expect(page.getByLabelText(/currency/i)).toBeVisible()
+      await expect(page.getByLabelText(/due date/i)).toBeVisible()
+      await expect(page.getByLabelText(/status/i)).toBeVisible()
+      
+      // Fill out invoice form
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 }) // Select first available client
+      await page.locator('input[name="amount"]').fill('250.00')
+      await page.getByLabelText(/currency/i).selectOption('USD')
+      
+      // Set due date to next month
+      const nextMonth = new Date()
+      nextMonth.setMonth(nextMonth.getMonth() + 1)
+      const dueDateStr = nextMonth.toISOString().split('T')[0]
+      await page.getByLabelText(/due date/i).fill(dueDateStr)
+      
+      await page.getByLabelText(/status/i).selectOption('pending')
+      
+      // Verify amount preview is shown
+      await expect(page.getByText('Invoice total: $250.00')).toBeVisible()
+      
+      // Submit form
+      await page.getByRole('button', { name: /create invoice/i }).click()
+      
+      // Should redirect to invoice detail
+      await expect(page).toHaveURL(/\/invoices\/\d+/)
+    })
+
+    test('should validate invoice form fields', async ({ page }) => {
+      await page.goto('/invoices/new')
+      
+      // Try to submit empty form
+      await page.getByRole('button', { name: /create invoice/i }).click()
+      
+      // Should show validation errors
+      await expect(page.getByText(/please select a client/i)).toBeVisible()
+      await expect(page.getByText(/amount must be greater than/i)).toBeVisible()
+      await expect(page.getByText(/due date is required/i)).toBeVisible()
+    })
+
+    test('should validate minimum amount', async ({ page }) => {
+      await page.goto('/invoices/new')
+      
+      // Try zero amount
+      await page.locator('input[name="amount"]').fill('0')
+      await page.getByRole('button', { name: /create invoice/i }).click()
+      
+      await expect(page.getByText(/amount must be greater than/i)).toBeVisible()
+      
+      // Try negative amount
+      await page.locator('input[name="amount"]').fill('-10')
+      await page.getByRole('button', { name: /create invoice/i }).click()
+      
+      await expect(page.getByText(/amount must be greater than/i)).toBeVisible()
+    })
+
+    test('should show client preview when selected', async ({ page }) => {
+      await page.goto('/invoices/new')
+      
+      // Select a client
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 })
+      
+      // Should show client preview
+      await expect(page.getByText(/invoice will be created for:/i)).toBeVisible()
+    })
+  })
+
+  test.describe('Form Loading States', () => {
+    test('should show loading states during submission', async ({ page }) => {
+      await page.goto('/clients/new')
+      
+      // Fill out minimum required fields
+      await page.locator('input[name="name"]').fill('Loading Test Client')
+      await page.getByLabelText(/email/i).fill('loading@test.com')
+      
+      // Submit form and immediately check for loading state
+      await page.getByRole('button', { name: /create client/i }).click()
+      
+      // Button should show loading text
+      await expect(page.getByRole('button', { name: /creating/i })).toBeVisible()
+      
+      // Form fields should be disabled during loading
+      await expect(page.locator('input[name="name"]')).toBeDisabled()
+    })
+  })
+
+  test.describe('Form Reset Functionality', () => {
+    test('should reset client form when reset button is clicked', async ({ page }) => {
+      await page.goto('/clients/new')
+      
+      // Fill out some fields
+      await page.locator('input[name="name"]').fill('Test Company')
+      await page.getByLabelText(/email/i).fill('test@company.com')
+      await page.getByLabelText(/contact name/i).fill('John Doe')
+      
+      // Click reset button
+      await page.getByRole('button', { name: /reset form/i }).click()
+      
+      // Fields should be cleared
+      await expect(page.locator('input[name="name"]')).toHaveValue('')
+      await expect(page.getByLabelText(/email/i)).toHaveValue('')
+      await expect(page.getByLabelText(/contact name/i)).toHaveValue('')
+    })
+
+    test('should reset invoice form when reset button is clicked', async ({ page }) => {
+      await page.goto('/invoices/new')
+      
+      // Fill out some fields
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 })
+      await page.locator('input[name="amount"]').fill('100.00')
+      
+      // Click reset button
+      await page.getByRole('button', { name: /reset form/i }).click()
+      
+      // Fields should be cleared
+      await expect(page.locator('select[name="client_id"]')).toHaveValue('')
+      await expect(page.locator('input[name="amount"]')).toHaveValue('')
+    })
+  })
+
+  test.describe('Mobile Form Experience', () => {
+    test.use({ viewport: { width: 375, height: 667 } })
+    
+    test('should handle client form on mobile', async ({ page }) => {
+      await page.goto('/clients/new')
+      
+      // Form should be mobile-friendly
+      const form = page.locator('form')
+      await expect(form).toBeVisible()
+      
+      // Input fields should have adequate touch targets
+      const inputs = page.locator('input, select, textarea')
+      const count = await inputs.count()
+      
+      for (let i = 0; i < count; i++) {
+        const input = inputs.nth(i)
+        const boundingBox = await input.boundingBox()
+        if (boundingBox && boundingBox.height > 0) {
+          expect(boundingBox.height).toBeGreaterThanOrEqual(44)
+        }
+      }
+      
+      // Buttons should be touch-friendly
+      const buttons = page.locator('button')
+      const buttonCount = await buttons.count()
+      
+      for (let i = 0; i < buttonCount; i++) {
+        const button = buttons.nth(i)
+        const boundingBox = await button.boundingBox()
+        if (boundingBox && boundingBox.height > 0) {
+          expect(boundingBox.height).toBeGreaterThanOrEqual(44)
+        }
+      }
+    })
+
+    test('should scroll form into view on mobile', async ({ page }) => {
+      await page.goto('/invoices/new')
+      
+      // Fill form top to bottom to ensure scrolling works
+      await page.locator('select[name="client_id"]').selectOption({ index: 1 })
+      await page.locator('input[name="amount"]').fill('150.00')
+      
+      // Scroll to bottom fields
+      await page.getByLabelText(/due date/i).scrollIntoViewIfNeeded()
+      
+      const nextMonth = new Date()
+      nextMonth.setMonth(nextMonth.getMonth() + 1)
+      const dueDateStr = nextMonth.toISOString().split('T')[0]
+      await page.getByLabelText(/due date/i).fill(dueDateStr)
+      
+      // Submit button should be accessible
+      const submitButton = page.getByRole('button', { name: /create invoice/i })
+      await submitButton.scrollIntoViewIfNeeded()
+      await expect(submitButton).toBeVisible()
+    })
+  })
+})

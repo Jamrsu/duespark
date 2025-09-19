@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/test'
+import {
+  mobileNavigationItems,
+  mobileViewportPresets,
+  TOUCH_TARGET_MIN_HEIGHT,
+  TOUCH_TARGET_MIN_WIDTH
+} from './fixtures/mobile'
 
 test.describe('Mobile Navigation', () => {
-  test.use({ viewport: { width: 375, height: 667 } }) // iPhone SE size
+  const seViewport = mobileViewportPresets.iphoneSE
+  test.use({ viewport: { width: seViewport.width, height: seViewport.height } })
 
   test('should have mobile-friendly navigation', async ({ page }) => {
     await page.goto('/')
@@ -9,6 +16,10 @@ test.describe('Mobile Navigation', () => {
     // Should show mobile bottom navigation
     const bottomNav = page.getByTestId('bottom-navigation')
     await expect(bottomNav).toBeVisible()
+
+    for (const item of mobileNavigationItems) {
+      await expect(page.getByTestId(item.testId)).toBeVisible()
+    }
     
     // Navigation items should be large enough for finger taps (44x44px minimum)
     const navItems = page.locator('nav a')
@@ -18,34 +29,21 @@ test.describe('Mobile Navigation', () => {
       const item = navItems.nth(i)
       const boundingBox = await item.boundingBox()
       if (boundingBox) {
-        expect(boundingBox.height).toBeGreaterThanOrEqual(44)
-        expect(boundingBox.width).toBeGreaterThanOrEqual(44)
+        expect(boundingBox.height).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN_HEIGHT)
+        expect(boundingBox.width).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN_WIDTH)
       }
     }
   })
 
   test('should navigate between main views on mobile', async ({ page }) => {
     await page.goto('/')
-    
-    // Click on Invoices in bottom nav
-    await page.getByTestId('bottom-nav-invoices').click({ force: true })
-    await page.waitForURL(/\/invoices/, { timeout: 10000 })
-    await expect(page).toHaveURL(/\/invoices/)
-    
-    // Click on Clients in bottom nav  
-    await page.getByTestId('bottom-nav-clients').click({ force: true })
-    await page.waitForURL(/\/clients/, { timeout: 10000 })
-    await expect(page).toHaveURL(/\/clients/)
-    
-    // Click on Settings in bottom nav
-    await page.getByTestId('bottom-nav-settings').click({ force: true })
-    await page.waitForTimeout(1000) // Give time for navigation
-    await expect(page).toHaveURL(/\/settings/)
-    
-    // Back to Dashboard
-    await page.getByTestId('bottom-nav-dashboard').click({ force: true })
-    await page.waitForURL('/dashboard', { timeout: 10000 })
-    await expect(page).toHaveURL('/dashboard')
+
+    for (const item of mobileNavigationItems) {
+      await page.getByTestId(item.testId).click({ force: true })
+      const globPattern = item.path.startsWith('/') ? `**${item.path}` : `**/${item.path}`
+      await page.waitForURL(globPattern, { timeout: 10000 })
+      await expect(page).toHaveURL(globPattern)
+    }
   })
 
   test('should have accessible tap targets', async ({ page }) => {
@@ -62,7 +60,7 @@ test.describe('Mobile Navigation', () => {
       const boundingBox = await element.boundingBox()
       if (boundingBox && boundingBox.width > 0 && boundingBox.height > 0) {
         // Apple's Human Interface Guidelines recommend 44x44pt minimum
-        expect(boundingBox.height).toBeGreaterThanOrEqual(40) // Slightly relaxed for flexibility
+        expect(boundingBox.height).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN_HEIGHT - 4) // Slightly relaxed for flexibility
       }
     }
   })

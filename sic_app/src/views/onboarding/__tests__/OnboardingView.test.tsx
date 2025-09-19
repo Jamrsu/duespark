@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { OnboardingView } from '../OnboardingView'
 import { useAuth, apiClient } from '@/api/client'
+import { createMockEnvelope } from '@/test/mockUtils'
 
 // Mock the auth client
 vi.mock('@/api/client', () => ({

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { InvoiceImportStep } from './InvoiceImportStep'
 import { apiClient } from '@/api/client'
+import { createMockUser } from '@/test/mockUtils'
 
 // Mock the API
 vi.mock('@/api/client', () => ({
@@ -31,10 +32,10 @@ describe('InvoiceImportStep', () => {
   const mockOnNext = vi.fn()
   const mockOnBack = vi.fn()
 
-  const mockUser = {
-    id: 1,
-    email: 'test@example.com'
-  }
+  const mockUser = createMockUser({
+    email_verified: true,
+    onboarding_status: 'data_import_pending'
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()

@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 client = TestClient(app)
@@ -37,5 +38,7 @@ def test_preview_legacy_requires_auth():
         "/reminders/preview",
         json={"invoice_id": 1, "tone": "friendly"},
     )
-    assert r.status_code in (400, 401)  # 400 when invoice_id missing vars; 401 when enforced
-
+    assert r.status_code in (
+        400,
+        401,
+    )  # 400 when invoice_id missing vars; 401 when enforced

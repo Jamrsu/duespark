@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, MapPin } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useClient } from '@/api/hooks'
+import { ClientInvoices } from '@/components/ClientInvoices'
 
 export function ClientDetailView() {
   const { id } = useParams<{ id: string }>()
@@ -10,6 +11,17 @@ export function ClientDetailView() {
   const clientId = parseInt(id || '0')
 
   const { data: client, isLoading } = useClient(clientId)
+
+  const handleSendEmail = () => {
+    // For now, show an alert. In a real app, this would open an email composer
+    // or integrate with an email service
+    if (client) {
+      const subject = encodeURIComponent(`Regarding your account - ${client.name}`)
+      const body = encodeURIComponent(`Hello ${client.contact_name || 'there'},\n\nI hope this message finds you well.\n\nBest regards`)
+      const mailtoUrl = `mailto:${client.email}?subject=${subject}&body=${body}`
+      window.open(mailtoUrl, '_blank')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -79,7 +91,7 @@ export function ClientDetailView() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Client Details */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Client Information</CardTitle>
@@ -97,7 +109,7 @@ export function ClientDetailView() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <div className="h-5 w-5 text-gray-400 flex items-center justify-center">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +125,7 @@ export function ClientDetailView() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-gray-400" />
                   <div>
@@ -125,7 +137,7 @@ export function ClientDetailView() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-gray-400" />
                   <div>
@@ -140,6 +152,9 @@ export function ClientDetailView() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Client Invoices Section */}
+          <ClientInvoices clientId={client.id} clientName={client.name} />
         </div>
 
         {/* Sidebar */}
@@ -150,25 +165,23 @@ export function ClientDetailView() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Button variant="ghost" size="sm" className="w-full justify-start">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={handleSendEmail}
+                >
                   <Mail className="h-4 w-4 mr-2" />
                   Send Email
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="w-full justify-start"
                   onClick={() => navigate(`/invoices/new?client_id=${client.id}`)}
                 >
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Invoice
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={() => navigate(`/invoices?client_id=${client.id}`)}
-                >
-                  View Invoices
                 </Button>
               </div>
             </CardContent>

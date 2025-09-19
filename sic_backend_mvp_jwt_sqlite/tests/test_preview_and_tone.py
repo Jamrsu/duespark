@@ -1,12 +1,15 @@
-from fastapi.testclient import TestClient
-from app.main import app
 import uuid
+
+from fastapi.testclient import TestClient
+
+from app.main import app
 
 client = TestClient(app)
 
+
 def make_headers():
     email = f"tone_{uuid.uuid4().hex[:8]}@example.com"
-    password = "secret123"
+    password = "Secret123!"
     r = client.post("/auth/register", json={"email": email, "password": password})
     assert r.status_code in (200, 409)
     r = client.post("/auth/login", data={"username": email, "password": password})
@@ -32,8 +35,12 @@ def test_preview_variables_missing_keys():
     # Check for the new error response structure
     error_message = response_data.get("error", {}).get("message", {})
     assert "missing" in error_message
-    missing = set(error_message["missing"]) if isinstance(error_message, dict) else set()
-    assert {"amount_formatted", "due_date_iso", "pay_link", "from_name"}.issubset(missing)
+    missing = (
+        set(error_message["missing"]) if isinstance(error_message, dict) else set()
+    )
+    assert {"amount_formatted", "due_date_iso", "pay_link", "from_name"}.issubset(
+        missing
+    )
 
 
 def test_preview_returns_html_and_text_and_tone_affects_subject():
@@ -46,8 +53,16 @@ def test_preview_returns_html_and_text_and_tone_affects_subject():
         "from_name": "Your Studio",
     }
     headers = make_headers()
-    friendly = client.post("/reminders/preview", headers=headers, json={"template": "reminder", "tone": "friendly", "variables": full_vars})
-    firm = client.post("/reminders/preview", headers=headers, json={"template": "reminder", "tone": "firm", "variables": full_vars})
+    friendly = client.post(
+        "/reminders/preview",
+        headers=headers,
+        json={"template": "reminder", "tone": "friendly", "variables": full_vars},
+    )
+    firm = client.post(
+        "/reminders/preview",
+        headers=headers,
+        json={"template": "reminder", "tone": "firm", "variables": full_vars},
+    )
     assert friendly.status_code == 200 and firm.status_code == 200
     f1 = friendly.json()["data"]
     f2 = firm.json()["data"]
