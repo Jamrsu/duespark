@@ -5,17 +5,10 @@ services:
   # FastAPI Backend Service
   - type: web
     name: duespark-backend
-    env: python
+    env: docker
     region: oregon  # or virginia, singapore, frankfurt
     plan: starter  # starter, standard, pro, pro plus, pro max, pro ultra
-    buildCommand: |
-      cd sic_backend_mvp_jwt_sqlite
-      pip install --upgrade pip
-      pip install -r requirements.txt
-    startCommand: |
-      cd sic_backend_mvp_jwt_sqlite
-      alembic upgrade head
-      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile.render
     healthCheckPath: /healthz
     autoDeploy: true
     branch: main
@@ -23,7 +16,7 @@ services:
     envVars:
       # Application Settings
       - key: PYTHONPATH
-        value: /opt/render/project/src/sic_backend_mvp_jwt_sqlite
+        value: /app
       - key: PYTHONDONTWRITEBYTECODE
         value: "1"
       - key: PYTHONUNBUFFERED
