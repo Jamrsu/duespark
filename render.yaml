@@ -1,0 +1,120 @@
+# DueSpark Backend - Render Configuration
+# Optimized for deployment from sic_backend_mvp_jwt_sqlite directory
+
+services:
+  # FastAPI Backend Service
+  - type: web
+    name: duespark-backend
+    env: docker
+    region: oregon
+    plan: starter
+    rootDir: ./sic_backend_mvp_jwt_sqlite
+    dockerfilePath: ./Dockerfile.render
+    healthCheckPath: /healthz
+    autoDeploy: true
+    branch: render-deployment-fix
+    envVars:
+      # Application Settings
+      - key: PYTHONPATH
+        value: /app
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: PORT
+        value: "8000"
+
+      # Database (PostgreSQL addon will provide DATABASE_URL automatically)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: duespark-postgres
+          property: connectionString
+
+      # Required Secrets (set in Render Dashboard)
+      - key: SECRET_KEY
+        sync: false  # Set manually in dashboard
+      - key: ENCRYPTION_KEY
+        sync: false  # Set manually in dashboard
+      - key: JWT_SECRET_KEY
+        sync: false  # Set manually in dashboard
+      - key: ADMIN_EMAIL
+        value: admin@duespark.com
+      - key: ADMIN_PASSWORD
+        sync: false  # Set manually in dashboard
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: ALLOW_SIMPLE_TEST_EMAIL
+        value: "true"
+
+      # Email Provider Settings (AWS SES)
+      - key: EMAIL_PROVIDER
+        value: ses
+      - key: AWS_ACCESS_KEY_ID
+        sync: false  # Set manually in dashboard
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false  # Set manually in dashboard
+      - key: AWS_REGION
+        value: eu-north-1
+      - key: AWS_SES_REGION
+        value: eu-north-1
+      - key: EMAIL_FROM
+        value: "DueSpark <no-reply@duespark.com>"
+      - key: MAIL_FROM
+        value: no-reply@duespark.com
+      - key: MAIL_FROM_NAME
+        value: DueSpark
+      - key: MAIL_REPLY_TO
+        value: support@duespark.com
+
+      # Stripe Configuration
+      - key: STRIPE_SECRET_KEY
+        sync: false  # Set manually in dashboard
+      - key: STRIPE_CLIENT_ID
+        sync: false  # Set manually in dashboard
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false  # Set manually in dashboard
+      - key: STRIPE_REDIRECT_URI
+        value: https://duespark-backend.onrender.com/integrations/stripe/callback
+
+      # Application URLs
+      - key: PUBLIC_BASE_URL
+        value: https://duespark-backend.onrender.com
+      - key: FRONTEND_URL
+        value: https://app.duespark.com
+
+      # Scheduler Settings
+      - key: SCHEDULER_BATCH_SIZE
+        value: "200"
+      - key: ADAPTIVE_ENABLE
+        value: "true"
+      - key: ADAPTIVE_LEADER_ONLY
+        value: "true"
+
+      # Rate Limiting
+      - key: RATE_LIMIT_REQUESTS_PER_MINUTE
+        value: "60"
+      - key: RATE_LIMIT_REQUESTS_PER_HOUR
+        value: "1000"
+
+      # Optional: Redis (can be added as separate service)
+      - key: REDIS_URL
+        value: ""  # Leave empty for memory fallback
+
+      # Optional: Monitoring
+      - key: SENTRY_DSN
+        sync: false  # Set manually if using Sentry
+
+databases:
+  # PostgreSQL Database
+  - name: duespark-postgres
+    databaseName: duespark
+    user: duespark
+    region: oregon
+    plan: starter
+    version: "16"
