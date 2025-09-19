@@ -1,0 +1,158 @@
+{
+  "connectivity": {
+    "root_endpoint": {
+      "test_name": "root_endpoint",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:21.963033",
+      "response_time_ms": 342.67,
+      "status_code": 404,
+      "details": "Status: 404",
+      "response_data": "{\"detail\":\"Not Found\"}"
+    },
+    "health_endpoint": {
+      "test_name": "health_endpoint",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:22.587799",
+      "response_time_ms": 623.67,
+      "status_code": 200,
+      "details": "Status: 200, Health: unhealthy",
+      "response_data": {
+        "status": "unhealthy",
+        "database": "disconnected",
+        "error": "Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')"
+      }
+    },
+    "api_docs": {
+      "test_name": "api_docs",
+      "success": true,
+      "timestamp": "2025-09-19T19:21:22.810203",
+      "response_time_ms": 222.31,
+      "status_code": 200,
+      "details": "Status: 200",
+      "response_data": null
+    }
+  },
+  "authentication": {
+    "user_registration": {
+      "test_name": "user_registration",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:23.350493",
+      "response_time_ms": 310.42,
+      "status_code": 404,
+      "details": "Status: 404",
+      "response_data": {
+        "detail": "Not Found"
+      }
+    },
+    "user_login": {
+      "test_name": "user_login",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:23.579603",
+      "response_time_ms": 228.89,
+      "status_code": 404,
+      "details": "Status: 404, Token received: False",
+      "response_data": {
+        "token_type": null
+      }
+    },
+    "protected_endpoint_access": {
+      "test_name": "protected_endpoint_access",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:23.901495",
+      "response_time_ms": 321.66,
+      "status_code": 404,
+      "details": "Status: 404",
+      "response_data": {
+        "detail": "Not Found"
+      }
+    },
+    "invalid_token_rejection": {
+      "test_name": "invalid_token_rejection",
+      "success": "<Response [404]>",
+      "timestamp": "2025-09-19T19:21:24.133927",
+      "response_time_ms": 232.26,
+      "status_code": null,
+      "details": "Status: No response",
+      "response_data": null
+    }
+  },
+  "client_management": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:24.134008",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "invoice_management": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:24.134022",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "email_system": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:24.134034",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "reminder_system": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:24.134044",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "database": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:21:24.134059",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "performance": {
+    "summary": {
+      "total_tests": 12,
+      "passed_tests": 1,
+      "success_rate": 8.33,
+      "avg_response_time_ms": 325.98,
+      "max_response_time_ms": 623.67,
+      "min_response_time_ms": 222.31,
+      "total_errors": 11
+    }
+  },
+  "errors": [
+    "connectivity.root_endpoint: Status: 404",
+    "connectivity.health_endpoint: Status: 200, Health: unhealthy",
+    "authentication.user_registration: Status: 404",
+    "authentication.user_login: Status: 404, Token received: False",
+    "authentication.protected_endpoint_access: Status: 404",
+    "authentication.invalid_token_rejection: Status: No response",
+    "client_management.authentication_required: No auth token available for testing",
+    "invoice_management.authentication_required: No auth token available for testing",
+    "email_system.authentication_required: No auth token available for testing",
+    "reminder_system.authentication_required: No auth token available for testing",
+    "database.authentication_required: No auth token available for testing"
+  ]
+}

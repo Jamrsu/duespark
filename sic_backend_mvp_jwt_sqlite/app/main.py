@@ -599,6 +599,48 @@ def _log_event(
         db.rollback()
 
 
+# ---- Debug endpoint for troubleshooting ----
+@app.post("/debug/auth-test", tags=["debug"])
+def debug_auth_test(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Debug endpoint to isolate auth registration issues"""
+    try:
+        # Test 1: Check if user exists
+        exists = db.query(models.User).filter(models.User.email == payload.email).first()
+        if exists:
+            return {"step": "user_exists_check", "status": "user_already_exists", "email": payload.email}
+
+        # Test 2: Hash password
+        password_hash = hash_password(payload.password)
+
+        # Test 3: Create user object (don't save yet)
+        user = models.User(
+            email=payload.email,
+            password_hash=password_hash
+        )
+
+        # Test 4: Add to db
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # Test 5: Create token
+        token = create_access_token(sub=payload.email)
+
+        return {
+            "status": "success",
+            "user_id": user.id,
+            "email": user.email,
+            "token_created": bool(token)
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 # ---- Auth ----
 @app.post("/auth/register", tags=["auth"])
 def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):

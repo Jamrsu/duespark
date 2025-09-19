@@ -1,0 +1,181 @@
+{
+  "connectivity": {
+    "api_docs": {
+      "test_name": "api_docs",
+      "success": true,
+      "timestamp": "2025-09-19T19:23:26.373316",
+      "response_time_ms": 700.33,
+      "status_code": 200,
+      "details": "Status: 200",
+      "response_data": null
+    },
+    "openapi_spec": {
+      "test_name": "openapi_spec",
+      "success": true,
+      "timestamp": "2025-09-19T19:23:26.752007",
+      "response_time_ms": 376.43,
+      "status_code": 200,
+      "details": "Status: 200, Endpoints: 35",
+      "response_data": {
+        "endpoint_count": 35
+      }
+    }
+  },
+  "authentication": {
+    "user_registration": {
+      "test_name": "user_registration",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.195154",
+      "response_time_ms": 230.77,
+      "status_code": 500,
+      "details": "Status: 500",
+      "response_data": {
+        "error": {
+          "code": 500,
+          "message": "An unexpected error occurred",
+          "type": "server_error"
+        },
+        "success": false,
+        "data": null
+      }
+    },
+    "user_login": {
+      "test_name": "user_login",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.421492",
+      "response_time_ms": 226.17,
+      "status_code": 422,
+      "details": "Status: 422, Token received: False",
+      "response_data": {
+        "token_type": null
+      }
+    },
+    "protected_endpoint_access": {
+      "test_name": "protected_endpoint_access",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.638891",
+      "response_time_ms": 217.25,
+      "status_code": 401,
+      "details": "Status: 401",
+      "response_data": {
+        "error": {
+          "code": 401,
+          "message": "Not authenticated",
+          "type": "http_error"
+        },
+        "success": false,
+        "data": null
+      }
+    },
+    "invalid_token_rejection": {
+      "test_name": "invalid_token_rejection",
+      "success": "<Response [401]>",
+      "timestamp": "2025-09-19T19:23:27.845374",
+      "response_time_ms": 206.35,
+      "status_code": null,
+      "details": "Status: No response",
+      "response_data": null
+    }
+  },
+  "client_management": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845433",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "invoice_management": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845445",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "reminder_system": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845455",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "analytics": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845464",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "templates": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845472",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "integrations": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845480",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  },
+  "performance": {
+    "summary": {
+      "total_tests": 13,
+      "passed_tests": 2,
+      "success_rate": 15.38,
+      "avg_response_time_ms": 326.22,
+      "max_response_time_ms": 700.33,
+      "min_response_time_ms": 206.35,
+      "total_errors": 11
+    }
+  },
+  "errors": [
+    "authentication.user_registration: Status: 500",
+    "authentication.user_login: Status: 422, Token received: False",
+    "authentication.protected_endpoint_access: Status: 401",
+    "authentication.invalid_token_rejection: Status: No response",
+    "client_management.authentication_required: No auth token available for testing",
+    "invoice_management.authentication_required: No auth token available for testing",
+    "reminder_system.authentication_required: No auth token available for testing",
+    "analytics.authentication_required: No auth token available for testing",
+    "templates.authentication_required: No auth token available for testing",
+    "integrations.authentication_required: No auth token available for testing",
+    "database.authentication_required: No auth token available for testing"
+  ],
+  "database": {
+    "authentication_required": {
+      "test_name": "authentication_required",
+      "success": false,
+      "timestamp": "2025-09-19T19:23:27.845488",
+      "response_time_ms": null,
+      "status_code": null,
+      "details": "No auth token available for testing",
+      "response_data": null
+    }
+  }
+}

@@ -1,0 +1,3426 @@
+{
+  "GET_/docs": {
+    "status_code": 200,
+    "response_time_ms": 566.95,
+    "success": true,
+    "headers": {
+      "Date": "Fri, 19 Sep 2025 18:25:50 GMT",
+      "Content-Type": "text/html; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "rndr-id": "fd0afe0d-d4fe-4f2a",
+      "vary": "Accept-Encoding",
+      "x-process-time": "0.0003681182861328125",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "Server": "cloudflare",
+      "CF-RAY": "981b20bdce0ceb18-MAN",
+      "Content-Encoding": "gzip",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "content_type": "text/html; charset=utf-8",
+    "data": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css\">\n    <link rel=\"shortcut icon\" href=\"https://fastapi.tiangolo.com/img/favicon.png\">\n    <title>DueSpark \u2013 Enterprise Platform - Swagger UI</title>\n    </head>\n    <body>\n    <div id=\"swagger-ui\">\n    </div>\n    <script src=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>\n    <!-- `SwaggerUIBundle` is now availabl"
+  },
+  "GET_/openapi.json": {
+    "status_code": 200,
+    "response_time_ms": 732.54,
+    "success": true,
+    "headers": {
+      "Date": "Fri, 19 Sep 2025 18:25:50 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "rndr-id": "ccd8f8bb-d081-4064",
+      "vary": "Accept-Encoding",
+      "x-process-time": "0.0011878013610839844",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "Server": "cloudflare",
+      "CF-RAY": "981b20c15e24a5d0-MAN",
+      "Content-Encoding": "gzip",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "content_type": "application/json",
+    "data": {
+      "openapi": "3.1.0",
+      "info": {
+        "title": "DueSpark \u2013 Enterprise Platform",
+        "description": "\n    DueSpark Backend API - Enterprise Invoice Management & AI Intelligence Platform\n\n    ## Phase 4: Enterprise Scale & AI Intelligence\n\n    * **Enterprise Multi-Tenancy** - Organization management with hierarchical access\n    * **AI Intelligence** - Machine learning payment prediction and debt collection strategies\n    * **Advanced Security** - Enterprise-grade security, audit logging, and compliance (GDPR/SOX)\n    * **Real-time Analytics** - Advanced business intelligence with custom reporting\n    * **Scalable Infrastructure** - Redis caching, background job processing, API rate limiting\n\n    ## Core Features\n\n    * **Authentication** - JWT-based authentication with enterprise SSO support\n    * **Invoice Management** - Create, update, and track invoices with AI-powered insights\n    * **Client Management** - Manage client information with predictive analytics\n    * **Advanced Analytics** - Real-time dashboards and comprehensive reporting\n    * **Automated Reminders** - AI-optimized payment reminder system\n    * **Integrations** - Stripe, QuickBooks, Xero, and Zapier integrations\n    * **Team Collaboration** - Role-based access control and team management\n\n    ## Authentication\n\n    Most endpoints require authentication. Use the `/auth/login` endpoint to obtain a JWT token,\n    then include it in the `Authorization` header as `Bearer <token>`.\n    ",
+        "version": "4.0.0"
+      },
+      "paths": {
+        "/auth/register": {
+          "post": {
+            "tags": [
+              "auth"
+            ],
+            "summary": "Register",
+            "operationId": "register_auth_register_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserCreate"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/auth/login": {
+          "post": {
+            "tags": [
+              "auth"
+            ],
+            "summary": "Login",
+            "operationId": "login_auth_login_post",
+            "requestBody": {
+              "content": {
+                "application/x-www-form-urlencoded": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Body_login_auth_login_post"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/clients": {
+          "get": {
+            "tags": [
+              "clients"
+            ],
+            "summary": "List Clients",
+            "operationId": "list_clients_clients_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Offset"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "tags": [
+              "clients"
+            ],
+            "summary": "Create Client",
+            "operationId": "create_client_clients_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ClientCreate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/clients/{client_id}": {
+          "get": {
+            "tags": [
+              "clients"
+            ],
+            "summary": "Get Client",
+            "operationId": "get_client_clients__client_id__get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "client_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Client Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "put": {
+            "tags": [
+              "clients"
+            ],
+            "summary": "Update Client",
+            "operationId": "update_client_clients__client_id__put",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "client_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Client Id"
+                }
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ClientUpdate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "delete": {
+            "tags": [
+              "clients"
+            ],
+            "summary": "Delete Client",
+            "operationId": "delete_client_clients__client_id__delete",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "client_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Client Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/invoices": {
+          "get": {
+            "tags": [
+              "invoices"
+            ],
+            "summary": "List Invoices",
+            "operationId": "list_invoices_invoices_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Offset"
+                }
+              },
+              {
+                "name": "client_id",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Client Id"
+                }
+              },
+              {
+                "name": "status",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Status"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "tags": [
+              "invoices"
+            ],
+            "summary": "Create Invoice",
+            "operationId": "create_invoice_invoices_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/InvoiceCreate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/invoices/{invoice_id}": {
+          "get": {
+            "tags": [
+              "invoices"
+            ],
+            "summary": "Get Invoice",
+            "operationId": "get_invoice_invoices__invoice_id__get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "invoice_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Invoice Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "put": {
+            "tags": [
+              "invoices"
+            ],
+            "summary": "Update Invoice",
+            "operationId": "update_invoice_invoices__invoice_id__put",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "invoice_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Invoice Id"
+                }
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/InvoiceUpdate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "delete": {
+            "tags": [
+              "invoices"
+            ],
+            "summary": "Delete Invoice",
+            "operationId": "delete_invoice_invoices__invoice_id__delete",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "invoice_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Invoice Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/reminders": {
+          "get": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "List Reminders",
+            "operationId": "list_reminders_reminders_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Offset"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "Create Reminder",
+            "operationId": "create_reminder_reminders_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ReminderCreate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/reminders/{reminder_id}": {
+          "get": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "Get Reminder",
+            "operationId": "get_reminder_reminders__reminder_id__get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "reminder_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Reminder Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "put": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "Update Reminder",
+            "operationId": "update_reminder_reminders__reminder_id__put",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "reminder_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Reminder Id"
+                }
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ReminderUpdate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "delete": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "Delete Reminder",
+            "operationId": "delete_reminder_reminders__reminder_id__delete",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "reminder_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Reminder Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/analytics/summary": {
+          "get": {
+            "tags": [
+              "analytics"
+            ],
+            "summary": "Get analytics summary",
+            "description": "Retrieve comprehensive analytics summary including:\n    - Invoice counts by status (draft, pending, paid, overdue, cancelled)\n    - Expected payments in next 30 days \n    - Average days to pay for paid invoices\n    - Top 5 late-paying clients with average lateness\n    \n    Returns aggregated metrics for the authenticated user's invoices.",
+            "operationId": "analytics_summary_analytics_summary_get",
+            "responses": {
+              "200": {
+                "description": "Successful response with analytics summary",
+                "content": {
+                  "application/json": {
+                    "schema": {},
+                    "example": {
+                      "data": {
+                        "totals": {
+                          "all": 25,
+                          "draft": 3,
+                          "pending": 8,
+                          "paid": 12,
+                          "overdue": 2,
+                          "cancelled": 0
+                        },
+                        "expected_payments_next_30d": 150000,
+                        "avg_days_to_pay": 5.2,
+                        "top_late_clients": [
+                          {
+                            "client_id": 1,
+                            "client_name": "Acme Corp",
+                            "client_email": "billing@acme.com",
+                            "avg_days_late": 12.5,
+                            "overdue_count": 2,
+                            "total_overdue_amount_cents": 50000
+                          }
+                        ]
+                      },
+                      "meta": {
+                        "generated_at": "2024-01-15T10:30:00Z",
+                        "currency": "USD",
+                        "window_days": 30,
+                        "notes": "Expected = pending/overdue invoices with due_date in next 30 days"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Authentication required"
+              },
+              "500": {
+                "description": "Internal server error"
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/analytics/timeseries": {
+          "get": {
+            "tags": [
+              "analytics"
+            ],
+            "summary": "Get analytics timeseries data",
+            "description": "Retrieve time-series analytics data for various metrics over specified intervals.\n    \n    **Available Metrics:**\n    - `payments`: Invoices that were marked as paid (uses paid_at date)\n    - `invoices_created`: New invoices created (uses created_at date) \n    - `invoices_paid`: Invoices that changed to paid status (uses paid_at date)\n    - `revenue`: Total monetary value of paid invoices (uses paid_at date)\n    \n    **Time Intervals:**\n    - `day`: Daily aggregation (last 12 days by default)\n    - `week`: Weekly aggregation (last 12 weeks by default) \n    - `month`: Monthly aggregation (last 12 months by default)\n    \n    **Date Range:**\n    - Without date parameters: Returns last 12 periods based on interval\n    - With custom dates: Returns data within specified date range\n    - Date format: ISO 8601 (e.g., '2024-01-01T00:00:00Z')\n    \n    **Response includes:**\n    - Time series data points with period, count, and value\n    - Total aggregated count and value across all periods\n    - Metadata with effective date range and timezone info",
+            "operationId": "analytics_timeseries_analytics_timeseries_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "metric",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^(payments|invoices_created|invoices_paid|revenue)$",
+                  "description": "Metric to analyze",
+                  "examples": {
+                    "payments": {
+                      "value": "payments"
+                    }
+                  },
+                  "default": "payments",
+                  "title": "Metric"
+                },
+                "description": "Metric to analyze"
+              },
+              {
+                "name": "interval",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^(day|week|month)$",
+                  "description": "Time interval for aggregation",
+                  "examples": {
+                    "week": {
+                      "value": "week"
+                    }
+                  },
+                  "default": "week",
+                  "title": "Interval"
+                },
+                "description": "Time interval for aggregation"
+              },
+              {
+                "name": "from_date",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Start date for custom date range (ISO 8601 format). If not provided, defaults to 12 periods ago based on interval.",
+                  "examples": {
+                    "iso_date": {
+                      "value": "2024-01-01T00:00:00Z"
+                    }
+                  },
+                  "title": "From Date"
+                },
+                "description": "Start date for custom date range (ISO 8601 format). If not provided, defaults to 12 periods ago based on interval."
+              },
+              {
+                "name": "to_date",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "End date for custom date range (ISO 8601 format). If not provided, defaults to current time. Must be greater than or equal to from_date.",
+                  "examples": {
+                    "iso_date": {
+                      "value": "2024-12-31T23:59:59Z"
+                    }
+                  },
+                  "title": "To Date"
+                },
+                "description": "End date for custom date range (ISO 8601 format). If not provided, defaults to current time. Must be greater than or equal to from_date."
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful response with timeseries data",
+                "content": {
+                  "application/json": {
+                    "schema": {},
+                    "example": {
+                      "data": {
+                        "metric": "payments",
+                        "interval": "week",
+                        "points": [
+                          {
+                            "period": "2024-01-01T00:00:00+00:00",
+                            "value": 125000.0,
+                            "count": 3
+                          },
+                          {
+                            "period": "2024-01-08T00:00:00+00:00",
+                            "value": 87500.0,
+                            "count": 2
+                          }
+                        ],
+                        "total_value": 212500.0,
+                        "total_count": 5
+                      },
+                      "meta": {
+                        "metric": "payments",
+                        "interval": "week",
+                        "from": "2024-01-01",
+                        "to": "2024-01-31",
+                        "timezone": "UTC",
+                        "series_len": 2
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Bad request - invalid parameters",
+                "content": {
+                  "application/json": {
+                    "examples": {
+                      "invalid_metric": {
+                        "summary": "Invalid metric parameter",
+                        "value": {
+                          "error": {
+                            "code": 400,
+                            "message": "Invalid metric. Must be one of: ['payments', 'invoices_created', 'invoices_paid', 'revenue']",
+                            "type": "http_error"
+                          },
+                          "success": false
+                        }
+                      },
+                      "invalid_date_range": {
+                        "summary": "Invalid date range",
+                        "value": {
+                          "error": {
+                            "code": 400,
+                            "message": "from_date must be less than or equal to to_date",
+                            "type": "http_error"
+                          },
+                          "success": false
+                        }
+                      },
+                      "invalid_date_format": {
+                        "summary": "Invalid date format",
+                        "value": {
+                          "error": {
+                            "code": 400,
+                            "message": "Invalid from_date format. Use ISO 8601 format (e.g., '2024-01-01T00:00:00Z')",
+                            "type": "http_error"
+                          },
+                          "success": false
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Authentication required"
+              },
+              "500": {
+                "description": "Internal server error"
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/templates": {
+          "get": {
+            "tags": [
+              "templates"
+            ],
+            "summary": "List Templates",
+            "operationId": "list_templates_templates_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Offset"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "tags": [
+              "templates"
+            ],
+            "summary": "Create Template",
+            "operationId": "create_template_templates_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TemplateCreate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/templates/{template_id}": {
+          "get": {
+            "tags": [
+              "templates"
+            ],
+            "summary": "Get Template",
+            "operationId": "get_template_templates__template_id__get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "template_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Template Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "put": {
+            "tags": [
+              "templates"
+            ],
+            "summary": "Update Template",
+            "operationId": "update_template_templates__template_id__put",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "template_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Template Id"
+                }
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TemplateUpdate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "delete": {
+            "tags": [
+              "templates"
+            ],
+            "summary": "Delete Template",
+            "operationId": "delete_template_templates__template_id__delete",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "template_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Template Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/events": {
+          "get": {
+            "tags": [
+              "events"
+            ],
+            "summary": "List Events",
+            "operationId": "list_events_events_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Offset"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "tags": [
+              "events"
+            ],
+            "summary": "Create Event",
+            "description": "Create a new event for tracking user actions",
+            "operationId": "create_event_events_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/EventCreate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/auth/me": {
+          "get": {
+            "tags": [
+              "auth"
+            ],
+            "summary": "Get Current User Profile",
+            "description": "Get current user profile including onboarding status",
+            "operationId": "get_current_user_profile_auth_me_get",
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          },
+          "put": {
+            "tags": [
+              "auth"
+            ],
+            "summary": "Update User Profile Put",
+            "description": "Update current user profile including onboarding status (PUT version for CORS compatibility)",
+            "operationId": "update_user_profile_put_auth_me_put",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "title": "Update Data"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          },
+          "patch": {
+            "tags": [
+              "auth"
+            ],
+            "summary": "Update User Profile",
+            "description": "Update current user profile including onboarding status",
+            "operationId": "update_user_profile_auth_me_patch",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "title": "Update Data"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/auth/send-verification": {
+          "post": {
+            "tags": [
+              "auth"
+            ],
+            "summary": "Send Verification Email",
+            "description": "Send email verification email",
+            "operationId": "send_verification_email_auth_send_verification_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "title": "Request"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/onboarding/sample-data": {
+          "post": {
+            "tags": [
+              "onboarding"
+            ],
+            "summary": "Create Sample Data",
+            "description": "Create sample clients and invoices for demo purposes",
+            "operationId": "create_sample_data_onboarding_sample_data_post",
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/reminders/preview": {
+          "post": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "Reminder Preview",
+            "operationId": "reminder_preview_reminders_preview_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ReminderPreviewRequest"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/reminders/send-now": {
+          "post": {
+            "tags": [
+              "reminders"
+            ],
+            "summary": "Reminders Send Now",
+            "operationId": "reminders_send_now_reminders_send_now_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ReminderSendNowRequest"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/integrations/stripe/connect": {
+          "get": {
+            "tags": [
+              "integrations"
+            ],
+            "summary": "Stripe Connect Start",
+            "operationId": "stripe_connect_start_integrations_stripe_connect_get",
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/integrations/stripe/status": {
+          "get": {
+            "tags": [
+              "integrations"
+            ],
+            "summary": "Stripe Connect Status",
+            "operationId": "stripe_connect_status_integrations_stripe_status_get",
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/integrations/stripe/callback": {
+          "get": {
+            "tags": [
+              "integrations"
+            ],
+            "summary": "Stripe Connect Callback",
+            "operationId": "stripe_connect_callback_integrations_stripe_callback_get",
+            "parameters": [
+              {
+                "name": "code",
+                "in": "query",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "title": "Code"
+                }
+              },
+              {
+                "name": "state",
+                "in": "query",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "title": "State"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/integrations/stripe/payment_link": {
+          "post": {
+            "tags": [
+              "integrations"
+            ],
+            "summary": "Create Payment Link",
+            "operationId": "create_payment_link_integrations_stripe_payment_link_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "invoice_id",
+                "in": "query",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Invoice Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/integrations/stripe/disconnect": {
+          "post": {
+            "tags": [
+              "integrations"
+            ],
+            "summary": "Stripe Disconnect",
+            "operationId": "stripe_disconnect_integrations_stripe_disconnect_post",
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/integrations/stripe/import-invoices": {
+          "post": {
+            "tags": [
+              "integrations"
+            ],
+            "summary": "Stripe Import Invoices",
+            "operationId": "stripe_import_invoices_integrations_stripe_import_invoices_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "since",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Since"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/dead_letters": {
+          "get": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "List Dead Letters",
+            "operationId": "list_dead_letters_admin_dead_letters_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Offset"
+                }
+              },
+              {
+                "name": "after_id",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "After Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/dead_letters/{dl_id}/retry": {
+          "post": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Retry Dead Letter",
+            "operationId": "retry_dead_letter_admin_dead_letters__dl_id__retry_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "dl_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Dl Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/dead_letters/{dl_id}": {
+          "delete": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Delete Dead Letter",
+            "operationId": "delete_dead_letter_admin_dead_letters__dl_id__delete",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "dl_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Dl Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/reminders/requeue-failed": {
+          "post": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Requeue Failed Reminders",
+            "operationId": "requeue_failed_reminders_admin_reminders_requeue_failed_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/outbox": {
+          "get": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "List Outbox",
+            "operationId": "list_outbox_admin_outbox_get",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 50,
+                  "title": "Limit"
+                }
+              },
+              {
+                "name": "after_id",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "After Id"
+                }
+              },
+              {
+                "name": "status",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Status"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/outbox/{outbox_id}/retry": {
+          "post": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Retry Outbox",
+            "operationId": "retry_outbox_admin_outbox__outbox_id__retry_post",
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "outbox_id",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "title": "Outbox Id"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/admin/scheduler/requeue": {
+          "post": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Admin Requeue Scheduler",
+            "operationId": "admin_requeue_scheduler_admin_scheduler_requeue_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "title": "Payload"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/admin/scheduler/run-adaptive": {
+          "post": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Admin Run Adaptive",
+            "operationId": "admin_run_adaptive_admin_scheduler_run_adaptive_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "anyOf": [
+                      {
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Payload"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/admin/test-email": {
+          "post": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Test Email Endpoint",
+            "description": "Test email functionality - sends a test email to specified address",
+            "operationId": "test_email_endpoint_admin_test_email_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "title": "Payload"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/admin/email-config": {
+          "get": {
+            "tags": [
+              "admin"
+            ],
+            "summary": "Get Email Config",
+            "description": "Get email configuration info (non-sensitive data only)",
+            "operationId": "get_email_config_admin_email_config_get",
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              }
+            },
+            "security": [
+              {
+                "OAuth2PasswordBearer": []
+              }
+            ]
+          }
+        },
+        "/test-email-simple": {
+          "post": {
+            "tags": [
+              "testing"
+            ],
+            "summary": "Simple Test Email",
+            "description": "Simple test email endpoint (no auth required - for testing only)",
+            "operationId": "simple_test_email_test_email_simple_post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "title": "Payload"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "200": {
+                "description": "Successful Response",
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "422": {
+                "description": "Validation Error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "components": {
+        "schemas": {
+          "Body_login_auth_login_post": {
+            "properties": {
+              "grant_type": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "password"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Grant Type"
+              },
+              "username": {
+                "type": "string",
+                "title": "Username"
+              },
+              "password": {
+                "type": "string",
+                "title": "Password"
+              },
+              "scope": {
+                "type": "string",
+                "title": "Scope",
+                "default": ""
+              },
+              "client_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Client Id"
+              },
+              "client_secret": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Client Secret"
+              }
+            },
+            "type": "object",
+            "required": [
+              "username",
+              "password"
+            ],
+            "title": "Body_login_auth_login_post"
+          },
+          "ClientCreate": {
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1,
+                "title": "Name",
+                "strip_whitespace": true
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "title": "Email"
+              },
+              "contact_name": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Contact Name",
+                "strip_whitespace": true
+              },
+              "contact_phone": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Contact Phone",
+                "strip_whitespace": true
+              },
+              "timezone": {
+                "type": "string",
+                "maxLength": 64,
+                "title": "Timezone",
+                "default": "UTC"
+              },
+              "notes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Notes"
+              }
+            },
+            "type": "object",
+            "required": [
+              "name",
+              "email"
+            ],
+            "title": "ClientCreate"
+          },
+          "ClientUpdate": {
+            "properties": {
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name",
+                "strip_whitespace": true
+              },
+              "email": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Email"
+              },
+              "contact_name": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Contact Name",
+                "strip_whitespace": true
+              },
+              "contact_phone": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Contact Phone",
+                "strip_whitespace": true
+              },
+              "timezone": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Timezone"
+              },
+              "notes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Notes"
+              }
+            },
+            "type": "object",
+            "title": "ClientUpdate"
+          },
+          "EventCreate": {
+            "properties": {
+              "entity_type": {
+                "type": "string",
+                "title": "Entity Type"
+              },
+              "entity_id": {
+                "type": "integer",
+                "title": "Entity Id"
+              },
+              "event_type": {
+                "type": "string",
+                "title": "Event Type"
+              },
+              "payload": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            },
+            "type": "object",
+            "required": [
+              "entity_type",
+              "entity_id",
+              "event_type"
+            ],
+            "title": "EventCreate"
+          },
+          "HTTPValidationError": {
+            "properties": {
+              "detail": {
+                "items": {
+                  "$ref": "#/components/schemas/ValidationError"
+                },
+                "type": "array",
+                "title": "Detail"
+              }
+            },
+            "type": "object",
+            "title": "HTTPValidationError"
+          },
+          "InvoiceCreate": {
+            "properties": {
+              "client_id": {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "title": "Client Id"
+              },
+              "amount_cents": {
+                "type": "integer",
+                "maximum": 999999999.0,
+                "exclusiveMinimum": 0.0,
+                "title": "Amount Cents"
+              },
+              "currency": {
+                "type": "string",
+                "title": "Currency",
+                "default": "USD",
+                "strip_whitespace": true
+              },
+              "due_date": {
+                "type": "string",
+                "format": "date",
+                "title": "Due Date"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "pending",
+                  "paid",
+                  "overdue",
+                  "cancelled"
+                ],
+                "title": "Status",
+                "default": "pending"
+              },
+              "external_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "External Id",
+                "strip_whitespace": true
+              },
+              "source": {
+                "type": "string",
+                "maxLength": 32,
+                "title": "Source",
+                "default": "manual"
+              }
+            },
+            "type": "object",
+            "required": [
+              "client_id",
+              "amount_cents",
+              "due_date"
+            ],
+            "title": "InvoiceCreate"
+          },
+          "InvoiceUpdate": {
+            "properties": {
+              "client_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Client Id"
+              },
+              "amount_cents": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0.0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Amount Cents"
+              },
+              "currency": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Currency"
+              },
+              "due_date": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Due Date"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "pending",
+                      "paid",
+                      "overdue",
+                      "cancelled"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Status"
+              },
+              "external_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "External Id"
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Source"
+              }
+            },
+            "type": "object",
+            "title": "InvoiceUpdate"
+          },
+          "ReminderCreate": {
+            "properties": {
+              "invoice_id": {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "title": "Invoice Id"
+              },
+              "send_at": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Send At"
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "sms",
+                  "whatsapp"
+                ],
+                "title": "Channel",
+                "default": "email"
+              },
+              "subject": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Subject",
+                "strip_whitespace": true
+              },
+              "body": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 5000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body",
+                "strip_whitespace": true
+              }
+            },
+            "type": "object",
+            "required": [
+              "invoice_id",
+              "send_at"
+            ],
+            "title": "ReminderCreate"
+          },
+          "ReminderPreviewRequest": {
+            "properties": {
+              "invoice_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Invoice Id"
+              },
+              "template_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Template Id"
+              },
+              "tone": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "friendly",
+                      "neutral",
+                      "firm"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tone"
+              },
+              "template": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Template"
+              },
+              "variables": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Variables"
+              }
+            },
+            "type": "object",
+            "title": "ReminderPreviewRequest"
+          },
+          "ReminderSendNowRequest": {
+            "properties": {
+              "reminder_id": {
+                "type": "integer",
+                "title": "Reminder Id"
+              },
+              "force": {
+                "type": "boolean",
+                "title": "Force",
+                "default": false
+              }
+            },
+            "type": "object",
+            "required": [
+              "reminder_id"
+            ],
+            "title": "ReminderSendNowRequest"
+          },
+          "ReminderUpdate": {
+            "properties": {
+              "send_at": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Send At"
+              },
+              "channel": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "email",
+                      "sms",
+                      "whatsapp"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Channel"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "scheduled",
+                      "sent",
+                      "failed",
+                      "cancelled"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Status"
+              },
+              "subject": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Subject"
+              },
+              "body": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            },
+            "type": "object",
+            "title": "ReminderUpdate"
+          },
+          "TemplateCreate": {
+            "properties": {
+              "name": {
+                "type": "string",
+                "title": "Name"
+              },
+              "tone": {
+                "type": "string",
+                "enum": [
+                  "friendly",
+                  "neutral",
+                  "firm"
+                ],
+                "title": "Tone"
+              },
+              "subject": {
+                "type": "string",
+                "title": "Subject"
+              },
+              "body_markdown": {
+                "type": "string",
+                "title": "Body Markdown"
+              }
+            },
+            "type": "object",
+            "required": [
+              "name",
+              "tone",
+              "subject",
+              "body_markdown"
+            ],
+            "title": "TemplateCreate"
+          },
+          "TemplateUpdate": {
+            "properties": {
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "tone": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "friendly",
+                      "neutral",
+                      "firm"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tone"
+              },
+              "subject": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Subject"
+              },
+              "body_markdown": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body Markdown"
+              }
+            },
+            "type": "object",
+            "title": "TemplateUpdate"
+          },
+          "UserCreate": {
+            "properties": {
+              "email": {
+                "type": "string",
+                "format": "email",
+                "title": "Email"
+              },
+              "password": {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 8,
+                "title": "Password",
+                "strip_whitespace": true
+              },
+              "referral_code": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Referral Code",
+                "strip_whitespace": true
+              }
+            },
+            "type": "object",
+            "required": [
+              "email",
+              "password"
+            ],
+            "title": "UserCreate"
+          },
+          "ValidationError": {
+            "properties": {
+              "loc": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ]
+                },
+                "type": "array",
+                "title": "Location"
+              },
+              "msg": {
+                "type": "string",
+                "title": "Message"
+              },
+              "type": {
+                "type": "string",
+                "title": "Error Type"
+              }
+            },
+            "type": "object",
+            "required": [
+              "loc",
+              "msg",
+              "type"
+            ],
+            "title": "ValidationError"
+          }
+        },
+        "securitySchemes": {
+          "OAuth2PasswordBearer": {
+            "type": "oauth2",
+            "flows": {
+              "password": {
+                "scopes": {},
+                "tokenUrl": "/auth/login"
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        {
+          "name": "authentication",
+          "description": "User authentication and authorization endpoints"
+        },
+        {
+          "name": "analytics",
+          "description": "Analytics and reporting endpoints providing insights into invoice data, payment metrics, and client behavior"
+        },
+        {
+          "name": "clients",
+          "description": "Client management operations"
+        },
+        {
+          "name": "invoices",
+          "description": "Invoice management and tracking"
+        },
+        {
+          "name": "reminders",
+          "description": "Payment reminder system"
+        },
+        {
+          "name": "integrations",
+          "description": "Third-party integrations (Stripe, etc.)"
+        },
+        {
+          "name": "admin",
+          "description": "Administrative operations and system management"
+        },
+        {
+          "name": "enterprise",
+          "description": "Phase 4: Enterprise multi-tenancy, AI intelligence, security, and advanced analytics"
+        }
+      ]
+    }
+  },
+  "GET_/health": {
+    "status_code": 200,
+    "response_time_ms": 1233.98,
+    "success": true,
+    "headers": {
+      "Date": "Fri, 19 Sep 2025 18:25:52 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "rndr-id": "881b5bf8-1cb9-40ac",
+      "vary": "Accept-Encoding",
+      "x-process-time": "0.0007505416870117188",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "Server": "cloudflare",
+      "CF-RAY": "981b20c94bffb393-MAN",
+      "Content-Encoding": "gzip",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "content_type": "application/json",
+    "data": {
+      "status": "unhealthy",
+      "database": "disconnected",
+      "error": "Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')"
+    }
+  },
+  "GET_/": {
+    "status_code": 404,
+    "response_time_ms": 303.35,
+    "success": false,
+    "headers": {
+      "Date": "Fri, 19 Sep 2025 18:25:52 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "rndr-id": "19314f25-159e-49c4",
+      "vary": "Accept-Encoding",
+      "x-process-time": "0.0005452632904052734",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "Server": "cloudflare",
+      "CF-RAY": "981b20cdcced220c-MAN",
+      "Content-Encoding": "gzip",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "content_type": "application/json"
+  },
+  "OPTIONS_/docs": {
+    "status_code": 405,
+    "response_time_ms": 1640.74,
+    "success": false,
+    "headers": {
+      "Date": "Fri, 19 Sep 2025 18:25:54 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "access-control-allow-credentials": "true",
+      "access-control-expose-headers": "X-Total-Count",
+      "allow": "HEAD, GET",
+      "rndr-id": "41b6bd86-cb1c-4e97",
+      "vary": "Accept-Encoding",
+      "x-process-time": "0.0006072521209716797",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "Server": "cloudflare",
+      "CF-RAY": "981b20d76c766a3a-MAN",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "content_type": "application/json"
+  },
+  "OPTIONS_/auth/login": {
+    "status_code": 405,
+    "response_time_ms": 817.0,
+    "success": false,
+    "headers": {
+      "Date": "Fri, 19 Sep 2025 18:25:54 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "access-control-allow-credentials": "true",
+      "access-control-expose-headers": "X-Total-Count",
+      "allow": "POST",
+      "rndr-id": "c01e9132-833b-4e2a",
+      "vary": "Accept-Encoding",
+      "x-process-time": "0.0005960464477539062",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "Server": "cloudflare",
+      "CF-RAY": "981b20dab93121ce-MAN",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "content_type": "application/json"
+  }
+}
