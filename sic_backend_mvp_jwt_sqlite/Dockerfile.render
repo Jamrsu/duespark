@@ -27,13 +27,8 @@ RUN pip install --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Copy initialization scripts from parent directory
-COPY ../init_db.py ./init_db.py
-COPY ../scripts ./scripts
-
-# Make scripts executable
-RUN chmod +x ./init_db.py && \
-    chmod +x ./scripts/*.sh 2>/dev/null || true
+# Make init_db.py executable (already exists in build context)
+RUN chmod +x ./init_db.py 2>/dev/null || true
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser && \
