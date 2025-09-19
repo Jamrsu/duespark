@@ -1,0 +1,23 @@
+# EXACT RENDER ENVIRONMENT VARIABLES FOR AWS SES
+# Copy these into your Render service Environment tab
+
+# === AWS CREDENTIALS ===
+AWS_ACCESS_KEY_ID=your_access_key_from_iam_user_creation
+AWS_SECRET_ACCESS_KEY=your_secret_key_from_iam_user_creation
+
+# === EMAIL PROVIDER CONFIGURATION ===
+EMAIL_PROVIDER=ses
+AWS_REGION=eu-north-1
+
+# === EMAIL ADDRESSES ===
+EMAIL_FROM=DueSpark <noreply@duespark.com>
+MAIL_FROM=noreply@duespark.com
+MAIL_FROM_NAME=DueSpark
+MAIL_REPLY_TO=support@duespark.com
+
+# === OPTIONAL SES CONFIGURATION ===
+SES_CONFIGURATION_SET=duespark-emails
+
+# === EXISTING VARIABLES TO KEEP ===
+# Keep all your existing database, JWT, Stripe variables
+# These are ADDITIONS to your current environment

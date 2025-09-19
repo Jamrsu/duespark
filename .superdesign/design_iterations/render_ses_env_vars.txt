@@ -1,0 +1,22 @@
+# AWS SES Configuration for Render
+# Add these to your Render service environment variables
+
+# AWS Credentials
+AWS_ACCESS_KEY_ID=your_access_key_here
+AWS_SECRET_ACCESS_KEY=your_secret_key_here
+
+# AWS SES Configuration
+AWS_SES_REGION=eu-north-1
+AWS_SES_SENDER_EMAIL=noreply@duespark.com
+AWS_SES_REPLY_TO_EMAIL=support@duespark.com
+
+# Email Configuration
+SMTP_HOST=email-smtp.eu-north-1.amazonaws.com
+SMTP_PORT=587
+SMTP_USERNAME=your_smtp_username_here
+SMTP_PASSWORD=your_smtp_password_here
+
+# Application Email Settings
+FROM_EMAIL=DueSpark <noreply@duespark.com>
+SUPPORT_EMAIL=support@duespark.com
+NO_REPLY_EMAIL=noreply@duespark.com

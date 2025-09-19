@@ -2981,3 +2981,138 @@ def admin_run_adaptive(
 
     job_compute_adaptive_schedules()
     return _envelope({"triggered": True})
+
+
+@app.post("/admin/test-email", tags=["admin"])
+async def test_email_endpoint(
+    payload: dict,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    """Test email functionality - sends a test email to specified address"""
+    if getattr(user, "role", None) != getattr(models.UserRole, "admin", None):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    try:
+        to_email = payload.get("to")
+        if not to_email:
+            raise HTTPException(status_code=400, detail="'to' email address required")
+
+        subject = payload.get("subject", "DueSpark Test Email")
+
+        # Get email provider
+        email_provider = get_email_provider()
+
+        # Simple test email content
+        html_content = f"""
+        <html>
+            <body>
+                <h2>DueSpark Email Test</h2>
+                <p>This is a test email from your DueSpark deployment.</p>
+                <p><strong>Timestamp:</strong> {datetime.now(timezone.utc).isoformat()}</p>
+                <p><strong>Environment:</strong> {os.getenv('ENVIRONMENT', 'development')}</p>
+                <p><strong>Email Provider:</strong> {os.getenv('EMAIL_PROVIDER', 'unknown')}</p>
+                <p><strong>AWS Region:</strong> {os.getenv('AWS_REGION', 'unknown')}</p>
+                <br>
+                <p>If you received this email, your email configuration is working correctly!</p>
+                <hr>
+                <small>DueSpark - Invoice Reminder System</small>
+            </body>
+        </html>
+        """
+
+        # Send email
+        message_id = await email_provider.send_email(
+            to_email=to_email,
+            subject=subject,
+            html_content=html_content,
+            text_content=f"DueSpark Test Email - {datetime.now(timezone.utc).isoformat()}"
+        )
+
+        return _envelope({
+            "status": "sent",
+            "message_id": message_id,
+            "to": to_email,
+            "subject": subject,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+
+    except Exception as e:
+        logging.error(f"Test email failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Email test failed: {str(e)}")
+
+
+@app.get("/admin/email-config", tags=["admin"])
+def get_email_config(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    """Get email configuration info (non-sensitive data only)"""
+    if getattr(user, "role", None) != getattr(models.UserRole, "admin", None):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    return _envelope({
+        "provider": os.getenv("EMAIL_PROVIDER", "unknown"),
+        "region": os.getenv("AWS_REGION", "unknown"),
+        "ses_region": os.getenv("AWS_SES_REGION", "unknown"),
+        "from_email": os.getenv("EMAIL_FROM", "unknown"),
+        "mail_from": os.getenv("MAIL_FROM", "unknown"),
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "has_aws_access_key": bool(os.getenv("AWS_ACCESS_KEY_ID")),
+        "has_aws_secret": bool(os.getenv("AWS_SECRET_ACCESS_KEY"))
+    })
+
+
+@app.post("/test-email-simple", tags=["testing"])
+async def simple_test_email(payload: dict):
+    """Simple test email endpoint (no auth required - for testing only)"""
+    # Only allow in development/staging environments
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        if not os.getenv("ALLOW_SIMPLE_TEST_EMAIL", "false").lower() == "true":
+            raise HTTPException(status_code=403, detail="Simple test email disabled in production")
+
+    try:
+        to_email = payload.get("to")
+        if not to_email:
+            raise HTTPException(status_code=400, detail="'to' email address required")
+
+        subject = payload.get("subject", "DueSpark Simple Test Email")
+
+        # Get email provider
+        email_provider = get_email_provider()
+
+        # Simple test email content
+        html_content = f"""
+        <html>
+            <body>
+                <h2>DueSpark Simple Email Test</h2>
+                <p>This is a simple test email from your DueSpark deployment.</p>
+                <p><strong>Timestamp:</strong> {datetime.now(timezone.utc).isoformat()}</p>
+                <p><strong>Provider:</strong> {os.getenv('EMAIL_PROVIDER', 'unknown')}</p>
+                <br>
+                <p>✅ Your email system is working!</p>
+                <hr>
+                <small>DueSpark - Automated Invoice Reminders</small>
+            </body>
+        </html>
+        """
+
+        # Send email
+        message_id = await email_provider.send_email(
+            to_email=to_email,
+            subject=subject,
+            html_content=html_content,
+            text_content=f"DueSpark Simple Test - {datetime.now(timezone.utc).isoformat()}"
+        )
+
+        return {
+            "status": "success",
+            "message": "Test email sent successfully",
+            "message_id": message_id,
+            "to": to_email,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+    except Exception as e:
+        logging.error(f"Simple test email failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Email test failed: {str(e)}")

@@ -44,14 +44,38 @@ services:
         sync: false  # Set manually in dashboard
       - key: ENCRYPTION_KEY
         sync: false  # Set manually in dashboard
+      - key: JWT_SECRET_KEY
+        sync: false  # Set manually in dashboard
+      - key: ADMIN_EMAIL
+        value: admin@duespark.com
+      - key: ADMIN_PASSWORD
+        sync: false  # Set manually in dashboard
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: ALLOW_SIMPLE_TEST_EMAIL
+        value: "true"  # Enable simple email testing in production
 
-      # Email Provider Settings
+      # Email Provider Settings (AWS SES)
       - key: EMAIL_PROVIDER
-        value: postmark
-      - key: POSTMARK_SERVER_TOKEN
+        value: ses
+      - key: AWS_ACCESS_KEY_ID
         sync: false  # Set manually in dashboard
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false  # Set manually in dashboard
+      - key: AWS_REGION
+        value: eu-north-1
+      - key: AWS_SES_REGION
+        value: eu-north-1
       - key: EMAIL_FROM
-        sync: false  # Set manually in dashboard
+        value: "DueSpark <no-reply@duespark.com>"
+      - key: MAIL_FROM
+        value: no-reply@duespark.com
+      - key: MAIL_FROM_NAME
+        value: DueSpark
+      - key: MAIL_REPLY_TO
+        value: support@duespark.com
 
       # Stripe Configuration
       - key: STRIPE_SECRET_KEY
