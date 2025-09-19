@@ -677,42 +677,67 @@ def register_simple(payload: schemas.UserCreate, db: Session = Depends(get_db)):
 # ---- Auth ----
 @app.post("/auth/register", tags=["auth"])
 def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
-    exists = db.query(models.User).filter(models.User.email == payload.email).first()
-    if exists:
-        raise HTTPException(status_code=409, detail="Email already registered")
+    try:
+        exists = db.query(models.User).filter(models.User.email == payload.email).first()
+        if exists:
+            raise HTTPException(status_code=409, detail="Email already registered")
 
-    # Create user first
-    user = models.User(
-        email=payload.email, password_hash=hash_password(payload.password)
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    # Handle referral code if provided
-    referrer = None
-    if payload.referral_code:
-        from app.referral_service import referral_service
-
-        is_valid, error_message, referrer = referral_service.validate_referral_code(
-            payload.referral_code, user, db
+        # Create user first with explicit values for all fields to avoid database issues
+        user = models.User(
+            email=payload.email,
+            password_hash=hash_password(payload.password),
+            role=models.UserRole.owner,  # Explicit role
+            email_verified=False,  # Explicit verification status
+            onboarding_status=models.OnboardingStatus.not_started,  # Explicit onboarding status
         )
-        if is_valid and referrer:
-            # Create referral record (reward will be granted after 1 month of paid subscription)
-            referral = referral_service.create_referral(
-                referrer, user, payload.referral_code, db
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # Handle referral code if provided
+        referrer = None
+        if payload.referral_code:
+            from app.referral_service import referral_service
+
+            is_valid, error_message, referrer = referral_service.validate_referral_code(
+                payload.referral_code, user, db
             )
+            if is_valid and referrer:
+                # Create referral record (reward will be granted after 1 month of paid subscription)
+                referral = referral_service.create_referral(
+                    referrer, user, payload.referral_code, db
+                )
 
-    token = create_access_token(sub=payload.email)
-    tok = schemas.Token(access_token=token)
+        token = create_access_token(sub=payload.email)
+        tok = schemas.Token(access_token=token)
 
-    # Include referral info in response
-    response_data = tok.model_dump()
-    if referrer:
-        response_data["referral_applied"] = True
-        response_data["referred_by"] = referrer.email.split("@")[0]
+        # Include referral info in response
+        response_data = tok.model_dump()
+        if referrer:
+            response_data["referral_applied"] = True
+            response_data["referred_by"] = referrer.email.split("@")[0]
 
-    return _envelope(response_data)
+        return _envelope(response_data)
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 409 for existing user)
+        raise
+    except Exception as e:
+        # Log the exact error and return a detailed response
+        import traceback
+        error_details = str(e)
+        trace = traceback.format_exc()
+        logger.error(f"Registration failed for {payload.email}: {error_details}")
+        logger.error(f"Traceback: {trace}")
+
+        # Rollback the transaction
+        db.rollback()
+
+        # Return a detailed error response for debugging
+        raise HTTPException(
+            status_code=500,
+            detail=f"Registration failed: {error_details}"
+        )
 
 
 @app.post("/auth/login", tags=["auth"])
