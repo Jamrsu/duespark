@@ -599,6 +599,36 @@ def _log_event(
         db.rollback()
 
 
+# ---- Database initialization endpoint ----
+@app.post("/admin/init-database", tags=["admin"])
+def init_database_endpoint():
+    """Initialize database tables - EMERGENCY USE ONLY"""
+    try:
+        from app.database import Base, engine
+        from app import models  # Import to register models
+
+        logger.info("Creating all database tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database initialization completed successfully!")
+
+        return {
+            "status": "success",
+            "message": "Database tables created successfully",
+            "tables_created": [table.name for table in Base.metadata.sorted_tables]
+        }
+
+    except Exception as e:
+        import traceback
+        error_details = str(e)
+        trace = traceback.format_exc()
+        logger.error(f"Database initialization failed: {error_details}")
+        logger.error(f"Traceback: {trace}")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database initialization failed: {error_details}"
+        )
+
 # ---- Debug endpoint for troubleshooting ----
 @app.post("/debug/auth-test", tags=["debug"])
 def debug_auth_test(payload: schemas.UserCreate, db: Session = Depends(get_db)):
