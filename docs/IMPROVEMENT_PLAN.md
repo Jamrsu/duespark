@@ -70,7 +70,7 @@ Last Updated: 2025-09-17
 /sic_backend_mvp_jwt_sqlite/.env
 
 # Example leakage (redacted):
-STRIPE_SECRET_KEY=sk_test_************************
+STRIPE_SECRET_KEY=sk_test_[REDACTED_TEST_KEY]
 ```
 
 **Resolution**:
