@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DueSpark - Offline</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-500: #6b7280;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, #0284c7 100%);
+            color: var(--gray-900);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .offline-container {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 400px;
+            width: 100%;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h1 {
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--gray-500);
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .features {
+            background: var(--gray-50);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+
+        .features h3 {
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            list-style: none;
+            space-y: 0.5rem;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            color: var(--gray-500);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-900);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .connection-status {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .online {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 1.5rem;
+            }
+
+            .actions {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.625rem 1rem;
+                font-size: 0.8125rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📱</div>
+        <h1>DueSpark Offline Mode</h1>
+        <p class="subtitle">
+            No internet connection detected. Don't worry - you can still access your cached data!
+        </p>
+
+        <div class="features">
+            <h3>Available Offline Features:</h3>
+            <ul class="feature-list">
+                <li>View cached dashboard analytics</li>
+                <li>Browse recent invoices</li>
+                <li>Review client information</li>
+                <li>Access cached reports</li>
+            </ul>
+        </div>
+
+        <div id="connection-status" class="connection-status offline">
+            🔴 Currently Offline
+        </div>
+
+        <div class="actions">
+            <a href="/dashboard" class="btn btn-primary">
+                📊 View Dashboard
+            </a>
+            <a href="/invoices" class="btn btn-success">
+                📄 View Invoices
+            </a>
+            <button onclick="checkConnection()" class="btn btn-secondary">
+                🔄 Check Connection
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Check online status
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connection-status');
+            if (navigator.onLine) {
+                statusEl.textContent = '🟢 Connected - Ready to sync!';
+                statusEl.className = 'connection-status online';
+
+                // Auto-redirect to app after 2 seconds when online
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            } else {
+                statusEl.textContent = '🔴 Currently Offline';
+                statusEl.className = 'connection-status offline';
+            }
+        }
+
+        function checkConnection() {
+            updateConnectionStatus();
+
+            // Try to fetch a small resource to verify connection
+            fetch('/manifest.json', { method: 'HEAD', cache: 'no-cache' })
+                .then(() => {
+                    window.location.href = '/dashboard';
+                })
+                .catch(() => {
+                    // Still offline, show user feedback
+                    const statusEl = document.getElementById('connection-status');
+                    statusEl.textContent = '🔴 Still Offline - Please check your connection';
+                    statusEl.className = 'connection-status offline';
+                });
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Initial status check
+        updateConnectionStatus();
+
+        // Periodic connection check (every 30 seconds)
+        setInterval(() => {
+            if (!navigator.onLine) {
+                fetch('/manifest.json', { method: 'HEAD', cache: 'no-cache' })
+                    .then(() => {
+                        // Connection restored
+                        updateConnectionStatus();
+                    })
+                    .catch(() => {
+                        // Still offline
+                    });
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

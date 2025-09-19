@@ -1,0 +1,29 @@
+[flake8]
+max-line-length = 88
+extend-ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (handled by black)
+    E501
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    .env,
+    env,
+    build,
+    dist,
+    .eggs,
+    *.egg-info,
+    alembic/versions
+max-complexity = 10
+import-order-style = google
+docstring-convention = google
+per-file-ignores =
+    # Tests can use assert statements and don't need docstrings
+    tests/*:D,S101
+    # Alembic migration files can be complex
+    alembic/versions/*:E501,D,F401

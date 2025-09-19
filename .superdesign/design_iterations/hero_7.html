@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DueSpark - Glass Morphism Hero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="hero_7_theme.css">
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif !important;
+            background:
+                radial-gradient(circle at 25% 25%, oklch(0.4800 0.2200 260 / 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, oklch(0.6500 0.2800 300 / 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 0%, oklch(0.5500 0.2600 200 / 0.10) 0%, transparent 50%),
+                linear-gradient(135deg, oklch(0.9800 0 0) 0%, oklch(0.9600 0.0200 260) 100%);
+        }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-5px);
+            box-shadow: 0 16px 40px 0 rgba(31, 38, 135, 0.25);
+        }
+
+        .glass-button {
+            background: rgba(72, 56, 149, 0.8);
+            backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass-button:hover {
+            background: rgba(72, 56, 149, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px 0 rgba(72, 56, 149, 0.3);
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .animate-float-glass {
+            animation: floatGlass 6s ease-in-out infinite;
+        }
+
+        @keyframes floatGlass {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-10px) rotate(1deg); }
+            66% { transform: translateY(5px) rotate(-1deg); }
+        }
+
+        .animate-glow {
+            animation: glow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            }
+            to {
+                box-shadow: 0 8px 32px 0 rgba(72, 56, 149, 0.3), 0 0 40px 0 rgba(165, 101, 229, 0.2);
+            }
+        }
+
+        .animate-slide-up-glass {
+            animation: slideUpGlass 1s ease-out forwards;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .animate-slide-up-glass-delay {
+            animation: slideUpGlass 1s ease-out 0.3s forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .animate-slide-up-glass-delay-2 {
+            animation: slideUpGlass 1s ease-out 0.6s forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        @keyframes slideUpGlass {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .text-gradient-glass {
+            background: linear-gradient(135deg, oklch(0.4800 0.2200 260), oklch(0.6500 0.2800 300), oklch(0.5500 0.2600 200));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: gradientShiftText 6s ease infinite;
+        }
+
+        @keyframes gradientShiftText {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .text-glass-large {
+            font-size: clamp(48px, 8vw, 84px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .frosted-overlay {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="glass-nav fixed w-full top-0 z-50 px-8 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 glass-morphism rounded-2xl flex items-center justify-center animate-glow">
+                    <i data-lucide="layers" class="h-5 w-5 text-purple-600"></i>
+                </div>
+                <span class="text-2xl font-bold text-gray-900">DueSpark</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-gray-700 hover:text-purple-600 transition-colors font-medium">Features</a>
+                <a href="#" class="text-gray-700 hover:text-purple-600 transition-colors font-medium">Solutions</a>
+                <a href="#" class="text-gray-700 hover:text-purple-600 transition-colors font-medium">Pricing</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="#" class="text-gray-700 hover:text-purple-600 transition-colors font-medium">Sign In</a>
+                <button class="glass-button text-white px-6 py-2 rounded-xl font-semibold">Get Started</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-glass-large text-gray-900 leading-tight mb-8 animate-slide-up-glass">
+                        Invoice Management
+                        <span class="text-gradient-glass block">Reimagined</span>
+                    </h1>
+
+                    <p class="text-xl text-gray-600 mb-12 leading-relaxed max-w-xl animate-slide-up-glass-delay">
+                        Beautiful, intelligent, and effortlessly simple payment tracking for the modern business. Experience the future of financial management.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12 animate-slide-up-glass-delay-2">
+                        <button class="glass-button text-white px-8 py-4 rounded-2xl text-lg font-semibold">
+                            Experience Now
+                        </button>
+                        <button class="glass-morphism text-gray-700 px-8 py-4 rounded-2xl text-lg font-semibold hover:text-purple-600 transition-colors">
+                            Learn More
+                        </button>
+                    </div>
+
+                    <!-- Floating Stats -->
+                    <div class="flex justify-center lg:justify-start space-x-8 animate-slide-up-glass-delay-2">
+                        <div class="glass-morphism p-4 rounded-2xl text-center animate-float-glass">
+                            <div class="text-2xl font-bold text-purple-600">99.9%</div>
+                            <div class="text-sm text-gray-600">Accuracy</div>
+                        </div>
+                        <div class="glass-morphism p-4 rounded-2xl text-center animate-float-glass" style="animation-delay: 1s;">
+                            <div class="text-2xl font-bold text-purple-600">24/7</div>
+                            <div class="text-sm text-gray-600">Monitoring</div>
+                        </div>
+                        <div class="glass-morphism p-4 rounded-2xl text-center animate-float-glass" style="animation-delay: 2s;">
+                            <div class="text-2xl font-bold text-purple-600">AI</div>
+                            <div class="text-sm text-gray-600">Powered</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative animate-slide-up-glass-delay">
+                    <!-- Main Glass Container -->
+                    <div class="glass-card p-8 rounded-3xl animate-float-glass animate-glow">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2015&h=1200&q=80"
+                             alt="Glass Interface"
+                             class="rounded-2xl w-full">
+
+                        <!-- Floating Glass Elements -->
+                        <div class="absolute -top-4 -right-4 glass-morphism p-3 rounded-xl animate-float-glass" style="animation-delay: 0.5s;">
+                            <i data-lucide="trending-up" class="h-6 w-6 text-green-600"></i>
+                        </div>
+                        <div class="absolute -bottom-4 -left-4 glass-morphism p-3 rounded-xl animate-float-glass" style="animation-delay: 1.5s;">
+                            <i data-lucide="zap" class="h-6 w-6 text-purple-600"></i>
+                        </div>
+                    </div>
+
+                    <!-- Background Glass Shapes -->
+                    <div class="absolute -z-10 top-12 right-12 w-32 h-32 glass-morphism rounded-full animate-float-glass opacity-50"></div>
+                    <div class="absolute -z-10 bottom-12 left-12 w-24 h-24 glass-morphism rounded-2xl animate-float-glass opacity-30" style="animation-delay: 2s;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="px-8 py-20">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    Crystalline clarity in every feature
+                </h2>
+                <p class="text-xl text-gray-600">
+                    Transparent, powerful, and beautifully designed
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass-card p-8 rounded-3xl text-center group">
+                    <div class="w-16 h-16 glass-morphism rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:animate-glow">
+                        <span class="text-3xl">🎯</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Precision</h3>
+                    <p class="text-gray-600 mb-4">Track every detail with perfect accuracy</p>
+                    <div class="text-sm text-gray-500 italic">Track every detail with perfect accuracy</div>
+                </div>
+
+                <div class="glass-card p-8 rounded-3xl text-center group">
+                    <div class="w-16 h-16 glass-morphism rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:animate-glow">
+                        <span class="text-3xl">⚡</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Speed</h3>
+                    <p class="text-gray-600 mb-4">Lightning fast processing</p>
+                    <div class="text-sm text-gray-500 italic">Lightning fast processing</div>
+                </div>
+
+                <div class="glass-card p-8 rounded-3xl text-center group">
+                    <div class="w-16 h-16 glass-morphism rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:animate-glow">
+                        <span class="text-3xl">🔮</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Intelligence</h3>
+                    <p class="text-gray-600 mb-4">AI-powered insights and automation</p>
+                    <div class="text-sm text-gray-500 italic">AI-powered insights and automation</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="px-8 py-20">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-card p-12 rounded-3xl text-center animate-glow">
+                <h2 class="text-3xl font-bold text-gray-900 mb-12">Transparent results</h2>
+
+                <div class="grid md:grid-cols-3 gap-12">
+                    <div>
+                        <div class="text-5xl font-bold text-gradient-glass mb-2">50M+</div>
+                        <div class="text-gray-600 font-medium">Invoices processed</div>
+                    </div>
+                    <div>
+                        <div class="text-5xl font-bold text-gradient-glass mb-2">99.9%</div>
+                        <div class="text-gray-600 font-medium">System reliability</div>
+                    </div>
+                    <div>
+                        <div class="text-5xl font-bold text-gradient-glass mb-2">200+</div>
+                        <div class="text-gray-600 font-medium">Countries served</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

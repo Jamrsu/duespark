@@ -1,0 +1,148 @@
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'sic_backend_mvp_jwt_sqlite/generate_openapi.py'
+      - 'sic_backend_mvp_jwt_sqlite/app/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Job to generate OpenAPI spec from backend
+  generate-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        run: |
+          cd sic_backend_mvp_jwt_sqlite
+          pip install -r requirements.txt
+
+      - name: Generate OpenAPI specification
+        run: |
+          cd sic_backend_mvp_jwt_sqlite
+          python generate_openapi.py
+
+      - name: Copy OpenAPI spec to docs
+        run: |
+          mkdir -p docs/static/api
+          cp sic_backend_mvp_jwt_sqlite/openapi.json docs/static/api/openapi.json
+
+      - name: Upload OpenAPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: docs/static/api/openapi.json
+
+  # Job to build and deploy documentation
+  build-and-deploy:
+    needs: generate-openapi
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Download OpenAPI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-spec
+          path: docs/static/api/
+
+      - name: Install documentation dependencies
+        run: |
+          cd docs
+          npm ci
+
+      - name: Build documentation
+        run: |
+          cd docs
+          npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Job to run documentation tests (optional)
+  test-docs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd docs
+          npm ci
+
+      - name: Test build
+        run: |
+          cd docs
+          npm run build
+
+      - name: Test for broken links (if configured)
+        run: |
+          cd docs
+          if npm list broken-link-checker > /dev/null 2>&1; then
+            npm run test:links || echo "Link checking skipped or failed"
+          fi
+
+  # Notification job (optional)
+  notify:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.build-and-deploy.result }}" == "success" ]; then
+            echo "✅ Documentation deployed successfully to GitHub Pages"
+            echo "🌐 Site URL: https://duespark.github.io/duespark/"
+          else
+            echo "❌ Documentation deployment failed"
+            exit 1
+          fi

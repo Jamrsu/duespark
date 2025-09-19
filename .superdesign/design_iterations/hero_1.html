@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DueSpark - Modern SaaS Hero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="hero_1_theme.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .animate-fade-in-up-delay-1 {
+            animation: fadeInUp 0.6s ease-out 0.2s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .animate-fade-in-up-delay-2 {
+            animation: fadeInUp 0.5s ease-out 0.4s forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        .animate-fade-in-right {
+            animation: fadeInRight 1s ease-out 0.3s forwards;
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+
+        .btn-hover {
+            transition: all 0.2s ease;
+        }
+
+        .btn-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 25px -5px hsl(0 0% 0% / 0.10), 0 8px 10px -6px hsl(0 0% 0% / 0.10);
+        }
+
+        .btn-hover:active {
+            transform: scale(0.98);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, oklch(1.0000 0 0) 0%, oklch(0.9800 0.0200 264) 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, oklch(0.4500 0.2800 264.0520) 0%, oklch(0.6200 0.1900 200) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-white hero-gradient">
+    <!-- Navigation -->
+    <nav class="px-6 py-4 animate-fade-in-up">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="zap" class="h-8 w-8 text-blue-600"></i>
+                <span class="text-2xl font-bold text-gray-900">DueSpark</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-gray-700 hover:text-gray-900 transition-colors stagger-1 animate-scale-in">Features</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 transition-colors stagger-2 animate-scale-in">Pricing</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 transition-colors stagger-3 animate-scale-in">About</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 transition-colors stagger-4 animate-scale-in">Contact</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="#" class="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">Login</a>
+                <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors btn-hover animate-scale-in">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="px-6 py-20 lg:py-32">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight mb-6 animate-fade-in-up">
+                        Smart Invoice
+                        <span class="gradient-text">Tracking</span>
+                        Made Simple
+                    </h1>
+
+                    <p class="text-xl text-gray-600 mb-8 leading-relaxed animate-fade-in-up-delay-1">
+                        Transform your business with AI-powered invoice management. Track payments, automate reminders, and never miss a due date again.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up-delay-2">
+                        <a href="#" class="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors btn-hover">
+                            Get Started Free
+                        </a>
+                        <a href="#" class="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors btn-hover">
+                            Watch Demo
+                        </a>
+                    </div>
+                </div>
+
+                <div class="animate-fade-in-right">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&h=800&q=80"
+                             alt="Dashboard Preview"
+                             class="rounded-2xl shadow-2xl">
+                        <div class="absolute inset-0 bg-gradient-to-t from-blue-500/20 to-transparent rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="px-6 py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4 animate-fade-in-up">
+                    Everything you need to manage invoices
+                </h2>
+                <p class="text-xl text-gray-600 animate-fade-in-up-delay-1">
+                    Powerful features designed to streamline your billing process
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-1">
+                    <div class="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="bell" class="h-6 w-6 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Smart Reminders</h3>
+                    <p class="text-gray-600">Automated payment reminders that adapt to your business needs</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-2">
+                    <div class="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="analytics" class="h-6 w-6 text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Analytics</h3>
+                    <p class="text-gray-600">Deep insights into your payment patterns and cash flow</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-3">
+                    <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="zap" class="h-6 w-6 text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">AI-Powered</h3>
+                    <p class="text-gray-600">Machine learning algorithms optimize your reminder timing</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-4">
+                    <div class="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="shield" class="h-6 w-6 text-orange-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Secure</h3>
+                    <p class="text-gray-600">Bank-level security to protect your financial data</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DueSpark Enterprise - Corporate Hero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="hero_5_theme.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 400;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+        }
+
+        .enterprise-gradient {
+            background: linear-gradient(135deg, oklch(0.9900 0 0) 0%, oklch(0.9700 0.0200 240) 100%);
+        }
+
+        .professional-shadow {
+            box-shadow: 0 20px 40px 0px hsl(240 20% 25% / 0.12);
+        }
+
+        .animate-fade-up {
+            animation: fadeUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .animate-fade-up-delay {
+            animation: fadeUp 0.8s ease-out 0.3s forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .animate-fade-up-delay-2 {
+            animation: fadeUp 0.8s ease-out 0.6s forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .animate-slide-up {
+            animation: slideUp 1s ease-out 0.9s forwards;
+            opacity: 0;
+            transform: translateY(60px);
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-enterprise {
+            background: linear-gradient(135deg, oklch(0.2500 0.0800 240), oklch(0.3500 0.0800 220));
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.25, 1);
+        }
+
+        .btn-enterprise:hover {
+            background: linear-gradient(135deg, oklch(0.3000 0.0800 240), oklch(0.4000 0.0800 220));
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px 0px hsl(240 20% 25% / 0.20);
+        }
+
+        .btn-secondary-enterprise {
+            border: 2px solid oklch(0.2500 0.0800 240);
+            color: oklch(0.2500 0.0800 240);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.25, 1);
+        }
+
+        .btn-secondary-enterprise:hover {
+            background: oklch(0.2500 0.0800 240);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px 0px hsl(240 20% 25% / 0.15);
+        }
+
+        .feature-card-enterprise {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.25, 1);
+            border: 1px solid oklch(0.9000 0 0);
+        }
+
+        .feature-card-enterprise:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px 0px hsl(240 20% 25% / 0.10);
+            border-color: oklch(0.2500 0.0800 240);
+        }
+
+        .text-enterprise-large {
+            font-size: clamp(40px, 6vw, 72px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .text-enterprise-subtitle {
+            font-size: 20px;
+            line-height: 1.6;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+
+        .trust-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid oklch(0.9000 0 0);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: oklch(0.3000 0 0);
+            margin: 4px;
+        }
+
+        .trust-badge:before {
+            content: '✓';
+            color: oklch(0.2500 0.0800 240);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .logo-container {
+            filter: grayscale(100%) opacity(60%);
+            transition: filter 0.3s ease;
+        }
+
+        .logo-container:hover {
+            filter: grayscale(0%) opacity(100%);
+        }
+    </style>
+</head>
+<body class="enterprise-gradient">
+    <!-- Navigation -->
+    <nav class="px-8 py-6 bg-white/90 backdrop-blur-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">D</span>
+                </div>
+                <span class="text-2xl font-semibold text-gray-900">DueSpark Enterprise</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Solutions</a>
+                <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Industries</a>
+                <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Resources</a>
+                <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Support</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Sign In</a>
+                <a href="#" class="btn-enterprise text-white px-6 py-2 rounded-lg font-medium">Contact Sales</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="px-8 py-24 lg:py-32">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div>
+                    <div class="mb-6 animate-fade-up">
+                        <div class="trust-badge">Enterprise Grade</div>
+                        <div class="trust-badge">SOC 2 Compliant</div>
+                        <div class="trust-badge">GDPR Ready</div>
+                    </div>
+
+                    <h1 class="text-enterprise-large text-gray-900 mb-8 animate-fade-up">
+                        The Enterprise Solution<br>
+                        for Invoice Management
+                    </h1>
+
+                    <p class="text-enterprise-subtitle text-gray-600 mb-12 max-w-xl animate-fade-up-delay">
+                        Trusted by Fortune 500 companies worldwide to optimize cash flow,
+                        reduce payment delays, and streamline financial operations at scale.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 mb-12 animate-fade-up-delay-2">
+                        <button class="btn-enterprise text-white px-8 py-4 rounded-lg text-lg font-semibold">
+                            Schedule Demo
+                        </button>
+                        <button class="btn-secondary-enterprise px-8 py-4 rounded-lg text-lg font-semibold">
+                            Download Whitepaper
+                        </button>
+                    </div>
+
+                    <!-- Trust Indicators -->
+                    <div class="animate-fade-up-delay-2">
+                        <p class="text-sm text-gray-500 mb-4 font-medium">TRUSTED BY LEADING ENTERPRISES</p>
+                        <div class="flex items-center space-x-8 opacity-60">
+                            <div class="logo-container">
+                                <div class="w-20 h-8 bg-gray-400 rounded opacity-50"></div>
+                            </div>
+                            <div class="logo-container">
+                                <div class="w-24 h-8 bg-gray-400 rounded opacity-50"></div>
+                            </div>
+                            <div class="logo-container">
+                                <div class="w-16 h-8 bg-gray-400 rounded opacity-50"></div>
+                            </div>
+                            <div class="logo-container">
+                                <div class="w-20 h-8 bg-gray-400 rounded opacity-50"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="animate-slide-up">
+                    <div class="relative">
+                        <div class="professional-shadow bg-white rounded-2xl p-8">
+                            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2015&h=1200&q=80"
+                                 alt="Enterprise Dashboard"
+                                 class="rounded-xl w-full">
+                            <div class="absolute top-8 left-8 right-8 h-6 bg-gradient-to-r from-blue-600/20 to-transparent rounded-t-xl"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Enterprise Features -->
+    <section class="px-8 py-24 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    Enterprise-Grade Capabilities
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Built to meet the most demanding requirements of large-scale operations
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="feature-card-enterprise bg-white p-8 rounded-xl">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="shield-check" class="h-6 w-6 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">■ COMPLIANCE</h3>
+                    <div class="space-y-2 text-gray-600">
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                            SOC 2 Type II
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                            GDPR Ready
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                            ISO 27001
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature-card-enterprise bg-white p-8 rounded-xl">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="network" class="h-6 w-6 text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">■ INTEGRATION</h3>
+                    <div class="space-y-2 text-gray-600">
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-green-600 rounded-full mr-3"></span>
+                            99.9% Uptime
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-green-600 rounded-full mr-3"></span>
+                            500+ APIs
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-green-600 rounded-full mr-3"></span>
+                            SSO Enabled
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature-card-enterprise bg-white p-8 rounded-xl">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="headphones" class="h-6 w-6 text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">■ SUPPORT</h3>
+                    <div class="space-y-2 text-gray-600">
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-purple-600 rounded-full mr-3"></span>
+                            24/7 Expert
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-purple-600 rounded-full mr-3"></span>
+                            Dedicated Team
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-purple-600 rounded-full mr-3"></span>
+                            SLA Guaranteed
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="px-8 py-24 bg-gray-50">
+        <div class="max-w-6xl mx-auto text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-16">Proven Results</h2>
+
+            <div class="grid md:grid-cols-4 gap-12">
+                <div>
+                    <div class="text-5xl font-bold text-blue-600 mb-2">$2.4B+</div>
+                    <div class="text-gray-600 font-medium">Revenue Managed</div>
+                </div>
+
+                <div>
+                    <div class="text-5xl font-bold text-blue-600 mb-2">45%</div>
+                    <div class="text-gray-600 font-medium">Faster Collections</div>
+                </div>
+
+                <div>
+                    <div class="text-5xl font-bold text-blue-600 mb-2">99.9%</div>
+                    <div class="text-gray-600 font-medium">System Uptime</div>
+                </div>
+
+                <div>
+                    <div class="text-5xl font-bold text-blue-600 mb-2">500+</div>
+                    <div class="text-gray-600 font-medium">Enterprise Clients</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="px-8 py-24 bg-gradient-to-br from-blue-600 to-blue-800 text-white text-center">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-4xl font-bold mb-6">Ready to Transform Your Operations?</h2>
+            <p class="text-xl mb-8 opacity-90">
+                Join the Fortune 500 companies that trust DueSpark Enterprise
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors">
+                    Get Enterprise Demo
+                </button>
+                <button class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all">
+                    Contact Sales Team
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
