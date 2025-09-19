@@ -11,7 +11,7 @@ services:
     dockerfilePath: ./Dockerfile.render
     healthCheckPath: /healthz
     autoDeploy: true
-    branch: main
+    branch: render-deployment-fix
     rootDir: ./sic_backend_mvp_jwt_sqlite
     envVars:
       # Application Settings
