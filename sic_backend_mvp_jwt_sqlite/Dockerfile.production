@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for DueSpark Backend Production Deployment
 # Stage 1: Build dependencies and prepare application
-FROM python:3.11-slim as builder
+FROM python:3.13-slim as builder
 
 # Set environment variables for build stage
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -25,7 +25,7 @@ RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # Stage 2: Production runtime
-FROM python:3.11-slim as production
+FROM python:3.13-slim as production
 
 # Set environment variables for production
 ENV PYTHONDONTWRITEBYTECODE=1 \
