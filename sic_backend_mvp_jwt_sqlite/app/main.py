@@ -641,6 +641,39 @@ def debug_auth_test(payload: schemas.UserCreate, db: Session = Depends(get_db)):
             "traceback": traceback.format_exc()
         }
 
+# ---- Simplified Auth (EMERGENCY FIX) ----
+@app.post("/auth/register-simple", tags=["auth"])
+def register_simple(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Simplified registration endpoint without referral logic for debugging"""
+    try:
+        # Check if user exists
+        exists = db.query(models.User).filter(models.User.email == payload.email).first()
+        if exists:
+            raise HTTPException(status_code=409, detail="Email already registered")
+
+        # Create minimal user
+        user = models.User(
+            email=payload.email,
+            password_hash=hash_password(payload.password)
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # Create token
+        token = create_access_token(sub=payload.email)
+        tok = schemas.Token(access_token=token)
+
+        return _envelope(tok.model_dump())
+
+    except Exception as e:
+        db.rollback()
+        import traceback
+        logger.error(f"Registration error: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
 # ---- Auth ----
 @app.post("/auth/register", tags=["auth"])
 def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
