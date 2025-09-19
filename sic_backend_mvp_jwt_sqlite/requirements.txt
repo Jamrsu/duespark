@@ -2,7 +2,7 @@
 fastapi==0.112.2
 uvicorn[standard]==0.30.6
 pydantic==2.8.2
-email-validator==2.2.0
+email-validator==2.3.0
 SQLAlchemy==2.0.32
 passlib[bcrypt]==1.7.4
 bcrypt==3.2.2
