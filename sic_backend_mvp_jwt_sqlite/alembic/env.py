@@ -13,9 +13,12 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set DB URL from env
+# Set DB URL from env, with PostgreSQL URL fix for Render
 db_url = os.getenv("DATABASE_URL")
 if db_url:
+    # Fix PostgreSQL URL scheme for SQLAlchemy 2.x compatibility
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
     config.set_main_option("sqlalchemy.url", db_url)
 
 # add your model's MetaData object here
