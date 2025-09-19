@@ -8,6 +8,14 @@ from typing import List, Optional
 import jwt
 import stripe
 from dotenv import load_dotenv
+import logging
+
+# Configure logging early
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -57,21 +65,68 @@ from app.subscription_service import get_subscription_gate, get_subscription_ser
 # Use FastAPI lifespan to manage startup/shutdown tasks (replaces deprecated on_event)
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
-    task = asyncio.create_task(_dead_letter_worker())
-    scheduler = init_scheduler()
-    scheduler.start()
+    """Optimized startup to prevent deployment timeouts"""
+    logger.info("Starting DueSpark backend services...")
+
+    # Initialize services with timeouts to prevent deployment hanging
+    task = None
+    scheduler = None
+
     try:
+        # Start background services asynchronously to avoid blocking startup
+        logger.info("Initializing scheduler...")
+        scheduler = init_scheduler()
+
+        # Only start scheduler and worker after basic startup is complete
+        # This prevents timeout during deployment
+        startup_delay = int(os.getenv('STARTUP_DELAY_SECONDS', '10'))
+        if startup_delay > 0:
+            logger.info(f"Delaying background services by {startup_delay}s for deployment stability")
+            asyncio.create_task(_delayed_startup(scheduler, startup_delay))
+        else:
+            scheduler.start()
+            task = asyncio.create_task(_dead_letter_worker())
+
+        logger.info("DueSpark backend startup completed successfully")
         yield
+
+    except Exception as exc:
+        logger.error(f"Error during startup: {exc}", exc_info=True)
+        raise
     finally:
+        logger.info("Shutting down DueSpark backend services...")
         try:
-            task.cancel()
-            await task
+            if task:
+                task.cancel()
+                await task
         except asyncio.CancelledError:
             logger.debug("Dead letter worker task cancelled during shutdown")
         try:
-            scheduler.shutdown(wait=False)
+            if scheduler:
+                scheduler.shutdown(wait=False)
         except Exception as exc:
             logger.warning("Failed to shut down scheduler: %s", exc, exc_info=True)
+
+
+async def _delayed_startup(scheduler, delay_seconds: int, disable_worker: bool = False):
+    """Start background services after a delay to ensure successful deployment"""
+    await asyncio.sleep(delay_seconds)
+    try:
+        logger.info("Starting delayed background services...")
+        if scheduler:
+            scheduler.start()
+            logger.info("Scheduler started successfully")
+
+        if not disable_worker:
+            # Note: We don't store the task reference here since it's fire-and-forget
+            asyncio.create_task(_dead_letter_worker())
+            logger.info("Dead letter worker started successfully")
+        else:
+            logger.info("Dead letter worker disabled for emergency deployment")
+
+        logger.info("Background services started successfully")
+    except Exception as exc:
+        logger.error(f"Error starting delayed services: {exc}", exc_info=True)
 
 
 app = FastAPI(
@@ -287,11 +342,13 @@ app.add_middleware(
 # app.include_router(analytics_router)
 # app.include_router(enterprise_router)
 
-# Basic health endpoint for Render deployment
-@app.get("/healthz", tags=["health"])
+# Fast health endpoint for Render deployment - optimized for speed
+@app.get("/healthz", tags=["health"], include_in_schema=False)
 async def health_check():
-    """Basic health check endpoint for Render deployment"""
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+    """Ultra-fast health check endpoint optimized for Render deployment health checks"""
+    # Return immediately without any expensive operations
+    # No database connections, no datetime operations, just pure response
+    return {"status": "healthy"}
 
 
 # Request logging middleware
@@ -470,10 +527,17 @@ TONE_PRESETS: dict[str, dict[str, str]] = {
 }
 
 
-# ---- Health ----
-@app.get("/healthz", include_in_schema=False)
-def healthz():
-    return {"status": "ok"}
+# ---- Health with Database Check (for debugging) ----
+@app.get("/health", include_in_schema=False)
+def health_with_db_check():
+    """Health check with database verification - use for debugging only"""
+    try:
+        # Quick database ping
+        with closing(SessionLocal()) as db:
+            db.execute("SELECT 1")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
 
 @app.get("/metrics", include_in_schema=False)

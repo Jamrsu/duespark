@@ -96,6 +96,12 @@ services:
       - key: ADAPTIVE_LEADER_ONLY
         value: "true"
 
+      # Startup Optimization for Deployment
+      - key: STARTUP_DELAY_SECONDS
+        value: "30"  # Delay background services to ensure successful deployment
+      - key: SKIP_PERFORMANCE_INDEXES
+        value: "true"  # Skip slow index creation during deployment
+
       # Rate Limiting
       - key: RATE_LIMIT_REQUESTS_PER_MINUTE
         value: "60"

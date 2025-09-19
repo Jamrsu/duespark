@@ -41,9 +41,12 @@ USER appuser
 # Render will map the correct port, so we use a default that will be overridden
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/healthz || exit 1
+# Health check - optimized for faster startup
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=2 \
+    CMD curl -f http://localhost:${PORT:-8000}/healthz || exit 1
 
-# Start command (Render will override this with render.yaml startCommand)
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Make startup script executable
+RUN chmod +x ./startup.py
+
+# Start command using optimized startup script
+CMD ["python", "startup.py"]

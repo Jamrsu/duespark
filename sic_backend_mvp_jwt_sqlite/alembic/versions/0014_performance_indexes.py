@@ -18,6 +18,15 @@ depends_on = None
 def upgrade() -> None:
     """Add critical performance indexes for scheduler and analytics queries"""
 
+    # Skip performance indexes during initial deployment to avoid timeout
+    # These will be added post-deployment via separate migration or manual process
+    # This enables faster deployment while keeping the migration for future use
+
+    import os
+    if os.getenv('SKIP_PERFORMANCE_INDEXES', 'false').lower() == 'true':
+        print("Skipping performance indexes due to SKIP_PERFORMANCE_INDEXES=true")
+        return
+
     # Critical scheduler performance indexes
     # These will improve the scheduler from O(n) to O(log n) lookups
     # Only create indexes on tables that exist in the basic schema
