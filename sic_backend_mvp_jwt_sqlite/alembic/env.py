@@ -19,7 +19,23 @@ if db_url:
     config.set_main_option("sqlalchemy.url", db_url)
 
 # add your model's MetaData object here
-from app.database import Base  # type: ignore
+# Handle import path issues in different environments
+import sys
+from pathlib import Path
+
+# Add the parent directory to Python path if not already there
+current_dir = Path(__file__).parent.parent
+if str(current_dir) not in sys.path:
+    sys.path.insert(0, str(current_dir))
+
+try:
+    from app.database import Base  # type: ignore
+except ImportError:
+    # Fallback for different path configurations
+    import sys
+    sys.path.insert(0, '/app')
+    from app.database import Base  # type: ignore
+
 target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
