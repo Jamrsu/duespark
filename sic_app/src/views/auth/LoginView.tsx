@@ -14,7 +14,7 @@ export function LoginView() {
   const location = useLocation()
   const loginMutation = useLogin()
 
-  const from = location.state?.from?.pathname || '/dashboard'
+  const from = location.state?.from?.pathname || '/app/dashboard'
 
   const {
     register,

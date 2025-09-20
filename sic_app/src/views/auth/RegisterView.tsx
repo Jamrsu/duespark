@@ -39,7 +39,7 @@ export function RegisterView() {
         password: data.password,
         referral_code: data.referralCode || undefined,
       })
-      navigate('/dashboard', { replace: true })
+      navigate('/app/dashboard', { replace: true })
     } catch (error) {
       // Error is handled by the mutation
     }
