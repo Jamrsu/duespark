@@ -280,7 +280,8 @@ def get_cors_origins():
     """Get CORS origins from environment variable with secure defaults"""
     # Always include critical production URLs regardless of environment config
     critical_origins = [
-        "https://sicfrontend-ap5kvc07a-james-projects-c948d138.vercel.app",  # Current production
+        "https://sicfrontend-ap5kvc07a-james-projects-c948d138.vercel.app",  # Old production
+        "https://sicfrontend-qg5ozv4dc-james-projects-c948d138.vercel.app",  # New production
     ]
 
     # Check if we have a dynamic Vercel frontend URL in environment
