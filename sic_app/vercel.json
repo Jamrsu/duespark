@@ -9,7 +9,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://duespark-backend.fly.dev/$1"
+      "destination": "https://duespark-backend.onrender.com/$1"
     }
   ],
   "redirects": [
