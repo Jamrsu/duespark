@@ -286,7 +286,7 @@ def get_cors_origins():
         "http://127.0.0.1:3000",
         "http://localhost:3002",  # Next.js dev port
         "https://sicfrontend-9q6bd7hcz-james-projects-c948d138.vercel.app",  # Old frontend deployment
-        "https://sicfrontend-me6kyh3dj-james-projects-c948d138.vercel.app",  # New frontend deployment
+        "https://sicfrontend-me6kyh3dj-james-projects-c948d138.vercel.app",  # New frontend deployment URL
     ]
 
 def get_cors_headers():
