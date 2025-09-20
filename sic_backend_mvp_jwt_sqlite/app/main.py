@@ -95,6 +95,18 @@ async def app_lifespan(app: FastAPI):
                 # Continue startup anyway - let the app try to run
                 logger.warning("Continuing startup despite database setup issues...")
 
+        # Create admin user if it doesn't exist
+        logger.info("Ensuring admin user exists...")
+        try:
+            from create_admin_user import create_admin_user
+            admin_created = create_admin_user()
+            if admin_created:
+                logger.info("✓ Admin user verified/created successfully")
+            else:
+                logger.warning("⚠ Admin user creation failed - login may not work")
+        except Exception as e:
+            logger.warning(f"⚠ Admin user creation error: {e}")
+
         # Start background services asynchronously to avoid blocking startup
         logger.info("Initializing scheduler...")
         scheduler = init_scheduler()
