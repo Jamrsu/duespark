@@ -38,32 +38,32 @@ export function LandingView() {
             {/* Logo - Left */}
             <div className="flex items-center space-x-3">
               <Zap className="w-8 h-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">DueSpark</span>
+              <span className="text-2xl font-bold text-gray-900">DueSpark</span>
             </div>
 
             {/* Center Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               <button
                 onClick={() => scrollToSection('features')}
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 Features
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 Pricing
               </button>
               <button
                 onClick={() => scrollToSection('about')}
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 About
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 Contact
               </button>
@@ -71,7 +71,7 @@ export function LandingView() {
 
             {/* Login/Signup - Right */}
             <div className="flex items-center space-x-4">
-              <Link to="/auth/login" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <Link to="/auth/login" className="text-gray-700 hover:text-gray-900 transition-colors">
                 Login
               </Link>
               <Link
