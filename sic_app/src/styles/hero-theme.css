@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --background: oklch(1.0000 0 0);
+  --foreground: oklch(0.0900 0 0);
+  --card: oklch(0.9800 0 0);
+  --card-foreground: oklch(0.0900 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.0900 0 0);
+  --primary: oklch(0.4500 0.2800 264.0520);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.9400 0 0);
+  --secondary-foreground: oklch(0.0900 0 0);
+  --muted: oklch(0.9600 0 0);
+  --muted-foreground: oklch(0.4500 0 0);
+  --accent: oklch(0.9400 0 0);
+  --accent-foreground: oklch(0.0900 0 0);
+  --destructive: oklch(0.5800 0.2400 27.3250);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9000 0 0);
+  --input: oklch(0.9600 0 0);
+  --ring: oklch(0.4500 0.2800 264.0520);
+  --chart-1: oklch(0.4500 0.2800 264.0520);
+  --chart-2: oklch(0.6200 0.1900 200);
+  --chart-3: oklch(0.5500 0.2200 160);
+  --chart-4: oklch(0.4900 0.2200 120);
+  --chart-5: oklch(0.7200 0.1800 80);
+  --sidebar: oklch(0.9800 0 0);
+  --sidebar-foreground: oklch(0.0900 0 0);
+  --sidebar-primary: oklch(0.4500 0.2800 264.0520);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9400 0 0);
+  --sidebar-accent-foreground: oklch(0.0900 0 0);
+  --sidebar-border: oklch(0.9000 0 0);
+  --sidebar-ring: oklch(0.4500 0.2800 264.0520);
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.10);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 4px 6px -1px hsl(0 0% 0% / 0.10), 0 2px 4px -2px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 10px 15px -3px hsl(0 0% 0% / 0.10), 0 4px 6px -4px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 20px 25px -5px hsl(0 0% 0% / 0.10), 0 8px 10px -6px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Custom gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, oklch(0.4500 0.2800 264.0520) 0%, oklch(0.6200 0.1900 200) 100%);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, oklch(1.0000 0 0) 0%, oklch(0.9800 0.0200 264) 100%);
+}
+
+/* Typography */
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif !important;
+}
+
+/* Animations */
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.animate-fade-in-up-delay-1 {
+  animation: fadeInUp 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.animate-fade-in-up-delay-2 {
+  animation: fadeInUp 0.5s ease-out 0.4s forwards;
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 1s ease-out 0.3s forwards;
+  opacity: 0;
+  transform: translateX(50px);
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+.btn-hover {
+  transition: all 0.2s ease;
+}
+
+.btn-hover:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-hover:active {
+  transform: scale(0.98);
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--shadow-xl);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, oklch(0.4500 0.2800 264.0520) 0%, oklch(0.6200 0.1900 200) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Auth Form Enhancements */
+.auth-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.input-field {
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  background: var(--input);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(69, 90, 120, 0.1);
+  transform: scale(1.01);
+}
+
+.primary-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transition: all 0.2s ease;
+}
+
+.primary-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.secondary-button {
+  border: 2px solid var(--border);
+  color: var(--foreground);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+}

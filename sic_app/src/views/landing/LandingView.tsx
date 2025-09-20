@@ -18,7 +18,7 @@ import {
   MapPin,
   Send
 } from 'lucide-react'
-import { AuroraBackground } from '@/components/ui/aurora-background'
+import '../../styles/hero-theme.css'
 
 export function LandingView() {
   const scrollToSection = (sectionId: string) => {
@@ -29,9 +29,9 @@ export function LandingView() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen hero-gradient">
       {/* Hero Section with Aurora Background covering nav + hero */}
-      <AuroraBackground className="items-start justify-start">
+      <div className="items-start justify-start">
         {/* Navigation */}
         <nav className="px-6 py-4 animate-fade-in-up relative z-20 w-full">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -45,25 +45,25 @@ export function LandingView() {
             <div className="hidden md:flex items-center space-x-8">
               <button
                 onClick={() => scrollToSection('features')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
               >
                 Features
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
               >
                 Pricing
               </button>
               <button
                 onClick={() => scrollToSection('about')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
               >
                 About
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
               >
                 Contact
               </button>
@@ -71,12 +71,12 @@ export function LandingView() {
 
             {/* Login/Signup - Right */}
             <div className="flex items-center space-x-4">
-              <Link to="/auth/login" className="text-gray-700 hover:text-gray-900 transition-colors">
+              <Link to="/auth/login" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
                 Login
               </Link>
               <Link
                 to="/auth/register"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 hover:scale-105"
+                className="primary-button px-4 py-2 rounded-lg font-semibold btn-hover animate-scale-in"
               >
                 Sign Up
               </Link>
@@ -89,34 +89,34 @@ export function LandingView() {
           <div className="max-w-7xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="text-center lg:text-left">
-                <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 dark:text-white leading-tight mb-6 animate-fade-in-up">
+                <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight mb-6 animate-fade-in-up">
                   Smart Invoice
-                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <span className="gradient-text">
                     {' '}Tracking{' '}
                   </span>
                   Made Simple
                 </h1>
 
-                <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed animate-fade-in-up-delay">
+                <p className="text-xl text-gray-600 mb-8 leading-relaxed animate-fade-in-up-delay-1">
                   Transform your business with AI-powered invoice management. Track payments, automate reminders, and never miss a due date again.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up-delay">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up-delay-2">
                   <Link
                     to="/auth/register"
-                    className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                    className="primary-button px-8 py-4 rounded-lg text-lg font-semibold btn-hover flex items-center justify-center gap-2"
                   >
                     Get Started Free
                     <ArrowRight className="h-5 w-5" />
                   </Link>
-                  <button className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50/10 dark:hover:bg-gray-800/20 backdrop-blur-sm transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2">
+                  <button className="secondary-button px-8 py-4 rounded-lg text-lg font-semibold btn-hover flex items-center justify-center gap-2">
                     <Play className="h-5 w-5" />
                     Watch Demo
                   </button>
                 </div>
 
                 {/* Trust indicators */}
-                <div className="mt-8 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-8 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-500 animate-fade-in-up-delay-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
                     <span>No credit card required</span>
@@ -141,7 +141,7 @@ export function LandingView() {
             </div>
           </div>
         </section>
-      </AuroraBackground>
+      </div>
 
       {/* Features Section */}
       <section id="features" className="px-6 py-16 bg-gray-50">
@@ -156,7 +156,7 @@ export function LandingView() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-2">
+            <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-1">
               <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Bell className="h-6 w-6 text-blue-600" />
               </div>
@@ -164,7 +164,7 @@ export function LandingView() {
               <p className="text-gray-600">Automated payment reminders that adapt to your business needs</p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-2">
+            <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-2">
               <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <BarChart3 className="h-6 w-6 text-green-600" />
               </div>
@@ -172,7 +172,7 @@ export function LandingView() {
               <p className="text-gray-600">Deep insights into your payment patterns and cash flow</p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-2">
+            <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-3">
               <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Zap className="h-6 w-6 text-purple-600" />
               </div>
@@ -180,7 +180,7 @@ export function LandingView() {
               <p className="text-gray-600">Machine learning algorithms optimize your reminder timing</p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-2">
+            <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-4">
               <div className="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-orange-600" />
               </div>
@@ -618,41 +618,6 @@ export function LandingView() {
         </div>
       </footer>
 
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInRight {
-          from {
-            opacity: 0;
-            transform: translateX(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s ease-out forwards;
-        }
-
-        .animate-fade-in-up-delay {
-          animation: fadeInUp 0.6s ease-out 0.2s both;
-        }
-
-        .animate-fade-in-right {
-          animation: fadeInRight 1s ease-out 0.3s both;
-        }
-      `}</style>
     </div>
   )
 }
