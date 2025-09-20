@@ -18,13 +18,17 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Create missing enums
-    op.execute("CREATE TYPE IF NOT EXISTS templatetone AS ENUM ('friendly', 'neutral', 'firm')")
-    op.execute("CREATE TYPE IF NOT EXISTS userrole AS ENUM ('owner', 'member', 'admin')")
-    op.execute("CREATE TYPE IF NOT EXISTS onboardingstatus AS ENUM ('not_started', 'account_created', 'email_verified', 'payment_configured', 'pending', 'completed')")
-    op.execute("CREATE TYPE IF NOT EXISTS invoicesource AS ENUM ('manual', 'stripe', 'paypal', 'xero')")
-    op.execute("CREATE TYPE IF NOT EXISTS subscriptiontier AS ENUM ('freemium', 'basic', 'professional', 'agency')")
-    op.execute("CREATE TYPE IF NOT EXISTS subscriptionstatus AS ENUM ('active', 'past_due', 'canceled', 'incomplete', 'incomplete_expired', 'trialing', 'unpaid', 'paused')")
+    # Create missing enums - SQLite doesn't support CREATE TYPE, so we skip these
+    # Enums will be enforced at the application level via SQLAlchemy models
+    import os
+    if os.getenv('DATABASE_URL', '').startswith('postgresql'):
+        # Only create PostgreSQL types if using PostgreSQL
+        op.execute("CREATE TYPE IF NOT EXISTS templatetone AS ENUM ('friendly', 'neutral', 'firm')")
+        op.execute("CREATE TYPE IF NOT EXISTS userrole AS ENUM ('owner', 'member', 'admin')")
+        op.execute("CREATE TYPE IF NOT EXISTS onboardingstatus AS ENUM ('not_started', 'account_created', 'email_verified', 'payment_configured', 'pending', 'completed')")
+        op.execute("CREATE TYPE IF NOT EXISTS invoicesource AS ENUM ('manual', 'stripe', 'paypal', 'xero')")
+        op.execute("CREATE TYPE IF NOT EXISTS subscriptiontier AS ENUM ('freemium', 'basic', 'professional', 'agency')")
+        op.execute("CREATE TYPE IF NOT EXISTS subscriptionstatus AS ENUM ('active', 'past_due', 'canceled', 'incomplete', 'incomplete_expired', 'trialing', 'unpaid', 'paused')")
 
     # Create templates table
     op.create_table(
@@ -32,7 +36,7 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), primary_key=True),
         sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True),
         sa.Column('name', sa.String(255), nullable=False),
-        sa.Column('tone', sa.Enum('friendly', 'neutral', 'firm', name='templatetone'), nullable=False),
+        sa.Column('tone', sa.String(20), nullable=False),  # SQLite: store as string, validate in app
         sa.Column('subject', sa.String(255), nullable=False),
         sa.Column('body_markdown', sa.Text(), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now()),
@@ -43,7 +47,7 @@ def upgrade() -> None:
 
     # Add missing columns to users table
     try:
-        op.add_column('users', sa.Column('role', sa.Enum('owner', 'member', 'admin', name='userrole'), server_default='owner', nullable=False))
+        op.add_column('users', sa.Column('role', sa.String(20), server_default='owner', nullable=False))
     except:
         pass  # Column might already exist
 
@@ -63,7 +67,7 @@ def upgrade() -> None:
         pass
 
     try:
-        op.add_column('users', sa.Column('onboarding_status', sa.Enum('not_started', 'account_created', 'email_verified', 'payment_configured', 'pending', 'completed', name='onboardingstatus'), server_default='not_started', nullable=False))
+        op.add_column('users', sa.Column('onboarding_status', sa.String(30), server_default='not_started', nullable=False))
     except:
         pass
 
@@ -222,8 +226,8 @@ def upgrade() -> None:
         sa.Column('stripe_subscription_id', sa.String(255), nullable=True, unique=True, index=True),
         sa.Column('stripe_customer_id', sa.String(255), nullable=True, index=True),
         sa.Column('stripe_price_id', sa.String(255), nullable=True),
-        sa.Column('tier', sa.Enum('freemium', 'basic', 'professional', 'agency', name='subscriptiontier'), default='freemium', nullable=False),
-        sa.Column('status', sa.Enum('active', 'past_due', 'canceled', 'incomplete', 'incomplete_expired', 'trialing', 'unpaid', 'paused', name='subscriptionstatus'), default='active', nullable=False),
+        sa.Column('tier', sa.String(20), default='freemium', nullable=False),
+        sa.Column('status', sa.String(20), default='active', nullable=False),
         sa.Column('current_period_start', sa.DateTime(timezone=True), nullable=True),
         sa.Column('current_period_end', sa.DateTime(timezone=True), nullable=True),
         sa.Column('trial_start', sa.DateTime(timezone=True), nullable=True),
@@ -241,7 +245,7 @@ def upgrade() -> None:
     op.create_table(
         'usage_limits',
         sa.Column('id', sa.Integer(), primary_key=True),
-        sa.Column('tier', sa.Enum('freemium', 'basic', 'professional', 'agency', name='subscriptiontier'), nullable=False, unique=True),
+        sa.Column('tier', sa.String(20), nullable=False, unique=True),
         sa.Column('reminders_per_month', sa.Integer(), nullable=False),
         sa.Column('clients_limit', sa.Integer(), nullable=True),
         sa.Column('invoices_limit', sa.Integer(), nullable=True),
@@ -320,10 +324,12 @@ def downgrade() -> None:
     op.drop_table('dead_letters')
     op.drop_table('templates')
 
-    # Drop enums
-    op.execute('DROP TYPE IF EXISTS subscriptionstatus')
-    op.execute('DROP TYPE IF EXISTS subscriptiontier')
-    op.execute('DROP TYPE IF EXISTS invoicesource')
-    op.execute('DROP TYPE IF EXISTS onboardingstatus')
-    op.execute('DROP TYPE IF EXISTS userrole')
-    op.execute('DROP TYPE IF EXISTS templatetone')
+    # Drop enums - only for PostgreSQL
+    import os
+    if os.getenv('DATABASE_URL', '').startswith('postgresql'):
+        op.execute('DROP TYPE IF EXISTS subscriptionstatus')
+        op.execute('DROP TYPE IF EXISTS subscriptiontier')
+        op.execute('DROP TYPE IF EXISTS invoicesource')
+        op.execute('DROP TYPE IF EXISTS onboardingstatus')
+        op.execute('DROP TYPE IF EXISTS userrole')
+        op.execute('DROP TYPE IF EXISTS templatetone')

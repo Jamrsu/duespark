@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers
-revision = '0014'
+revision = '0014_performance_indexes'
 down_revision = '0001_initial'
 branch_labels = None
 depends_on = None
