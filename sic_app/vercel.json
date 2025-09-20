@@ -1,13 +1,10 @@
 {
   "version": 2,
-  "name": "duespark-frontend",
-  "alias": ["app.duespark.com", "duespark-app.vercel.app"],
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci --include=dev",
   "devCommand": "npm run dev",
-  "regions": ["iad1", "sfo1"],
   "public": true,
   "rewrites": [
     {
@@ -91,11 +88,5 @@
     "env": {
       "NODE_ENV": "production"
     }
-  },
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  "crons": []
+  }
 }

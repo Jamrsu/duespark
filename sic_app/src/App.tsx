@@ -34,6 +34,7 @@ const OnboardingView = React.lazy(() => import('./views/onboarding/OnboardingVie
 const ReferralsView = React.lazy(() => import('./views/referrals/ReferralsView').then(module => ({ default: module.ReferralsView })))
 const FAQView = React.lazy(() => import('./views/help/FAQView'))
 const EnterpriseView = React.lazy(() => import('./views/enterprise/EnterpriseView').then(module => ({ default: module.EnterpriseView })))
+const LandingView = React.lazy(() => import('./views/landing/LandingView').then(module => ({ default: module.LandingView })))
 
 // Route guards
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -51,7 +52,7 @@ function RequireGuest({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
 
   if (isAuthenticated()) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/app/dashboard" replace />
   }
 
   return <>{children}</>
@@ -133,6 +134,20 @@ export default function App() {
     <ErrorBoundary level="critical">
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Routes>
+          {/* Landing page - public route */}
+          <Route
+            path="/"
+            element={
+              <ErrorBoundary level="page">
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ErrorBoundary level="component">
+                    <LandingView />
+                  </ErrorBoundary>
+                </Suspense>
+              </ErrorBoundary>
+            }
+          />
+
           {/* Auth routes */}
           <Route
             path="/auth/*"
@@ -185,7 +200,7 @@ export default function App() {
 
           {/* App routes */}
           <Route
-            path="/*"
+            path="/app/*"
             element={
               <ErrorBoundary level="page">
                 <RequireOnboardingComplete>
@@ -312,8 +327,8 @@ export default function App() {
                           }
                         />
 
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+                        <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
                       </Routes>
                     </Suspense>
                   </AppLayout>
@@ -321,6 +336,12 @@ export default function App() {
               </ErrorBoundary>
             }
           />
+
+          {/* Redirect /dashboard to /app/dashboard for compatibility */}
+          <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+
+          {/* Catch-all route for authenticated users */}
+          <Route path="*" element={<Navigate to="/auth/login" replace />} />
         </Routes>
       </div>
     </ErrorBoundary>
