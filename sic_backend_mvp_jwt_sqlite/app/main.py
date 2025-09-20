@@ -59,8 +59,10 @@ from app.email_templates import (
 )
 from app.scheduler import init_scheduler
 from app.subscription_service import get_subscription_gate, get_subscription_service
+from app.emergency_db_init import emergency_database_setup, skip_migrations_mode
 
 # Alembic manages migrations; do not auto-create tables here.
+# Emergency database initialization bypasses migrations when they fail.
 
 
 # Use FastAPI lifespan to manage startup/shutdown tasks (replaces deprecated on_event)
@@ -74,6 +76,25 @@ async def app_lifespan(app: FastAPI):
     scheduler = None
 
     try:
+        # Emergency database setup - bypass migrations if they're broken
+        if skip_migrations_mode():
+            logger.info("SKIP_MIGRATIONS=true detected - running emergency database setup...")
+            db_result = emergency_database_setup()
+
+            if db_result["success"]:
+                logger.info("✓ Emergency database setup completed successfully")
+                if db_result.get("tables_created"):
+                    logger.info(f"Created tables: {db_result['tables_created']}")
+                if db_result.get("warnings"):
+                    for warning in db_result["warnings"]:
+                        logger.warning(warning)
+            else:
+                logger.error("✗ Emergency database setup failed")
+                for error in db_result.get("errors", []):
+                    logger.error(error)
+                # Continue startup anyway - let the app try to run
+                logger.warning("Continuing startup despite database setup issues...")
+
         # Start background services asynchronously to avoid blocking startup
         logger.info("Initializing scheduler...")
         scheduler = init_scheduler()
@@ -264,7 +285,8 @@ def get_cors_origins():
         "http://localhost:3000",  # Additional dev port
         "http://127.0.0.1:3000",
         "http://localhost:3002",  # Next.js dev port
-        "https://sicfrontend-9q6bd7hcz-james-projects-c948d138.vercel.app",  # Frontend deployment
+        "https://sicfrontend-9q6bd7hcz-james-projects-c948d138.vercel.app",  # Old frontend deployment
+        "https://sicfrontend-me6kyh3dj-james-projects-c948d138.vercel.app",  # New frontend deployment
     ]
 
 def get_cors_headers():
@@ -604,31 +626,68 @@ def _log_event(
 # ---- Database initialization endpoint ----
 @app.post("/admin/init-database", tags=["admin"])
 def init_database_endpoint():
-    """Initialize database tables - EMERGENCY USE ONLY"""
+    """
+    Comprehensive emergency database initialization - EMERGENCY USE ONLY
+
+    This endpoint uses the robust emergency database setup system that:
+    - Tests connectivity
+    - Verifies existing tables
+    - Creates missing tables safely
+    - Provides detailed reports
+    """
     try:
-        from app.database import Base, engine
-        from app import models  # Import to register models
+        logger.info("=== EMERGENCY DATABASE INITIALIZATION ENDPOINT ===")
 
-        logger.info("Creating all database tables...")
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database initialization completed successfully!")
+        # Use our comprehensive emergency setup system
+        result = emergency_database_setup()
 
-        return {
-            "status": "success",
-            "message": "Database tables created successfully",
-            "tables_created": [table.name for table in Base.metadata.sorted_tables]
-        }
+        if result["success"]:
+            response = {
+                "status": "success",
+                "message": "Emergency database setup completed successfully",
+                "connectivity": result["connectivity"],
+                "tables_created": result["tables_created"],
+                "verification": result["verification"],
+                "warnings": result.get("warnings", [])
+            }
 
+            logger.info("✓ Emergency database initialization completed via endpoint")
+            return response
+        else:
+            # Setup failed but return detailed error info
+            response = {
+                "status": "failed",
+                "message": "Emergency database setup failed",
+                "connectivity": result["connectivity"],
+                "tables_created": result["tables_created"],
+                "verification": result["verification"],
+                "errors": result["errors"],
+                "warnings": result.get("warnings", [])
+            }
+
+            logger.error("✗ Emergency database initialization failed via endpoint")
+            raise HTTPException(
+                status_code=500,
+                detail=response
+            )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
         import traceback
         error_details = str(e)
         trace = traceback.format_exc()
-        logger.error(f"Database initialization failed: {error_details}")
+        logger.error(f"Emergency database endpoint failed: {error_details}")
         logger.error(f"Traceback: {trace}")
 
         raise HTTPException(
             status_code=500,
-            detail=f"Database initialization failed: {error_details}"
+            detail={
+                "status": "error",
+                "message": f"Emergency database endpoint failed: {error_details}",
+                "trace": trace
+            }
         )
 
 # ---- Debug endpoint for troubleshooting ----
