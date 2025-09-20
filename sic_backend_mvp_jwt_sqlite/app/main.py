@@ -196,18 +196,32 @@ def get_cors_origins():
             # Parse JSON array from environment variable
             return json.loads(cors_origins_env)
         except json.JSONDecodeError:
-            logging.warning("Invalid BACKEND_CORS_ORIGINS format, using default development origins")
+            logging.warning("Invalid BACKEND_CORS_ORIGINS format, using default origins")
 
-    # Default to development origins if not specified
-    # WARNING: These should never be used in production
-    return [
+    # Default origins for development and production
+    default_origins = [
+        # Development origins
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",  # Vite alternate port
         "http://127.0.0.1:5174",
         "http://localhost:3000",  # Additional dev port
         "http://127.0.0.1:3000",
+
+        # Production domains
+        "https://www.duespark.com",
+        "https://duespark.com",
+        "https://duespark.vercel.app",
     ]
+
+    # Also allow Vercel preview domains
+    environment = os.getenv("ENVIRONMENT", "development")
+    if environment != "production":
+        # In non-production, also allow any vercel.app subdomain
+        # This is less secure but necessary for preview deployments
+        return ["*"]  # Allow all origins for development/staging
+
+    return default_origins
 
 def get_cors_headers():
     """Get CORS headers - restrictive in production, permissive in development"""
