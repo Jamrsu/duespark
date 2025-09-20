@@ -277,7 +277,7 @@ def get_cors_origins():
 
     # Default to development origins if not specified
     # WARNING: These should never be used in production
-    return [
+    base_origins = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",  # Vite alternate port
@@ -285,10 +285,61 @@ def get_cors_origins():
         "http://localhost:3000",  # Additional dev port
         "http://127.0.0.1:3000",
         "http://localhost:3002",  # Next.js dev port
-        "https://sicfrontend-9q6bd7hcz-james-projects-c948d138.vercel.app",  # Old frontend deployment
-        "https://sicfrontend-me6kyh3dj-james-projects-c948d138.vercel.app",  # Previous frontend deployment
-        "https://sicfrontend-ps9vz1h48-james-projects-c948d138.vercel.app",  # Current frontend deployment
+        # Current Vercel deployments
+        "https://sicfrontend-ap5kvc07a-james-projects-c948d138.vercel.app",  # Latest deployment
+        "https://sicfrontend-ps9vz1h48-james-projects-c948d138.vercel.app",  # Previous deployment
+        "https://sicfrontend-me6kyh3dj-james-projects-c948d138.vercel.app",  # Earlier deployment
+        "https://sicfrontend-9q6bd7hcz-james-projects-c948d138.vercel.app",  # Archive deployment
     ]
+
+    # Add pattern-based Vercel subdomain support for better deployment flexibility
+    # This helps handle new Vercel deployments without manual updates
+    import re
+
+    # Check if we have a dynamic Vercel frontend URL in environment
+    dynamic_frontend_url = os.getenv("FRONTEND_URL")
+    if dynamic_frontend_url and "vercel.app" in dynamic_frontend_url:
+        # Validate it's a safe Vercel URL pattern
+        if re.match(r"^https://[a-zA-Z0-9\-]+\.vercel\.app$", dynamic_frontend_url):
+            base_origins.append(dynamic_frontend_url)
+            logging.info(f"Added dynamic frontend URL to CORS: {dynamic_frontend_url}")
+
+    return base_origins
+
+def is_cors_origin_allowed(origin: str) -> bool:
+    """
+    Custom CORS origin validator that supports wildcard patterns for Vercel deployments.
+    This solves the recurring issue of new Vercel URLs not being allowed.
+    """
+    if not origin:
+        return False
+
+    # Get the configured origins
+    allowed_origins = get_cors_origins()
+
+    # Check exact matches first
+    if origin in allowed_origins:
+        return True
+
+    # For development, allow additional Vercel subdomain patterns
+    environment = os.getenv("ENVIRONMENT", "development")
+    if environment != "production":
+        import re
+
+        # Allow any sicfrontend-*.vercel.app subdomain for development
+        vercel_pattern = r"^https://sicfrontend-[a-zA-Z0-9\-]+\.vercel\.app$"
+        if re.match(vercel_pattern, origin):
+            logging.info(f"CORS: Allowing Vercel subdomain pattern match: {origin}")
+            return True
+
+        # Allow any james-projects-c948d138.vercel.app subdomain pattern
+        project_pattern = r"^https://[a-zA-Z0-9\-]+-james-projects-c948d138\.vercel\.app$"
+        if re.match(project_pattern, origin):
+            logging.info(f"CORS: Allowing project subdomain pattern match: {origin}")
+            return True
+
+    logging.warning(f"CORS: Origin not allowed: {origin}")
+    return False
 
 def get_cors_headers():
     """Get CORS headers - restrictive in production, permissive in development"""
@@ -330,10 +381,13 @@ environment = os.getenv("ENVIRONMENT", "development")
 # Log CORS configuration for debugging (but not in production)
 if environment != "production":
     logging.info(f"CORS origins configured: {cors_origins}")
+    logging.info("CORS: Using enhanced pattern matching for Vercel deployments")
 
+# Use custom origin validator for flexible Vercel subdomain support
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=r"https://sicfrontend-[a-zA-Z0-9\-]+-james-projects-c948d138\.vercel\.app" if environment != "production" else None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=cors_headers,
