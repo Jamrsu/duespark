@@ -6,12 +6,6 @@
   "installCommand": "npm ci --include=dev",
   "devCommand": "npm run dev",
   "public": true,
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://duespark-backend.onrender.com/$1"
-    }
-  ],
   "redirects": [
     {
       "source": "/login",
