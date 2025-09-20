@@ -56,20 +56,20 @@ export function LoginView() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <Zap className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">DueSpark</span>
+            <span className="text-2xl font-bold text-foreground">DueSpark</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/#features" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#features" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Features
             </Link>
-            <Link to="/#pricing" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#pricing" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Pricing
             </Link>
-            <Link to="/#about" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#about" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               About
             </Link>
-            <Link to="/#contact" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#contact" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Contact
             </Link>
           </div>
@@ -85,16 +85,16 @@ export function LoginView() {
       <main className="flex-1 flex items-center justify-center px-6 py-12 lg:py-20">
         <div className="w-full max-w-6xl grid lg:grid-cols-[1.15fr,1fr] gap-12 items-center">
           <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/80 border border-white/60 text-sm font-medium text-gray-700 px-4 py-2 rounded-full mx-auto lg:mx-0 animate-scale-in">
+            <div className="inline-flex items-center gap-2 bg-white/80 border border-white/60 text-sm font-medium text-muted-foreground px-4 py-2 rounded-full mx-auto lg:mx-0 animate-scale-in">
               <Sparkles className="h-4 w-4 text-blue-600" />
               AI-powered reminders
             </div>
 
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight animate-fade-in-up">
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground leading-tight animate-fade-in-up">
               Welcome back to <span className="gradient-text">DueSpark</span>
             </h1>
 
-            <p className="text-lg text-gray-600 leading-relaxed animate-fade-in-up-delay-1">
+            <p className="text-lg text-muted-foreground leading-relaxed animate-fade-in-up-delay-1">
               Sign in to stay on top of invoices, automate follow-ups, and keep cash flow predictable.
             </p>
 
@@ -102,8 +102,8 @@ export function LoginView() {
               <div className="bg-white/90 border border-white/60 rounded-xl p-5 shadow-sm card-hover flex items-start gap-3">
                 <Shield className="h-5 w-5 text-blue-600 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Secure by design</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-foreground">Secure by design</h3>
+                  <p className="text-sm text-muted-foreground">
                     Bank-level safeguards, MFA, and encrypted workflows protect every login.
                   </p>
                 </div>
@@ -111,8 +111,8 @@ export function LoginView() {
               <div className="bg-white/90 border border-white/60 rounded-xl p-5 shadow-sm card-hover flex items-start gap-3">
                 <Clock className="h-5 w-5 text-purple-600 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Faster payments</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-foreground">Faster payments</h3>
+                  <p className="text-sm text-muted-foreground">
                     Automated nudges help clients pay an average of 35% faster.
                   </p>
                 </div>
@@ -126,10 +126,10 @@ export function LoginView() {
                 <Lock className="h-3.5 w-3.5" />
                 Secure sign-in
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mt-4">
+              <h2 className="text-2xl font-bold text-foreground mt-4">
                 Access your workspace
               </h2>
-              <p className="text-gray-600 mt-2">
+              <p className="text-muted-foreground mt-2">
                 Use your email and password to continue managing invoices.
               </p>
             </div>
@@ -139,7 +139,7 @@ export function LoginView() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Email address
                 </label>
@@ -170,7 +170,7 @@ export function LoginView() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Password
                 </label>
@@ -195,9 +195,9 @@ export function LoginView() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -229,7 +229,7 @@ export function LoginView() {
               </div>
 
               {/* Register link */}
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link
                   to="/auth/register"

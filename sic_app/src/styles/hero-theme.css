@@ -197,3 +197,24 @@ body {
   background: var(--muted);
   border-color: var(--primary);
 }
+
+/* Text color utilities using design system */
+.text-foreground {
+  color: var(--foreground) !important;
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-card-foreground {
+  color: var(--card-foreground) !important;
+}
+
+.text-sidebar-foreground {
+  color: var(--sidebar-foreground) !important;
+}

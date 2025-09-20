@@ -38,32 +38,32 @@ export function LandingView() {
             {/* Logo - Left */}
             <div className="flex items-center space-x-3">
               <Zap className="w-8 h-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">DueSpark</span>
+              <span className="text-2xl font-bold text-foreground">DueSpark</span>
             </div>
 
             {/* Center Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               <button
                 onClick={() => scrollToSection('features')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer animate-scale-in"
               >
                 Features
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer animate-scale-in"
               >
                 Pricing
               </button>
               <button
                 onClick={() => scrollToSection('about')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer animate-scale-in"
               >
                 About
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
-                className="text-gray-700 hover:text-gray-900 transition-colors cursor-pointer animate-scale-in"
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer animate-scale-in"
               >
                 Contact
               </button>
@@ -71,7 +71,7 @@ export function LandingView() {
 
             {/* Login/Signup - Right */}
             <div className="flex items-center space-x-4">
-              <Link to="/auth/login" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+              <Link to="/auth/login" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
                 Login
               </Link>
               <Link
@@ -89,7 +89,7 @@ export function LandingView() {
           <div className="max-w-7xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="text-center lg:text-left">
-                <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight mb-6 animate-fade-in-up">
+                <h1 className="text-5xl lg:text-7xl font-bold text-foreground leading-tight mb-6 animate-fade-in-up">
                   Smart Invoice
                   <span className="gradient-text">
                     {' '}Tracking{' '}
@@ -97,7 +97,7 @@ export function LandingView() {
                   Made Simple
                 </h1>
 
-                <p className="text-xl text-gray-600 mb-8 leading-relaxed animate-fade-in-up-delay-1">
+                <p className="text-xl text-muted-foreground mb-8 leading-relaxed animate-fade-in-up-delay-1">
                   Transform your business with AI-powered invoice management. Track payments, automate reminders, and never miss a due date again.
                 </p>
 
@@ -116,7 +116,7 @@ export function LandingView() {
                 </div>
 
                 {/* Trust indicators */}
-                <div className="mt-8 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-500 animate-fade-in-up-delay-2">
+                <div className="mt-8 flex items-center justify-center lg:justify-start gap-6 text-sm text-muted-foreground animate-fade-in-up-delay-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
                     <span>No credit card required</span>
@@ -147,10 +147,10 @@ export function LandingView() {
       <section id="features" className="px-6 py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Everything you need to manage invoices
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Powerful features designed to streamline your billing process
             </p>
           </div>
@@ -160,32 +160,32 @@ export function LandingView() {
               <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Bell className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Reminders</h3>
-              <p className="text-gray-600">Automated payment reminders that adapt to your business needs</p>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Smart Reminders</h3>
+              <p className="text-muted-foreground">Automated payment reminders that adapt to your business needs</p>
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-2">
               <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <BarChart3 className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Analytics</h3>
-              <p className="text-gray-600">Deep insights into your payment patterns and cash flow</p>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Analytics</h3>
+              <p className="text-muted-foreground">Deep insights into your payment patterns and cash flow</p>
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-3">
               <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Zap className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">AI-Powered</h3>
-              <p className="text-gray-600">Machine learning algorithms optimize your reminder timing</p>
+              <h3 className="text-xl font-semibold text-foreground mb-2">AI-Powered</h3>
+              <p className="text-muted-foreground">Machine learning algorithms optimize your reminder timing</p>
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm card-hover animate-scale-in stagger-4">
               <div className="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-orange-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Secure</h3>
-              <p className="text-gray-600">Bank-level security to protect your financial data</p>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Secure</h3>
+              <p className="text-muted-foreground">Bank-level security to protect your financial data</p>
             </div>
           </div>
         </div>
@@ -195,10 +195,10 @@ export function LandingView() {
       <section id="pricing" className="px-6 py-16 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Simple, transparent pricing
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Choose the plan that fits your business needs
             </p>
           </div>
@@ -207,38 +207,38 @@ export function LandingView() {
             {/* Freemium Plan */}
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-all duration-300">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Freemium</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-1">$0</div>
-                <div className="text-gray-500 mb-6">per month</div>
-                <p className="text-gray-600 mb-8">Perfect for getting started with basic invoice reminders</p>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Freemium</h3>
+                <div className="text-4xl font-bold text-foreground mb-1">$0</div>
+                <div className="text-muted-foreground mb-6">per month</div>
+                <p className="text-muted-foreground mb-8">Perfect for getting started with basic invoice reminders</p>
               </div>
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">5 clients max</span>
+                  <span className="text-muted-foreground">5 clients max</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">20 invoices/month</span>
+                  <span className="text-muted-foreground">20 invoices/month</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Basic templates</span>
+                  <span className="text-muted-foreground">Basic templates</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Daily reminders</span>
+                  <span className="text-muted-foreground">Daily reminders</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Email support</span>
+                  <span className="text-muted-foreground">Email support</span>
                 </li>
               </ul>
 
               <Link
                 to="/auth/register"
-                className="block w-full text-center bg-gray-100 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors duration-200"
+                className="block w-full text-center bg-gray-100 text-foreground px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors duration-200"
               >
                 Get Started Free
               </Link>
@@ -253,40 +253,40 @@ export function LandingView() {
               </div>
 
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-1">$29</div>
-                <div className="text-gray-500 mb-6">per month</div>
-                <p className="text-gray-600 mb-8">Everything you need to scale your business with AI-powered features</p>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Professional</h3>
+                <div className="text-4xl font-bold text-foreground mb-1">$29</div>
+                <div className="text-muted-foreground mb-6">per month</div>
+                <p className="text-muted-foreground mb-8">Everything you need to scale your business with AI-powered features</p>
               </div>
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Unlimited clients</span>
+                  <span className="text-muted-foreground">Unlimited clients</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Unlimited invoices</span>
+                  <span className="text-muted-foreground">Unlimited invoices</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">AI-powered features</span>
+                  <span className="text-muted-foreground">AI-powered features</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Custom branding</span>
+                  <span className="text-muted-foreground">Custom branding</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Advanced analytics</span>
+                  <span className="text-muted-foreground">Advanced analytics</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Priority support</span>
+                  <span className="text-muted-foreground">Priority support</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Integrations</span>
+                  <span className="text-muted-foreground">Integrations</span>
                 </li>
               </ul>
 
@@ -303,41 +303,41 @@ export function LandingView() {
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Crown className="h-6 w-6 text-yellow-500" />
-                  <h3 className="text-2xl font-bold text-gray-900">Agency</h3>
+                  <h3 className="text-2xl font-bold text-foreground">Agency</h3>
                 </div>
-                <div className="text-4xl font-bold text-gray-900 mb-1">$99</div>
-                <div className="text-gray-500 mb-6">per month</div>
-                <p className="text-gray-600 mb-8">Advanced collaboration and white-label options for agencies and teams</p>
+                <div className="text-4xl font-bold text-foreground mb-1">$99</div>
+                <div className="text-muted-foreground mb-6">per month</div>
+                <p className="text-muted-foreground mb-8">Advanced collaboration and white-label options for agencies and teams</p>
               </div>
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Everything in Professional</span>
+                  <span className="text-muted-foreground">Everything in Professional</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Multi-user access</span>
+                  <span className="text-muted-foreground">Multi-user access</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">API access</span>
+                  <span className="text-muted-foreground">API access</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">White-label branding</span>
+                  <span className="text-muted-foreground">White-label branding</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Realtime reminders</span>
+                  <span className="text-muted-foreground">Realtime reminders</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Zapier integration</span>
+                  <span className="text-muted-foreground">Zapier integration</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Webhooks</span>
+                  <span className="text-muted-foreground">Webhooks</span>
                 </li>
               </ul>
 
@@ -351,8 +351,8 @@ export function LandingView() {
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4">All plans include a 14-day free trial. No credit card required.</p>
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
+            <p className="text-muted-foreground mb-4">All plans include a 14-day free trial. No credit card required.</p>
+            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>Cancel anytime</span>
@@ -374,18 +374,18 @@ export function LandingView() {
       <section id="about" className="px-6 py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               About DueSpark
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               We're on a mission to help businesses get paid faster with intelligent automation and AI-powered insights.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-16 items-center mb-16">
             <div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h3>
-              <div className="space-y-4 text-gray-600 leading-relaxed">
+              <h3 className="text-3xl font-bold text-foreground mb-6">Our Story</h3>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
                   Founded in 2024, DueSpark was born from the frustration of watching businesses struggle with unpaid invoices and inefficient reminder processes. We saw companies spending countless hours manually tracking payments and sending follow-ups, often missing the optimal timing for reminders.
                 </p>
@@ -404,8 +404,8 @@ export function LandingView() {
                   <Target className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Our Mission</h4>
-                  <p className="text-gray-600">To eliminate late payments and improve cash flow for businesses through intelligent automation.</p>
+                  <h4 className="font-semibold text-foreground mb-2">Our Mission</h4>
+                  <p className="text-muted-foreground">To eliminate late payments and improve cash flow for businesses through intelligent automation.</p>
                 </div>
               </div>
 
@@ -414,8 +414,8 @@ export function LandingView() {
                   <Users className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Our Values</h4>
-                  <p className="text-gray-600">Transparency, reliability, and putting our customers' success at the heart of everything we do.</p>
+                  <h4 className="font-semibold text-foreground mb-2">Our Values</h4>
+                  <p className="text-muted-foreground">Transparency, reliability, and putting our customers' success at the heart of everything we do.</p>
                 </div>
               </div>
 
@@ -424,8 +424,8 @@ export function LandingView() {
                   <Award className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Our Impact</h4>
-                  <p className="text-gray-600">Over $50M in faster payments processed and 100,000+ hours saved for our customers.</p>
+                  <h4 className="font-semibold text-foreground mb-2">Our Impact</h4>
+                  <p className="text-muted-foreground">Over $50M in faster payments processed and 100,000+ hours saved for our customers.</p>
                 </div>
               </div>
             </div>
@@ -435,19 +435,19 @@ export function LandingView() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-blue-600 mb-2">10K+</div>
-              <div className="text-gray-600">Active Users</div>
+              <div className="text-muted-foreground">Active Users</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600 mb-2">$50M+</div>
-              <div className="text-gray-600">Payments Processed</div>
+              <div className="text-muted-foreground">Payments Processed</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-purple-600 mb-2">35%</div>
-              <div className="text-gray-600">Faster Payments</div>
+              <div className="text-muted-foreground">Faster Payments</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-orange-600 mb-2">99.9%</div>
-              <div className="text-gray-600">Uptime</div>
+              <div className="text-muted-foreground">Uptime</div>
             </div>
           </div>
         </div>
@@ -457,10 +457,10 @@ export function LandingView() {
       <section id="contact" className="px-6 py-16 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Get in Touch
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
           </div>
@@ -468,11 +468,11 @@ export function LandingView() {
           <div className="grid lg:grid-cols-2 gap-16">
             {/* Contact Form */}
             <div className="bg-gray-50 p-8 rounded-2xl">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Send us a message</h3>
+              <h3 className="text-2xl font-semibold text-foreground mb-6">Send us a message</h3>
               <form className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">First Name</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -480,7 +480,7 @@ export function LandingView() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Last Name</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -490,7 +490,7 @@ export function LandingView() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Email</label>
                   <input
                     type="email"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -499,7 +499,7 @@ export function LandingView() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Company</label>
                   <input
                     type="text"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -508,7 +508,7 @@ export function LandingView() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Message</label>
                   <textarea
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -529,16 +529,16 @@ export function LandingView() {
             {/* Contact Info */}
             <div className="space-y-8">
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-6">Contact Information</h3>
+                <h3 className="text-2xl font-semibold text-foreground mb-6">Contact Information</h3>
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
                     <div className="bg-blue-100 p-3 rounded-lg">
                       <Mail className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                      <p className="text-gray-600">support@duespark.com</p>
-                      <p className="text-gray-600">sales@duespark.com</p>
+                      <h4 className="font-semibold text-foreground mb-1">Email</h4>
+                      <p className="text-muted-foreground">support@duespark.com</p>
+                      <p className="text-muted-foreground">sales@duespark.com</p>
                     </div>
                   </div>
 
@@ -547,9 +547,9 @@ export function LandingView() {
                       <Phone className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Phone</h4>
-                      <p className="text-gray-600">+1 (555) 123-4567</p>
-                      <p className="text-gray-500 text-sm">Mon-Fri 9am-6pm PST</p>
+                      <h4 className="font-semibold text-foreground mb-1">Phone</h4>
+                      <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                      <p className="text-muted-foreground text-sm">Mon-Fri 9am-6pm PST</p>
                     </div>
                   </div>
 
@@ -558,16 +558,16 @@ export function LandingView() {
                       <MapPin className="h-6 w-6 text-purple-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Office</h4>
-                      <p className="text-gray-600">123 Business Ave<br />San Francisco, CA 94105</p>
+                      <h4 className="font-semibold text-foreground mb-1">Office</h4>
+                      <p className="text-muted-foreground">123 Business Ave<br />San Francisco, CA 94105</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="bg-blue-50 p-6 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-3">Need immediate help?</h4>
-                <p className="text-gray-600 mb-4">
+                <h4 className="font-semibold text-foreground mb-3">Need immediate help?</h4>
+                <p className="text-muted-foreground mb-4">
                   Check out our comprehensive help center or chat with our support team.
                 </p>
                 <div className="flex gap-3">

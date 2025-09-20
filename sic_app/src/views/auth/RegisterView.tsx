@@ -62,26 +62,26 @@ export function RegisterView() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <Zap className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">DueSpark</span>
+            <span className="text-2xl font-bold text-foreground">DueSpark</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/#features" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#features" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Features
             </Link>
-            <Link to="/#pricing" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#pricing" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Pricing
             </Link>
-            <Link to="/#about" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#about" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               About
             </Link>
-            <Link to="/#contact" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/#contact" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Contact
             </Link>
           </div>
 
           <div className="flex items-center space-x-4">
-            <Link to="/auth/login" className="text-gray-700 hover:text-gray-900 transition-colors animate-scale-in">
+            <Link to="/auth/login" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
               Log in
             </Link>
             <Link to="/auth/register" className="primary-button px-4 py-2 rounded-lg font-semibold btn-hover animate-scale-in">
@@ -94,16 +94,16 @@ export function RegisterView() {
       <main className="flex-1 flex items-center justify-center px-6 py-12 lg:py-20">
         <div className="w-full max-w-6xl grid lg:grid-cols-[1.1fr,1fr] gap-12 items-center">
           <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/80 border border-white/60 text-sm font-medium text-gray-700 px-4 py-2 rounded-full mx-auto lg:mx-0 animate-scale-in">
+            <div className="inline-flex items-center gap-2 bg-white/80 border border-white/60 text-sm font-medium text-muted-foreground px-4 py-2 rounded-full mx-auto lg:mx-0 animate-scale-in">
               <Sparkles className="h-4 w-4 text-blue-600" />
               Launch in minutes
             </div>
 
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight animate-fade-in-up">
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground leading-tight animate-fade-in-up">
               Create your <span className="gradient-text">DueSpark</span> account
             </h1>
 
-            <p className="text-lg text-gray-600 leading-relaxed animate-fade-in-up-delay-1">
+            <p className="text-lg text-muted-foreground leading-relaxed animate-fade-in-up-delay-1">
               Automate reminders, unlock AI insights, and manage every invoice in one modern workspace.
             </p>
 
@@ -111,8 +111,8 @@ export function RegisterView() {
               <div className="bg-white/90 border border-white/60 rounded-xl p-5 shadow-sm card-hover flex items-start gap-3">
                 <Rocket className="h-5 w-5 text-purple-600 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Put growth on autopilot</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-foreground">Put growth on autopilot</h3>
+                  <p className="text-sm text-muted-foreground">
                     Guided onboarding and smart templates get your billing engine running fast.
                   </p>
                 </div>
@@ -120,8 +120,8 @@ export function RegisterView() {
               <div className="bg-white/90 border border-white/60 rounded-xl p-5 shadow-sm card-hover flex items-start gap-3">
                 <Shield className="h-5 w-5 text-blue-600 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Built for compliance</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-foreground">Built for compliance</h3>
+                  <p className="text-sm text-muted-foreground">
                     SOC 2-ready controls and audit trails keep finance teams confident.
                   </p>
                 </div>
@@ -135,10 +135,10 @@ export function RegisterView() {
                 <Users className="h-3.5 w-3.5" />
                 Join the community
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mt-4">
+              <h2 className="text-2xl font-bold text-foreground mt-4">
                 Start your free trial
               </h2>
-              <p className="text-gray-600 mt-2">
+              <p className="text-muted-foreground mt-2">
                 Create a workspace for your team—no credit card required.
               </p>
             </div>
@@ -148,7 +148,7 @@ export function RegisterView() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Work email
                 </label>
@@ -179,7 +179,7 @@ export function RegisterView() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Password
                 </label>
@@ -204,9 +204,9 @@ export function RegisterView() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -221,7 +221,7 @@ export function RegisterView() {
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Confirm password
                 </label>
@@ -246,9 +246,9 @@ export function RegisterView() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -263,9 +263,9 @@ export function RegisterView() {
               <div>
                 <label
                   htmlFor="referralCode"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
-                  Referral code <span className="text-gray-500">(optional)</span>
+                  Referral code <span className="text-muted-foreground">(optional)</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -305,12 +305,12 @@ export function RegisterView() {
               </button>
 
               {/* Terms */}
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 By creating an account, you agree to our Terms of Service and Privacy Policy.
               </p>
 
               {/* Login link */}
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-muted-foreground">
                 Already have an account?{' '}
                 <Link
                   to="/auth/login"
@@ -321,7 +321,7 @@ export function RegisterView() {
               </div>
             </form>
 
-            <div className="mt-8 flex flex-col gap-3 text-sm text-gray-500">
+            <div className="mt-8 flex flex-col gap-3 text-sm text-muted-foreground">
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 Unlimited clients on every paid plan
