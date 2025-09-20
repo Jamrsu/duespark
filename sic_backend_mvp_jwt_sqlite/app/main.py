@@ -266,12 +266,30 @@ async def general_exception_handler(request: Request, exc: Exception):
 # CORS Configuration - Environment-based for security
 def get_cors_origins():
     """Get CORS origins from environment variable with secure defaults"""
+    # Always include critical production URLs regardless of environment config
+    critical_origins = [
+        "https://sicfrontend-ap5kvc07a-james-projects-c948d138.vercel.app",  # Current production
+    ]
+
+    # Check if we have a dynamic Vercel frontend URL in environment
+    dynamic_frontend_url = os.getenv("FRONTEND_URL")
+    if dynamic_frontend_url and "vercel.app" in dynamic_frontend_url:
+        import re
+        # Validate it's a safe Vercel URL pattern
+        if re.match(r"^https://[a-zA-Z0-9\-]+\.vercel\.app$", dynamic_frontend_url):
+            critical_origins.append(dynamic_frontend_url)
+            logging.info(f"Added dynamic frontend URL to CORS: {dynamic_frontend_url}")
+
     cors_origins_env = os.getenv("BACKEND_CORS_ORIGINS")
 
     if cors_origins_env:
         try:
-            # Parse JSON array from environment variable
-            return json.loads(cors_origins_env)
+            # Parse JSON array from environment variable and merge with critical origins
+            env_origins = json.loads(cors_origins_env)
+            # Combine and deduplicate
+            all_origins = list(set(critical_origins + env_origins))
+            logging.info(f"Using environment CORS origins + critical origins: {all_origins}")
+            return all_origins
         except json.JSONDecodeError:
             logging.warning("Invalid BACKEND_CORS_ORIGINS format, using default development origins")
 
@@ -285,26 +303,15 @@ def get_cors_origins():
         "http://localhost:3000",  # Additional dev port
         "http://127.0.0.1:3000",
         "http://localhost:3002",  # Next.js dev port
-        # Current Vercel deployments
-        "https://sicfrontend-ap5kvc07a-james-projects-c948d138.vercel.app",  # Latest deployment
+        # Previous Vercel deployments
         "https://sicfrontend-ps9vz1h48-james-projects-c948d138.vercel.app",  # Previous deployment
         "https://sicfrontend-me6kyh3dj-james-projects-c948d138.vercel.app",  # Earlier deployment
         "https://sicfrontend-9q6bd7hcz-james-projects-c948d138.vercel.app",  # Archive deployment
     ]
 
-    # Add pattern-based Vercel subdomain support for better deployment flexibility
-    # This helps handle new Vercel deployments without manual updates
-    import re
-
-    # Check if we have a dynamic Vercel frontend URL in environment
-    dynamic_frontend_url = os.getenv("FRONTEND_URL")
-    if dynamic_frontend_url and "vercel.app" in dynamic_frontend_url:
-        # Validate it's a safe Vercel URL pattern
-        if re.match(r"^https://[a-zA-Z0-9\-]+\.vercel\.app$", dynamic_frontend_url):
-            base_origins.append(dynamic_frontend_url)
-            logging.info(f"Added dynamic frontend URL to CORS: {dynamic_frontend_url}")
-
-    return base_origins
+    # Merge critical origins with defaults and deduplicate
+    all_origins = list(set(critical_origins + base_origins))
+    return all_origins
 
 def is_cors_origin_allowed(origin: str) -> bool:
     """
@@ -387,7 +394,7 @@ if environment != "production":
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://sicfrontend-[a-zA-Z0-9\-]+-james-projects-c948d138\.vercel\.app" if environment != "production" else None,
+    allow_origin_regex=r"https://sicfrontend-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-james-projects-c948d138\.vercel\.app" if environment != "production" else None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=cors_headers,
