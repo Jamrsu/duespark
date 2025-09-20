@@ -283,6 +283,7 @@ def get_cors_origins():
         "https://sicfrontend-ap5kvc07a-james-projects-c948d138.vercel.app",  # Old production
         "https://sicfrontend-qg5ozv4dc-james-projects-c948d138.vercel.app",  # New production
         "https://sicfrontend-ok0lu61at-james-projects-c948d138.vercel.app",  # Fixed production
+        "https://sicfrontend-i7hm0rnsu-james-projects-c948d138.vercel.app",  # Complete production
     ]
 
     # Check if we have a dynamic Vercel frontend URL in environment
