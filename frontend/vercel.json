@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@duespark-api-url",
+    "NEXT_PUBLIC_APP_NAME": "DueSpark",
+    "NEXT_PUBLIC_APP_VERSION": "1.0.0"
+  }
+}
