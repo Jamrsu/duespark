@@ -95,41 +95,6 @@ export default defineConfig({
     host: true,
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // React ecosystem
-          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-            return 'react-vendor'
-          }
-
-          // Data management
-          if (id.includes('@tanstack/react-query') || id.includes('axios')) {
-            return 'data-vendor'
-          }
-
-          // Form utilities
-          if (id.includes('react-hook-form') || id.includes('zod') || id.includes('@hookform')) {
-            return 'form-vendor'
-          }
-
-          // UI libraries
-          if (id.includes('lucide-react') || id.includes('@headlessui') || id.includes('react-hot-toast')) {
-            return 'ui-vendor'
-          }
-
-          // Date utilities
-          if (id.includes('date-fns')) {
-            return 'date-vendor'
-          }
-
-          // Node modules (general)
-          if (id.includes('node_modules')) {
-            return 'vendor'
-          }
-        }
-      }
-    },
     chunkSizeWarningLimit: 500,
     target: 'es2022',
     minify: 'esbuild',
