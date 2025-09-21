@@ -8,7 +8,6 @@ import { User } from './types/api'
 
 // Layout components
 import { AppLayout } from './components/layout/AppLayout'
-import { AuthLayout } from './components/layout/AuthLayout'
 
 // Loading component
 import { LoadingSpinner } from './components/ui/LoadingSpinner'
@@ -154,29 +153,27 @@ export default function App() {
             element={
               <ErrorBoundary level="page">
                 <RequireGuest>
-                  <AuthLayout>
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <Routes>
-                        <Route
-                          path="login"
-                          element={
-                            <ErrorBoundary level="component">
-                              <LoginView />
-                            </ErrorBoundary>
-                          }
-                        />
-                        <Route
-                          path="register"
-                          element={
-                            <ErrorBoundary level="component">
-                              <RegisterView />
-                            </ErrorBoundary>
-                          }
-                        />
-                        <Route path="*" element={<Navigate to="/auth/login" replace />} />
-                      </Routes>
-                    </Suspense>
-                  </AuthLayout>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Routes>
+                      <Route
+                        path="login"
+                        element={
+                          <ErrorBoundary level="component">
+                            <LoginView />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="register"
+                        element={
+                          <ErrorBoundary level="component">
+                            <RegisterView />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route path="*" element={<Navigate to="/auth/login" replace />} />
+                    </Routes>
+                  </Suspense>
                 </RequireGuest>
               </ErrorBoundary>
             }

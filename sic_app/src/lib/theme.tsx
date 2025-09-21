@@ -6,7 +6,7 @@ type Theme = 'light' | 'dark' | 'system'
 interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
-  effectiveTheme: 'light' | 'dark'
+  resolvedTheme: 'light' | 'dark'
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -16,49 +16,49 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     storage.get('theme', 'system') as Theme
   )
 
-  const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light')
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
 
   useEffect(() => {
-    const updateEffectiveTheme = () => {
-      let newEffectiveTheme: 'light' | 'dark'
-      
+    const updateResolvedTheme = () => {
+      let newResolvedTheme: 'light' | 'dark'
+
       if (theme === 'system') {
-        newEffectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches 
-          ? 'dark' 
+        newResolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
           : 'light'
       } else {
-        newEffectiveTheme = theme
+        newResolvedTheme = theme
       }
-      
-      setEffectiveTheme(newEffectiveTheme)
+
+      setResolvedTheme(newResolvedTheme)
       
       // Update DOM
       const root = document.documentElement
       root.classList.remove('light', 'dark')
-      root.classList.add(newEffectiveTheme)
-      
+      root.classList.add(newResolvedTheme)
+
       // Update meta theme-color for mobile browsers
       const metaThemeColor = document.querySelector('meta[name="theme-color"]')
       if (metaThemeColor) {
         metaThemeColor.setAttribute(
-          'content', 
-          newEffectiveTheme === 'dark' ? '#111827' : '#ffffff'
+          'content',
+          newResolvedTheme === 'dark' ? '#030712' : '#ffffff'
         )
       } else {
         const meta = document.createElement('meta')
         meta.name = 'theme-color'
-        meta.content = newEffectiveTheme === 'dark' ? '#111827' : '#ffffff'
+        meta.content = newResolvedTheme === 'dark' ? '#030712' : '#ffffff'
         document.head.appendChild(meta)
       }
     }
 
-    updateEffectiveTheme()
+    updateResolvedTheme()
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    mediaQuery.addEventListener('change', updateEffectiveTheme)
+    mediaQuery.addEventListener('change', updateResolvedTheme)
 
-    return () => mediaQuery.removeEventListener('change', updateEffectiveTheme)
+    return () => mediaQuery.removeEventListener('change', updateResolvedTheme)
   }, [theme])
 
   const handleSetTheme = (newTheme: Theme) => {
@@ -68,10 +68,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider 
-      value={{ 
-        theme, 
-        setTheme: handleSetTheme, 
-        effectiveTheme 
+      value={{
+        theme,
+        setTheme: handleSetTheme,
+        resolvedTheme
       }}
     >
       {children}

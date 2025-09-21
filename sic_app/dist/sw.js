@@ -1,206 +1,464 @@
-/**
- * Copyright 2018 Google Inc. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// DueSpark Service Worker - Advanced PWA Capabilities
+// Version 1.1.0 - Phase 2 Mobile-First Enhancements
 
-// If the loader is already loaded, just stop.
-if (!self.define) {
-  let registry = {};
+const CACHE_NAME = 'duespark-v1.1.0'
+const STATIC_CACHE = 'duespark-static-v1.1.0'
+const DYNAMIC_CACHE = 'duespark-dynamic-v1.1.0'
+const API_CACHE = 'duespark-api-v1.1.0'
 
-  // Used for `eval` and `importScripts` where we can't get script URL by other means.
-  // In both cases, it's safe to use a global var because those functions are synchronous.
-  let nextDefineUri;
+// Files to cache for offline support
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/offline.html',
+  // Core app routes for SPA
+  '/dashboard',
+  '/invoices',
+  '/clients',
+  '/reminders',
+  // Critical API data for offline functionality
+]
 
-  const singleRequire = (uri, parentUri) => {
-    uri = new URL(uri + ".js", parentUri).href;
-    return registry[uri] || (
-      
-        new Promise(resolve => {
-          if ("document" in self) {
-            const script = document.createElement("script");
-            script.src = uri;
-            script.onload = resolve;
-            document.head.appendChild(script);
-          } else {
-            nextDefineUri = uri;
-            importScripts(uri);
-            resolve();
-          }
-        })
-      
+// API endpoints to cache with stale-while-revalidate
+const CACHEABLE_API_PATTERNS = [
+  /\/api\/analytics\/summary/,
+  /\/api\/invoices\?limit=5/,
+  /\/api\/clients/,
+  /\/api\/dashboard/,
+]
+
+// Network-first strategy for critical operations
+const NETWORK_FIRST_PATTERNS = [
+  /\/api\/auth/,
+  /\/api\/.*\/(create|update|delete)/,
+  /\/api\/reminders\/send/,
+  /\/api\/payments/,
+]
+
+// Background sync patterns
+const SYNC_PATTERNS = [
+  /\/api\/invoices\/\d+\/remind/,
+  /\/api\/analytics\/track/,
+]
+
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
+  console.log('[DueSpark SW] Installing service worker v1.1.0...')
+
+  event.waitUntil(
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('[DueSpark SW] Caching static assets')
+        return cache.addAll(STATIC_ASSETS)
+      }),
+      // Pre-cache critical API data if user is authenticated
+      preCacheCriticalData()
+    ])
       .then(() => {
-        let promise = registry[uri];
-        if (!promise) {
-          throw new Error(`Module ${uri} didn’t register its module`);
-        }
-        return promise;
+        console.log('[DueSpark SW] Service worker installed successfully')
+        return self.skipWaiting()
       })
-    );
-  };
+      .catch((error) => {
+        console.error('[DueSpark SW] Failed to install service worker:', error)
+      })
+  )
+})
 
-  self.define = (depsNames, factory) => {
-    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
-    if (registry[uri]) {
-      // Module is already loading or loaded.
-      return;
+// Pre-cache critical data for better offline experience
+async function preCacheCriticalData() {
+  try {
+    const cache = await caches.open(API_CACHE)
+    // Pre-cache dashboard data if available
+    const dashboardUrl = '/api/analytics/summary'
+    const response = await fetch(dashboardUrl)
+    if (response.ok) {
+      await cache.put(dashboardUrl, response)
     }
-    let exports = {};
-    const require = depUri => singleRequire(depUri, uri);
-    const specialDeps = {
-      module: { uri },
-      exports,
-      require
-    };
-    registry[uri] = Promise.all(depsNames.map(
-      depName => specialDeps[depName] || require(depName)
-    )).then(deps => {
-      factory(...deps);
-      return exports;
-    });
-  };
+  } catch (error) {
+    console.warn('[DueSpark SW] Pre-caching failed:', error)
+  }
 }
-define(['./workbox-f1e82ed9'], (function (workbox) { 'use strict';
 
-  self.skipWaiting();
-  workbox.clientsClaim();
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...')
 
-  /**
-   * The precacheAndRoute() method efficiently caches and responds to
-   * requests for URLs in the manifest.
-   * See https://goo.gl/S9QRab
-   */
-  workbox.precacheAndRoute([{
-    "url": "assets/Badge-dcvuvZBI.js",
-    "revision": null
-  }, {
-    "url": "assets/ClientCreateView-D45VEjtM.js",
-    "revision": null
-  }, {
-    "url": "assets/ClientDetailView-CyABFG_W.js",
-    "revision": null
-  }, {
-    "url": "assets/ClientEditView-CotD8A4_.js",
-    "revision": null
-  }, {
-    "url": "assets/ClientForm-CIteNxtr.js",
-    "revision": null
-  }, {
-    "url": "assets/ClientsView-lh5GLU_C.js",
-    "revision": null
-  }, {
-    "url": "assets/DashboardView-QHy7MdA4.js",
-    "revision": null
-  }, {
-    "url": "assets/data-vendor-vybsYvzX.js",
-    "revision": null
-  }, {
-    "url": "assets/date-vendor-DBdW3y0n.js",
-    "revision": null
-  }, {
-    "url": "assets/EnterpriseView-DqcW4jxb.js",
-    "revision": null
-  }, {
-    "url": "assets/FAQView-CilidcQ-.js",
-    "revision": null
-  }, {
-    "url": "assets/form-vendor-IAZZ7zNx.js",
-    "revision": null
-  }, {
-    "url": "assets/hooks-De3QLl0G.js",
-    "revision": null
-  }, {
-    "url": "assets/index-6g1Lgde9.css",
-    "revision": null
-  }, {
-    "url": "assets/index-CyK9IDyA.js",
-    "revision": null
-  }, {
-    "url": "assets/InvoiceCreateView-BqiorCqY.js",
-    "revision": null
-  }, {
-    "url": "assets/InvoiceDetailView-B4TXTp6b.js",
-    "revision": null
-  }, {
-    "url": "assets/InvoiceEditView-hbCzvGl9.js",
-    "revision": null
-  }, {
-    "url": "assets/InvoiceForm-C0UPslng.js",
-    "revision": null
-  }, {
-    "url": "assets/InvoicesView-Ccs-bCZF.js",
-    "revision": null
-  }, {
-    "url": "assets/LoadingStates-gn6_MbE0.js",
-    "revision": null
-  }, {
-    "url": "assets/LoginView-QM8qm4KZ.js",
-    "revision": null
-  }, {
-    "url": "assets/OnboardingView-Bhed6iyZ.js",
-    "revision": null
-  }, {
-    "url": "assets/placeholder.svg",
-    "revision": null
-  }, {
-    "url": "assets/react-vendor-DBbBoGAA.js",
-    "revision": null
-  }, {
-    "url": "assets/ReferralsView-DbxCdNNa.js",
-    "revision": null
-  }, {
-    "url": "assets/RegisterView-yU8Tu6Ly.js",
-    "revision": null
-  }, {
-    "url": "assets/schemas-DELryz0P.js",
-    "revision": null
-  }, {
-    "url": "assets/SettingsView-QqRoarq-.js",
-    "revision": null
-  }, {
-    "url": "assets/StatusBadge-kyg_Rki7.js",
-    "revision": null
-  }, {
-    "url": "assets/SubscriptionView-BN6jbs_L.js",
-    "revision": null
-  }, {
-    "url": "assets/vendor-DjxHXWWU.js",
-    "revision": null
-  }, {
-    "url": "index.html",
-    "revision": "bade2a86e12669d239bc4d9cf0a1b922"
-  }, {
-    "url": "offline.html",
-    "revision": "5fa3861f4e63cc5cb738fb376423faee"
-  }, {
-    "url": "registerSW.js",
-    "revision": "1872c500de691dce40960bb85481de07"
-  }, {
-    "url": "manifest.webmanifest",
-    "revision": "96b77deac99266e246300e79079264f8"
-  }], {});
-  workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
-  workbox.registerRoute(/^https:\/\/api\./, new workbox.NetworkFirst({
-    "cacheName": "api-cache",
-    "networkTimeoutSeconds": 10,
-    plugins: [new workbox.CacheableResponsePlugin({
-      statuses: [0, 200]
-    })]
-  }), 'GET');
-  workbox.registerRoute(/\.(png|jpg|jpeg|svg|gif)$/, new workbox.CacheFirst({
-    "cacheName": "images-cache",
-    plugins: [new workbox.ExpirationPlugin({
-      maxEntries: 100,
-      maxAgeSeconds: 2592000
-    })]
-  }), 'GET');
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => {
+              return cacheName !== STATIC_CACHE &&
+                     cacheName !== DYNAMIC_CACHE &&
+                     cacheName.startsWith('sic-app-')
+            })
+            .map((cacheName) => {
+              console.log('[SW] Deleting old cache:', cacheName)
+              return caches.delete(cacheName)
+            })
+        )
+      })
+      .then(() => {
+        console.log('[SW] Service worker activated')
+        return self.clients.claim()
+      })
+  )
+})
 
-}));
+// Fetch event - handle offline/online requests
+self.addEventListener('fetch', (event) => {
+  const { request } = event
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return
+  }
+
+  // Skip chrome-extension and other non-http requests
+  if (!request.url.startsWith('http')) {
+    return
+  }
+
+  // Handle different types of requests
+  if (request.url.includes('/api/')) {
+    // API requests
+    event.respondWith(handleApiRequest(request))
+  } else if (request.destination === 'document') {
+    // Navigation requests
+    event.respondWith(handleNavigationRequest(request))
+  } else {
+    // Static assets (JS, CSS, images, etc.)
+    event.respondWith(handleStaticRequest(request))
+  }
+})
+
+// Handle API requests with appropriate caching strategy
+async function handleApiRequest(request) {
+  const url = request.url
+
+  // Network-first for critical operations
+  if (NETWORK_FIRST_PATTERNS.some(pattern => pattern.test(url))) {
+    return networkFirstStrategy(request, DYNAMIC_CACHE)
+  }
+
+  // Cache-first for read operations that can be stale
+  if (CACHEABLE_API_PATTERNS.some(pattern => pattern.test(url))) {
+    return cacheFirstStrategy(request, DYNAMIC_CACHE)
+  }
+
+  // Default: network only for uncached API calls
+  try {
+    return await fetch(request)
+  } catch (error) {
+    console.warn('[SW] API request failed:', url)
+    // Return a custom offline response for API calls
+    return new Response(
+      JSON.stringify({
+        error: 'Offline',
+        message: 'This feature requires an internet connection'
+      }),
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+  }
+}
+
+// Handle navigation requests (SPA routing)
+async function handleNavigationRequest(request) {
+  try {
+    // Try network first
+    const response = await fetch(request)
+
+    // Cache successful responses
+    if (response.status === 200) {
+      const cache = await caches.open(DYNAMIC_CACHE)
+      cache.put(request, response.clone())
+    }
+
+    return response
+  } catch (error) {
+    console.log('[SW] Network failed for navigation, serving from cache')
+
+    // Fallback to cached version
+    const cachedResponse = await caches.match(request)
+    if (cachedResponse) {
+      return cachedResponse
+    }
+
+    // Fallback to index.html for SPA routing
+    const indexResponse = await caches.match('/index.html')
+    if (indexResponse) {
+      return indexResponse
+    }
+
+    // Last resort: offline page
+    return new Response(
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <title>Offline - SIC App</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: system-ui; text-align: center; padding: 2rem; }
+            .offline { color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="offline">
+            <h1>📱 DueSpark Offline</h1>
+            <p>Don't worry! You can still view your cached invoices and analytics.</p>
+            <div style="margin: 2rem 0;">
+              <a href="/dashboard" style="display: inline-block; background: #0ea5e9; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Dashboard</a>
+              <a href="/invoices" style="display: inline-block; background: #10b981; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Invoices</a>
+            </div>
+            <button onclick="window.location.reload()" style="background: #6b7280; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;">Try Reconnecting</button>
+          </div>
+        </body>
+      </html>`,
+      {
+        headers: {
+          'Content-Type': 'text/html',
+        },
+      }
+    )
+  }
+}
+
+// Handle static assets
+async function handleStaticRequest(request) {
+  return cacheFirstStrategy(request, STATIC_CACHE)
+}
+
+// Cache-first strategy: check cache first, fallback to network
+async function cacheFirstStrategy(request, cacheName) {
+  const cachedResponse = await caches.match(request)
+
+  if (cachedResponse) {
+    console.log('[SW] Serving from cache:', request.url)
+    return cachedResponse
+  }
+
+  try {
+    console.log('[SW] Fetching from network:', request.url)
+    const response = await fetch(request)
+
+    if (response.status === 200) {
+      const cache = await caches.open(cacheName)
+      cache.put(request, response.clone())
+    }
+
+    return response
+  } catch (error) {
+    console.warn('[SW] Network request failed:', request.url)
+    throw error
+  }
+}
+
+// Network-first strategy: try network first, fallback to cache
+async function networkFirstStrategy(request, cacheName) {
+  try {
+    console.log('[SW] Fetching from network (network-first):', request.url)
+    const response = await fetch(request)
+
+    if (response.status === 200) {
+      const cache = await caches.open(cacheName)
+      cache.put(request, response.clone())
+    }
+
+    return response
+  } catch (error) {
+    console.log('[SW] Network failed, trying cache:', request.url)
+
+    const cachedResponse = await caches.match(request)
+    if (cachedResponse) {
+      console.log('[SW] Serving stale content from cache:', request.url)
+      return cachedResponse
+    }
+
+    throw error
+  }
+}
+
+// Background sync for failed requests
+self.addEventListener('sync', (event) => {
+  console.log('[DueSpark SW] Background sync triggered:', event.tag)
+
+  if (event.tag === 'duespark-reminders') {
+    event.waitUntil(syncPendingReminders())
+  } else if (event.tag === 'duespark-analytics') {
+    event.waitUntil(syncAnalyticsEvents())
+  } else if (event.tag === 'duespark-invoices') {
+    event.waitUntil(syncInvoiceUpdates())
+  }
+})
+
+// Sync pending reminder requests
+async function syncPendingReminders() {
+  console.log('[DueSpark SW] Syncing pending reminders...')
+  const offlineDb = await openOfflineDB()
+  const pendingReminders = await getPendingRequests(offlineDb, 'reminders')
+
+  for (const reminder of pendingReminders) {
+    try {
+      await fetch(reminder.url, {
+        method: reminder.method,
+        headers: reminder.headers,
+        body: reminder.body
+      })
+      await removePendingRequest(offlineDb, 'reminders', reminder.id)
+    } catch (error) {
+      console.warn('[DueSpark SW] Failed to sync reminder:', error)
+    }
+  }
+}
+
+// Sync analytics events
+async function syncAnalyticsEvents() {
+  console.log('[DueSpark SW] Syncing analytics events...')
+  // Implementation for analytics sync
+}
+
+// Sync invoice updates
+async function syncInvoiceUpdates() {
+  console.log('[DueSpark SW] Syncing invoice updates...')
+  // Implementation for invoice sync
+}
+
+// Handle push notifications (if needed)
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json()
+
+    const options = {
+      body: data.body,
+      icon: '/icon-192x192.png',
+      badge: '/icon-192x192.png',
+      tag: data.tag || 'duespark-notification',
+      data: data.data || {},
+      vibrate: [200, 100, 200], // Mobile vibration pattern
+      requireInteraction: data.urgent || false,
+      actions: data.actions || [
+        {
+          action: 'view',
+          title: '👁️ View',
+          icon: '/icon-192x192.png'
+        },
+        {
+          action: 'remind',
+          title: '📧 Send Reminder',
+          icon: '/icon-192x192.png'
+        }
+      ],
+    }
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    )
+  }
+})
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url || '/')
+  )
+})
+
+// Add offline database support
+async function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('DueSparkOffline', 1)
+
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(request.result)
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result
+
+      // Store for pending requests
+      if (!db.objectStoreNames.contains('pendingRequests')) {
+        const store = db.createObjectStore('pendingRequests', { keyPath: 'id', autoIncrement: true })
+        store.createIndex('type', 'type', { unique: false })
+        store.createIndex('timestamp', 'timestamp', { unique: false })
+      }
+
+      // Store for offline actions
+      if (!db.objectStoreNames.contains('offlineActions')) {
+        const store = db.createObjectStore('offlineActions', { keyPath: 'id', autoIncrement: true })
+        store.createIndex('action', 'action', { unique: false })
+      }
+    }
+  })
+}
+
+async function getPendingRequests(db, type) {
+  const transaction = db.transaction(['pendingRequests'], 'readonly')
+  const store = transaction.objectStore('pendingRequests')
+  const index = store.index('type')
+
+  return new Promise((resolve, reject) => {
+    const request = index.getAll(type)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function removePendingRequest(db, type, id) {
+  const transaction = db.transaction(['pendingRequests'], 'readwrite')
+  const store = transaction.objectStore('pendingRequests')
+
+  return new Promise((resolve, reject) => {
+    const request = store.delete(id)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+}
+
+// Message handling for app communication
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type) {
+    switch (event.data.type) {
+      case 'SKIP_WAITING':
+        self.skipWaiting()
+        break
+      case 'QUEUE_REMINDER':
+        queueOfflineAction('reminder', event.data.payload)
+        break
+      case 'QUEUE_ANALYTICS':
+        queueOfflineAction('analytics', event.data.payload)
+        break
+    }
+  }
+})
+
+async function queueOfflineAction(action, payload) {
+  try {
+    const db = await openOfflineDB()
+    const transaction = db.transaction(['offlineActions'], 'readwrite')
+    const store = transaction.objectStore('offlineActions')
+
+    await store.add({
+      action,
+      payload,
+      timestamp: Date.now()
+    })
+
+    // Register background sync
+    await self.registration.sync.register(`duespark-${action}s`)
+  } catch (error) {
+    console.error('[DueSpark SW] Failed to queue offline action:', error)
+  }
+}
+
+console.log('[DueSpark SW] Service worker v1.1.0 loaded successfully with enhanced PWA features')

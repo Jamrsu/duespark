@@ -2,33 +2,36 @@ import React from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { motion } from 'framer-motion'
 import {
   Mail,
   Lock,
   Eye,
   EyeOff,
   Zap,
-  Sparkles,
-  Shield,
-  Clock,
+  ArrowRight,
   CheckCircle,
+  Github,
+  ArrowLeft,
 } from 'lucide-react'
 import { useLogin } from '@/api/hooks'
 import { loginSchema, LoginFormData } from '@/lib/schemas'
 import { cn } from '@/lib/utils'
-import '../../styles/hero-theme.css'
+import { useTheme } from '@/lib/theme'
 
 export function LoginView() {
   const [showPassword, setShowPassword] = React.useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const loginMutation = useLogin()
+  const { resolvedTheme } = useTheme()
 
   const from = location.state?.from?.pathname || '/app/dashboard'
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,10 +41,15 @@ export function LoginView() {
     },
   })
 
+  const fillDemoCredentials = () => {
+    setValue('email', 'demo@example.com')
+    setValue('password', 'demo123')
+  }
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       await loginMutation.mutateAsync({
-        username: data.email, // API expects username field
+        username: data.email,
         password: data.password,
       })
       navigate(from, { replace: true })
@@ -51,207 +59,362 @@ export function LoginView() {
   }
 
   return (
-    <div className="min-h-screen hero-gradient flex flex-col">
-      <nav className="px-6 py-4 animate-fade-in-up">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <Zap className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-foreground">DueSpark</span>
+    <div className={cn(
+      "min-h-screen relative overflow-hidden transition-colors duration-300",
+      resolvedTheme === 'dark' ? 'bg-gray-950' : 'bg-gray-50'
+    )}>
+      {/* Animated Background */}
+      <div className="absolute inset-0">
+        <div className={cn(
+          "absolute inset-0 bg-gradient-to-br transition-colors duration-300",
+          resolvedTheme === 'dark'
+            ? 'from-purple-900/20 via-blue-900/20 to-indigo-900/20'
+            : 'from-purple-100/30 via-blue-100/30 to-indigo-100/30'
+        )} />
+        <div className={cn(
+          "absolute top-0 left-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-xl animate-pulse",
+          resolvedTheme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-300/20'
+        )} />
+        <div className={cn(
+          "absolute top-1/2 right-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000",
+          resolvedTheme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-300/20'
+        )} />
+        <div className={cn(
+          "absolute bottom-0 left-1/3 w-96 h-96 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000",
+          resolvedTheme === 'dark' ? 'bg-indigo-500/10' : 'bg-indigo-300/20'
+        )} />
+      </div>
+
+      {/* Simplified Navigation */}
+      <nav className="relative z-10 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex justify-end">
+          <Link
+            to="/"
+            className={cn(
+              "group flex items-center gap-2 px-4 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200",
+              resolvedTheme === 'dark'
+                ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white'
+                : 'bg-gray-200/50 border-gray-300 text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+            )}
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform duration-200" />
+            <span className="text-sm font-medium">Back</span>
           </Link>
-
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/#features" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
-              Features
-            </Link>
-            <Link to="/#pricing" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
-              Pricing
-            </Link>
-            <Link to="/#about" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
-              About
-            </Link>
-            <Link to="/#contact" className="text-muted-foreground hover:text-foreground transition-colors animate-scale-in">
-              Contact
-            </Link>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <Link to="/auth/register" className="primary-button px-4 py-2 rounded-lg font-semibold btn-hover animate-scale-in">
-              Sign Up
-            </Link>
-          </div>
         </div>
       </nav>
 
-      <main className="flex-1 flex items-center justify-center px-6 py-12 lg:py-20">
-        <div className="w-full max-w-6xl grid lg:grid-cols-[1.15fr,1fr] gap-12 items-center">
-          <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/80 border border-white/60 text-sm font-medium text-muted-foreground px-4 py-2 rounded-full mx-auto lg:mx-0 animate-scale-in">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              AI-powered reminders
-            </div>
+      {/* Main Content */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 min-h-[calc(100vh-120px)]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-lg mx-auto"
+        >
+          {/* Glassmorphic Card */}
+          <div className="relative">
+            {/* Card Glow Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-2xl blur-xl" />
 
-            <h1 className="text-4xl lg:text-5xl font-bold text-foreground leading-tight animate-fade-in-up">
-              Welcome back to <span className="gradient-text">DueSpark</span>
-            </h1>
-
-            <p className="text-lg text-muted-foreground leading-relaxed animate-fade-in-up-delay-1">
-              Sign in to stay on top of invoices, automate follow-ups, and keep cash flow predictable.
-            </p>
-
-            <div className="grid sm:grid-cols-2 gap-4 animate-fade-in-up-delay-2">
-              <div className="bg-white/90 border border-white/60 rounded-xl p-5 shadow-sm card-hover flex items-start gap-3">
-                <Shield className="h-5 w-5 text-blue-600 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-foreground">Secure by design</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Bank-level safeguards, MFA, and encrypted workflows protect every login.
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white/90 border border-white/60 rounded-xl p-5 shadow-sm card-hover flex items-start gap-3">
-                <Clock className="h-5 w-5 text-purple-600 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-foreground">Faster payments</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Automated nudges help clients pay an average of 35% faster.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="auth-container bg-white/95 rounded-2xl shadow-2xl p-8 lg:p-10 animate-fade-in-right">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold animate-scale-in">
-                <Lock className="h-3.5 w-3.5" />
-                Secure sign-in
-              </div>
-              <h2 className="text-2xl font-bold text-foreground mt-4">
-                Access your workspace
-              </h2>
-              <p className="text-muted-foreground mt-2">
-                Use your email and password to continue managing invoices.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Email field */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-muted-foreground mb-2"
-                >
-                  Email address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    {...register('email')}
-                    type="email"
-                    id="email"
-                    autoComplete="email"
-                    className={cn(
-                      'input-field w-full pl-10 pr-4 py-3 rounded-lg',
-                      errors.email && 'border-red-500 focus:border-red-500'
-                    )}
-                    placeholder="you@company.com"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Password field */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-muted-foreground mb-2"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    autoComplete="current-password"
-                    className={cn(
-                      'input-field w-full pl-10 pr-10 py-3 rounded-lg',
-                      errors.password && 'border-red-500 focus:border-red-500'
-                    )}
-                    placeholder="Enter your password"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400 hover:text-muted-foreground" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Submit button */}
-              <button
-                type="submit"
-                className="primary-button w-full py-3 rounded-lg font-semibold btn-hover"
-                disabled={isSubmitting || loginMutation.isPending}
+            {/* Main Card */}
+            <div className={cn(
+              "relative backdrop-blur-xl border rounded-2xl p-6 sm:p-8 shadow-2xl min-h-[500px] sm:min-h-[600px] flex flex-col justify-center transition-colors duration-300",
+              resolvedTheme === 'dark'
+                ? 'bg-white/5 border-white/10'
+                : 'bg-white/70 border-gray-200'
+            )}>
+              {/* Branding */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-center mb-8 mt-8"
               >
-                {isSubmitting || loginMutation.isPending ? 'Signing in...' : 'Sign in'}
-              </button>
+                <div className="inline-flex flex-col items-center gap-4">
+                  {/* Logo */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1, duration: 0.5 }}
+                  >
+                    <Zap className={cn("h-12 w-12", resolvedTheme === 'dark' ? 'text-white' : 'text-gray-700')} />
+                  </motion.div>
 
-              {/* Demo credentials */}
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <p className="text-sm text-blue-700 mb-2 font-medium">
-                  Demo credentials
-                </p>
-                <p className="text-xs text-blue-600">
-                  Email: demo@example.com<br />
-                  Password: demo123
-                </p>
-              </div>
+                  {/* Brand Name */}
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className={cn("text-3xl font-bold tracking-tight", resolvedTheme === 'dark' ? 'text-white' : 'text-gray-800')}
+                  >
+                    DueSpark
+                  </motion.h2>
+                </div>
+              </motion.div>
 
-              {/* Register link */}
-              <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link
-                  to="/auth/register"
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              {/* Header */}
+              <div className="text-center mb-8">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className={cn("inline-flex items-center gap-2 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium mb-4", resolvedTheme === 'dark' ? 'bg-white/10 text-white' : 'bg-gray-200/80 text-gray-800')}
                 >
-                  Sign up
-                </Link>
-              </div>
-            </form>
+                  <Lock className="h-4 w-4" />
+                  Secure Login
+                </motion.div>
 
-            <div className="mt-8 flex flex-col gap-3 text-sm text-gray-500">
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                14-day free trial on every new workspace
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  className={cn("text-2xl font-bold mb-2", resolvedTheme === 'dark' ? 'text-white' : 'text-gray-800')}
+                >
+                  Welcome back
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                  className={cn(resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-600')}
+                >
+                  Sign in to your DueSpark account
+                </motion.p>
               </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Cancel anytime — no credit card required to start
-              </div>
+
+              {/* Form */}
+              <motion.form
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
+                {/* Email Field */}
+                <div>
+                  <label className={cn("block text-sm font-medium mb-2", resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
+                    Email
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className={cn("h-5 w-5 opacity-100", resolvedTheme === 'dark' ? 'text-gray-400' : 'text-gray-800')} />
+                    </div>
+                    <input
+                      {...register('email')}
+                      type="email"
+                      autoComplete="email"
+                      className={cn(
+                        'w-full pl-10 pr-4 py-3 backdrop-blur-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200',
+                        resolvedTheme === 'dark'
+                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-400'
+                          : 'bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500',
+                        errors.email && 'border-red-500 focus:ring-red-500'
+                      )}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  {errors.email && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="mt-2 text-sm text-red-400 flex items-center gap-2"
+                    >
+                      ⚠ {errors.email.message}
+                    </motion.p>
+                  )}
+                </div>
+
+                {/* Password Field */}
+                <div>
+                  <label className={cn("block text-sm font-medium mb-2", resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className={cn("h-5 w-5 opacity-100", resolvedTheme === 'dark' ? 'text-gray-400' : 'text-gray-800')} />
+                    </div>
+                    <input
+                      {...register('password')}
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      className={cn(
+                        'w-full pl-10 pr-12 py-3 backdrop-blur-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200',
+                        resolvedTheme === 'dark'
+                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-400'
+                          : 'bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500',
+                        errors.password && 'border-red-500 focus:ring-red-500'
+                      )}
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className={cn(
+                          "h-5 w-5 opacity-100 transition-colors",
+                          resolvedTheme === 'dark'
+                            ? 'text-gray-400 hover:text-gray-300'
+                            : 'text-gray-600 hover:text-gray-700'
+                        )} />
+                      ) : (
+                        <Eye className={cn(
+                          "h-5 w-5 opacity-100 transition-colors",
+                          resolvedTheme === 'dark'
+                            ? 'text-gray-400 hover:text-gray-300'
+                            : 'text-gray-600 hover:text-gray-700'
+                        )} />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="mt-2 text-sm text-red-400 flex items-center gap-2"
+                    >
+                      ⚠ {errors.password.message}
+                    </motion.p>
+                  )}
+                </div>
+
+                {/* Remember & Forgot */}
+                <div className="flex items-center justify-between text-sm">
+                  <label className={cn(
+                    "flex items-center",
+                    resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  )}>
+                    <input
+                      type="checkbox"
+                      className={cn(
+                        "w-4 h-4 border rounded focus:ring-purple-500 focus:ring-2 text-purple-500",
+                        resolvedTheme === 'dark'
+                          ? 'bg-white/5 border-white/10'
+                          : 'bg-white border-gray-300'
+                      )}
+                    />
+                    <span className="ml-2">Remember me</span>
+                  </label>
+                  <Link
+                    to="/auth/forgot-password"
+                    className={cn(
+                      "transition-colors",
+                      resolvedTheme === 'dark'
+                        ? 'text-purple-400 hover:text-purple-300'
+                        : 'text-purple-600 hover:text-purple-700'
+                    )}
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                {/* Submit Button */}
+                <motion.button
+                  type="submit"
+                  disabled={isSubmitting || loginMutation.isPending}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full relative bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting || loginMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign in
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </motion.button>
+
+                {/* Demo Credentials */}
+                <motion.button
+                  type="button"
+                  onClick={fillDemoCredentials}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={cn(
+                    "w-full backdrop-blur-sm border py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2",
+                    resolvedTheme === 'dark'
+                      ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                      : 'bg-gray-200/80 border-gray-300 text-gray-900 hover:bg-gray-200'
+                  )}
+                >
+                  <Github className="h-4 w-4" />
+                  Try Demo Account
+                </motion.button>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className={cn(
+                      "w-full border-t",
+                      resolvedTheme === 'dark' ? 'border-white/10' : 'border-gray-300'
+                    )} />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className={cn(
+                      "px-2",
+                      resolvedTheme === 'dark'
+                        ? 'bg-gray-950 text-gray-400'
+                        : 'bg-gray-50 text-gray-500'
+                    )}>or</span>
+                  </div>
+                </div>
+
+                {/* Register Link */}
+                <div className="text-center">
+                  <span className={cn(
+                    resolvedTheme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  )}>Don't have an account? </span>
+                  <Link
+                    to="/auth/register"
+                    className={cn(
+                      "transition-colors font-medium",
+                      resolvedTheme === 'dark'
+                        ? 'text-purple-400 hover:text-purple-300'
+                        : 'text-purple-600 hover:text-purple-700'
+                    )}
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              </motion.form>
+
+              {/* Benefits */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9, duration: 0.5 }}
+                className={cn(
+                  "mt-8 pt-6 border-t",
+                  resolvedTheme === 'dark' ? 'border-white/10' : 'border-gray-300'
+                )}
+              >
+                <div className="space-y-3 text-sm">
+                  <div className={cn(
+                    "flex items-center gap-3",
+                    resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  )}>
+                    <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
+                    <span>14-day free trial on every new workspace</span>
+                  </div>
+                  <div className={cn(
+                    "flex items-center gap-3",
+                    resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  )}>
+                    <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
+                    <span>Cancel anytime — no credit card required</span>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </main>
     </div>
   )
