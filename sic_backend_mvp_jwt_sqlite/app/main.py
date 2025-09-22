@@ -1337,12 +1337,59 @@ def analytics_summary(
         else (single_currency if currency_count == 1 else "USD")
     )
 
+    # Build per-currency revenue breakdown to avoid mixing currencies on the dashboard
+    currency_breakdown: list[schemas.CurrencyRevenueBreakdown] = []
+    if currency_count > 0:
+        query_start = time.time()
+        currency_totals = (
+            db.query(
+                models.Invoice.currency,
+                models.Invoice.status,
+                func.sum(models.Invoice.amount_cents).label("total_amount"),
+            )
+            .filter(models.Invoice.user_id == user.id)
+            .group_by(models.Invoice.currency, models.Invoice.status)
+            .all()
+        )
+        ANALYTICS_QUERY_DURATION_SECONDS.labels(
+            query_type="currency_breakdown"
+        ).observe(time.time() - query_start)
+
+        breakdown_map: dict[str, dict[str, int]] = {}
+        for currency, status, total_amount in currency_totals:
+            currency_code = (currency or "USD").upper()
+            status_str = status.value if hasattr(status, "value") else str(status)
+            entry = breakdown_map.setdefault(
+                currency_code,
+                {"earned": 0, "outstanding": 0},
+            )
+            amount = int(total_amount or 0)
+            if status_str == "paid":
+                entry["earned"] += amount
+            elif status_str in {"pending", "overdue"}:
+                entry["outstanding"] += amount
+
+        for currency_code, values in breakdown_map.items():
+            earned_amount = values["earned"]
+            outstanding_amount = values["outstanding"]
+            currency_breakdown.append(
+                schemas.CurrencyRevenueBreakdown(
+                    currency=currency_code,
+                    earned_revenue=earned_amount,
+                    outstanding_revenue=outstanding_amount,
+                    total_revenue=earned_amount + outstanding_amount,
+                )
+            )
+
+        currency_breakdown.sort(key=lambda item: item.currency)
+
     result = schemas.AnalyticsSummaryOut(
         totals=schemas.AnalyticsStatusTotals(**totals),
         earned_revenue=earned_revenue,
         expected_payments_next_30d=expected_payments,
         avg_days_to_pay=avg_days_to_pay,
         top_late_clients=top_late_clients,
+        currency_breakdown=currency_breakdown or None,
     )
 
     # Record overall request duration

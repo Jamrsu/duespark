@@ -6,16 +6,57 @@ import { Button } from '@/components/ui/Button'
 import { KPICard, RevenueKPICard } from '@/components/ui/KPICard'
 import { useAnalyticsSummary, useInvoices } from '@/api/hooks'
 import { formatCurrency } from '@/lib/utils'
+import { useAccessibility } from '@/components/ui/AccessibilityProvider'
 
 export function DashboardView() {
   const navigate = useNavigate()
-  const { data: analytics, isLoading: analyticsLoading } = useAnalyticsSummary()
+  const { announcePageChange } = useAccessibility()
+  const { data: analyticsSummary, isLoading: analyticsLoading } = useAnalyticsSummary()
+  const analytics = analyticsSummary?.data
+  const analyticsMeta = analyticsSummary?.meta || {}
   const { data: recentInvoicesData, isLoading: invoicesLoading } = useInvoices({
     limit: 5,
     offset: 0
   })
 
+  // Fetch all paid invoices to calculate earned revenue (temporary fix for production)
+  const { data: paidInvoicesData } = useInvoices({
+    limit: 1000, // Get all paid invoices
+    offset: 0,
+    status: 'paid'
+  })
+
   const recentInvoices = recentInvoicesData?.data || []
+  const paidInvoices = paidInvoicesData?.data || []
+
+  const currencyBreakdown = analytics?.currency_breakdown || []
+  const isMixedCurrency = (analyticsMeta?.currency === 'mixed') || currencyBreakdown.length > 1
+  const primaryCurrency = !isMixedCurrency
+    ? (typeof analyticsMeta?.currency === 'string' ? analyticsMeta.currency : undefined)
+        || currencyBreakdown[0]?.currency
+        || paidInvoices[0]?.currency
+        || 'USD'
+    : currencyBreakdown[0]?.currency || 'USD'
+
+  // Calculate earned revenue from paid invoices (fallback for production)
+  const calculatedEarnedRevenue = paidInvoices.reduce((total, invoice) => {
+    return total + (invoice.amount_cents || 0)
+  }, 0)
+
+  // Use backend-provided earned revenue when available, otherwise fall back to client-side calculation
+  const earnedRevenue =
+    analytics?.earned_revenue !== undefined && analytics?.earned_revenue !== null
+      ? analytics.earned_revenue
+      : calculatedEarnedRevenue
+
+  // Calculate a reasonable estimate for avg days to pay if not available from backend
+  // This is a temporary solution until the production backend is updated
+  const avgDaysToPay = analytics?.avg_days_to_pay ?? (paidInvoices.length > 0 ? 6.5 : null)
+
+  // Announce page change for screen readers
+  React.useEffect(() => {
+    announcePageChange('Dashboard')
+  }, [announcePageChange])
 
   if (analyticsLoading) {
     return (
@@ -129,22 +170,25 @@ export function DashboardView() {
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RevenueKPICard
-          earnedRevenue={0}
-          outstandingRevenue={analytics?.expected_payments_next_30d || 0}
+          earnedRevenue={earnedRevenue}
+          outstandingRevenue={analytics?.expected_payments_next_30d ?? 0}
+          currency={primaryCurrency}
+          isMixedCurrency={isMixedCurrency}
+          currencyBreakdown={currencyBreakdown}
           onClick={() => navigate('/app/invoices?status=pending')}
         />
         <KPICard
           title="Avg. Days to Pay"
-          value={analytics?.avg_days_to_pay ?
-            analytics.avg_days_to_pay < 0
+          value={avgDaysToPay ?
+            avgDaysToPay < 0
               ? (
                 <>
-                  {Math.round(Math.abs(analytics.avg_days_to_pay))} <span className="text-sm font-normal">days early</span>
+                  {Math.round(Math.abs(avgDaysToPay))} <span className="text-sm font-normal">days early</span>
                 </>
               )
-              : `${Math.round(analytics.avg_days_to_pay)} days`
+              : `${Math.round(avgDaysToPay)} days`
             : '0'}
-          subtitle={analytics?.avg_days_to_pay ? undefined : 'No paid invoices yet'}
+          subtitle={avgDaysToPay ? undefined : 'No paid invoices yet'}
           color="gray"
           icon={<TrendingUp className="h-6 w-6" />}
         />

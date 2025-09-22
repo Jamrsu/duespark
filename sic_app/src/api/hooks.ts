@@ -438,8 +438,7 @@ export function useAnalyticsSummary() {
   return useQuery({
     queryKey: queryKeys.analyticsSummary,
     queryFn: async () => {
-      const response = await apiClient.get<AnalyticsSummary>('/analytics/summary')
-      return response.data
+      return apiClient.get<AnalyticsSummary>('/analytics/summary')
     },
   })
 }

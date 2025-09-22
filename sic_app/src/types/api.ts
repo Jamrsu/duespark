@@ -142,9 +142,11 @@ export interface AnalyticsSummary {
     overdue: number
     cancelled: number
   }
+  earned_revenue: number
   expected_payments_next_30d: number
   avg_days_to_pay: number | null
   top_late_clients: AnalyticsTopLateClient[]
+  currency_breakdown?: CurrencyRevenueBreakdown[]
 }
 
 export interface AnalyticsTopLateClient {
@@ -154,6 +156,13 @@ export interface AnalyticsTopLateClient {
   avg_days_late: number
   overdue_count: number
   total_overdue_amount_cents: number
+}
+
+export interface CurrencyRevenueBreakdown {
+  currency: string
+  earned_revenue: number
+  outstanding_revenue: number
+  total_revenue: number
 }
 
 export interface AnalyticsTimeseries {

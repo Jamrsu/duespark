@@ -2,6 +2,13 @@ import React, { useState } from 'react'
 import { Card, CardContent } from './Card'
 import { cn, formatCurrency } from '@/lib/utils'
 
+interface RevenueBreakdown {
+  currency: string
+  earned_revenue: number
+  outstanding_revenue: number
+  total_revenue: number
+}
+
 interface KPICardProps {
   title: string
   value: number | string | React.ReactNode
@@ -209,7 +216,9 @@ export function RevenueKPICard({
   className,
   onClick,
   showMobileActions,
-  quickActions
+  quickActions,
+  isMixedCurrency = false,
+  currencyBreakdown = []
 }: {
   earnedRevenue: number
   outstandingRevenue: number
@@ -223,8 +232,70 @@ export function RevenueKPICard({
     action: () => void
     color?: string
   }>
+  isMixedCurrency?: boolean
+  currencyBreakdown?: RevenueBreakdown[]
 }) {
   const totalRevenue = earnedRevenue + outstandingRevenue
+  const displayCurrency = currency?.toUpperCase?.() || currency
+  const hasBreakdown = isMixedCurrency && currencyBreakdown.length > 0
+
+  if (hasBreakdown) {
+    return (
+      <Card
+        className={cn(
+          'transition-all duration-200 h-full',
+          className
+        )}
+      >
+        <CardContent className="p-4 h-full flex flex-col justify-start min-h-[100px]">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-lg sm:text-xl font-medium text-gray-500 dark:text-gray-400 truncate">
+                Total Revenue
+              </p>
+              <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100 text-base">
+                Multiple currencies detected
+              </p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Totals are shown per currency to avoid mixing exchange rates.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {currencyBreakdown.map((breakdown) => {
+              const code = breakdown.currency?.toUpperCase?.() || 'USD'
+              return (
+                <div
+                  key={code}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                      {code}
+                    </span>
+                    <span className="font-bold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(breakdown.total_revenue, code)}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                    <span className="text-success-600 dark:text-success-400 flex items-center justify-between sm:justify-start sm:gap-2">
+                      <span className="font-medium">Earned</span>
+                      <span>{formatCurrency(breakdown.earned_revenue, code)}</span>
+                    </span>
+                    <span className="text-yellow-600 dark:text-yellow-400 flex items-center justify-between sm:justify-end sm:gap-2">
+                      <span className="font-medium">Outstanding</span>
+                      <span>{formatCurrency(breakdown.outstanding_revenue, code)}</span>
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="relative group">
@@ -249,7 +320,7 @@ export function RevenueKPICard({
                   'font-bold text-gray-900 dark:text-gray-100',
                   'text-xl sm:text-2xl lg:text-2xl'
                 )}>
-                  {formatCurrency(totalRevenue, currency)}
+                  {formatCurrency(totalRevenue, displayCurrency)}
                 </p>
               </div>
 
@@ -260,7 +331,7 @@ export function RevenueKPICard({
                     Earned
                   </span>
                   <span className="text-success-600 dark:text-success-400 font-medium">
-                    {formatCurrency(earnedRevenue, currency)}
+                    {formatCurrency(earnedRevenue, displayCurrency)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -268,7 +339,7 @@ export function RevenueKPICard({
                     Outstanding
                   </span>
                   <span className="text-yellow-600 dark:text-yellow-400 font-medium">
-                    {formatCurrency(outstandingRevenue, currency)}
+                    {formatCurrency(outstandingRevenue, displayCurrency)}
                   </span>
                 </div>
               </div>

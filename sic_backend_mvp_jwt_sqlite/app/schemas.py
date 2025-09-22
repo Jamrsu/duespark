@@ -306,12 +306,20 @@ class AnalyticsTopLateClient(BaseModel):
     total_overdue_amount_cents: int
 
 
+class CurrencyRevenueBreakdown(BaseModel):
+    currency: str
+    earned_revenue: int
+    outstanding_revenue: int
+    total_revenue: int
+
+
 class AnalyticsSummaryOut(BaseModel):
     totals: AnalyticsStatusTotals
     earned_revenue: int  # Total revenue from paid invoices (in cents)
     expected_payments_next_30d: int
     avg_days_to_pay: Optional[float] = None
     top_late_clients: list[AnalyticsTopLateClient]
+    currency_breakdown: Optional[list[CurrencyRevenueBreakdown]] = None
 
 
 class AnalyticsTimeseriesPoint(BaseModel):
