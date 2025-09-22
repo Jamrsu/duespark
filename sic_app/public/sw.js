@@ -1,10 +1,23 @@
 // DueSpark Service Worker - Advanced PWA Capabilities
 // Version 1.1.0 - Phase 2 Mobile-First Enhancements
 
-const CACHE_NAME = 'duespark-v1.1.0'
-const STATIC_CACHE = 'duespark-static-v1.1.0'
-const DYNAMIC_CACHE = 'duespark-dynamic-v1.1.0'
-const API_CACHE = 'duespark-api-v1.1.0'
+const CACHE_PREFIX = 'duespark'
+const BUILD_VERSION = (() => {
+  try {
+    if (self && self.__DUESPARK_BUILD_ID) return self.__DUESPARK_BUILD_ID
+    const url = new URL(self.location.href)
+    const searchVersion = url.searchParams.get('v')
+    if (searchVersion) return searchVersion
+    return `${url.pathname.replace(/\W+/g, '-')}-${Date.now()}`
+  } catch (error) {
+    return `fallback-${Date.now()}`
+  }
+})()
+
+const STATIC_CACHE = `${CACHE_PREFIX}-static-${BUILD_VERSION}`
+const DYNAMIC_CACHE = `${CACHE_PREFIX}-dynamic-${BUILD_VERSION}`
+const API_CACHE = `${CACHE_PREFIX}-api-${BUILD_VERSION}`
+const ACTIVE_CACHES = new Set([STATIC_CACHE, DYNAMIC_CACHE, API_CACHE])
 
 // Files to cache for offline support
 const STATIC_ASSETS = [
@@ -44,7 +57,7 @@ const SYNC_PATTERNS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[DueSpark SW] Installing service worker v1.1.0...')
+  console.log('[DueSpark SW] Installing service worker...', BUILD_VERSION)
 
   event.waitUntil(
     Promise.all([
@@ -83,7 +96,7 @@ async function preCacheCriticalData() {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...')
+  console.log('[SW] Activating service worker...', BUILD_VERSION)
 
   event.waitUntil(
     caches.keys()
@@ -91,9 +104,12 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames
             .filter((cacheName) => {
-              return cacheName !== STATIC_CACHE &&
-                     cacheName !== DYNAMIC_CACHE &&
-                     cacheName.startsWith('sic-app-')
+              if (ACTIVE_CACHES.has(cacheName)) {
+                return false
+              }
+
+              // Remove legacy caches prefixed with duespark- or sic-app-
+              return cacheName.startsWith(`${CACHE_PREFIX}-`) || cacheName.startsWith('sic-app-')
             })
             .map((cacheName) => {
               console.log('[SW] Deleting old cache:', cacheName)
@@ -106,6 +122,26 @@ self.addEventListener('activate', (event) => {
         return self.clients.claim()
       })
   )
+})
+
+self.addEventListener('message', (event) => {
+  if (!event.data) return
+
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+
+  if (event.data.type === 'CLEAR_DUESPARK_CACHES') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName.startsWith(`${CACHE_PREFIX}-`) || cacheName.startsWith('sic-app-'))
+            .map((cacheName) => caches.delete(cacheName))
+        )
+      })
+    )
+  }
 })
 
 // Fetch event - handle offline/online requests
@@ -238,27 +274,26 @@ async function handleStaticRequest(request) {
   return cacheFirstStrategy(request, STATIC_CACHE)
 }
 
-// Cache-first strategy: check cache first, fallback to network
+// Cache strategy that prefers fresh network responses and updates cache.
 async function cacheFirstStrategy(request, cacheName) {
-  const cachedResponse = await caches.match(request)
-
-  if (cachedResponse) {
-    console.log('[SW] Serving from cache:', request.url)
-    return cachedResponse
-  }
+  const cache = await caches.open(cacheName)
 
   try {
-    console.log('[SW] Fetching from network:', request.url)
+    console.log('[SW] Fetching (network-preferred):', request.url)
     const response = await fetch(request)
 
-    if (response.status === 200) {
-      const cache = await caches.open(cacheName)
+    if (response && response.status === 200) {
       cache.put(request, response.clone())
     }
 
     return response
   } catch (error) {
-    console.warn('[SW] Network request failed:', request.url)
+    console.warn('[SW] Network request failed, attempting cache:', request.url)
+    const cachedResponse = await cache.match(request)
+    if (cachedResponse) {
+      console.log('[SW] Returning cached fallback:', request.url)
+      return cachedResponse
+    }
     throw error
   }
 }

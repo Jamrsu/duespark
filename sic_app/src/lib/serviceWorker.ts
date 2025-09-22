@@ -11,6 +11,7 @@ export interface ServiceWorkerOptions {
 class ServiceWorkerManager {
   private registration: ServiceWorkerRegistration | null = null
   private options: ServiceWorkerOptions = {}
+  private refreshing = false
 
   /**
    * Register the service worker
@@ -28,6 +29,8 @@ class ServiceWorkerManager {
       return
     }
 
+    const hadController = !!navigator.serviceWorker.controller
+
     try {
       this.registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
@@ -43,10 +46,24 @@ class ServiceWorkerManager {
       // Listen for controller changes (new SW activated)
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         console.log('Service Worker controller changed')
+        if (!hadController) {
+          // First install, rely on normal navigation flow
+          return
+        }
+        if (this.refreshing) {
+          return
+        }
+        this.refreshing = true
         if (this.options.onUpdate && this.registration) {
           this.options.onUpdate(this.registration)
         }
+        window.location.reload()
       })
+
+      // Immediately activate an already waiting worker
+      if (this.registration.waiting) {
+        this.skipWaiting()
+      }
 
       // Setup network status listeners
       this.setupNetworkListeners()
@@ -184,9 +201,7 @@ class ServiceWorkerManager {
     newWorker.addEventListener('statechange', () => {
       if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
         console.log('New service worker available')
-        if (this.options.onUpdate && this.registration) {
-          this.options.onUpdate(this.registration)
-        }
+        this.skipWaiting()
       }
     })
   }
