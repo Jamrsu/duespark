@@ -17,6 +17,12 @@
       "permanent": false
     }
   ],
+  "rewrites": [
+    {
+      "source": "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-.*).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
