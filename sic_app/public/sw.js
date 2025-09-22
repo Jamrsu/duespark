@@ -62,9 +62,17 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     Promise.all([
       // Cache static assets
-      caches.open(STATIC_CACHE).then((cache) => {
+      caches.open(STATIC_CACHE).then(async (cache) => {
         console.log('[DueSpark SW] Caching static assets')
-        return cache.addAll(STATIC_ASSETS)
+        await Promise.all(
+          STATIC_ASSETS.map(async (asset) => {
+            try {
+              await cache.add(asset)
+            } catch (error) {
+              console.warn('[DueSpark SW] Skipping static asset (failed to cache):', asset, error)
+            }
+          })
+        )
       }),
       // Pre-cache critical API data if user is authenticated
       preCacheCriticalData()
