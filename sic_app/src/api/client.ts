@@ -225,10 +225,12 @@ class ApiClient {
     console.log('Getting subscription info, auth status:', this.isAuthenticated())
     console.log('Token:', this.getToken())
     try {
-      const envelope = await this.get<any>('/api/subscription/info')
-      console.log('Subscription response:', envelope)
-      return envelope.data
+      // Bypass retry logic to handle 404s directly
+      const response = await this.client.get<any>('/api/subscription/info')
+      console.log('Subscription response:', response.data)
+      return response.data.data
     } catch (error: any) {
+      console.log('Subscription error:', error.response?.status, error.message)
       // Handle 404 - endpoint doesn't exist in production yet
       if (error.response?.status === 404) {
         console.warn('Subscription endpoint not available, returning fallback data')
@@ -283,9 +285,11 @@ class ApiClient {
 
   getReferralStats = async () => {
     try {
-      const envelope = await this.get<any>('/api/referrals/stats')
-      return envelope.data
+      // Bypass retry logic to handle 404s directly
+      const response = await this.client.get<any>('/api/referrals/stats')
+      return response.data.data
     } catch (error: any) {
+      console.log('Referral stats error:', error.response?.status, error.message)
       // Handle 404 - endpoint doesn't exist in production yet
       if (error.response?.status === 404) {
         console.warn('Referrals stats endpoint not available, returning fallback data')
@@ -302,9 +306,11 @@ class ApiClient {
 
   getCreditsBreakdown = async () => {
     try {
-      const envelope = await this.get<any>('/api/referrals/credits')
-      return envelope.data
+      // Bypass retry logic to handle 404s directly
+      const response = await this.client.get<any>('/api/referrals/credits')
+      return response.data.data
     } catch (error: any) {
+      console.log('Credits error:', error.response?.status, error.message)
       // Handle 404 - endpoint doesn't exist in production yet
       if (error.response?.status === 404) {
         console.warn('Referrals credits endpoint not available, returning fallback data')
