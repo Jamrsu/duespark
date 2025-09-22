@@ -15,6 +15,8 @@ from .subscription_service import (
 )
 
 router = APIRouter(prefix="/api/subscription", tags=["subscription"])
+# Legacy router keeps backward-compatible endpoints for deployments without the /api prefix
+legacy_router = APIRouter(prefix="/subscription", tags=["subscription"])
 
 
 class UpgradePlanRequest(BaseModel):
@@ -197,6 +199,17 @@ async def resume_subscription(
             detail=f"Failed to resume subscription: {str(e)}",
         )
 
+
+
+# Expose legacy routes without the "/api" prefix for existing deployments.
+legacy_router.add_api_route("/info", get_subscription_info, methods=["GET"])
+legacy_router.add_api_route("/upgrade", upgrade_subscription, methods=["POST"])
+legacy_router.add_api_route(
+    "/billing-portal", create_billing_portal_session, methods=["POST"]
+)
+legacy_router.add_api_route("/apply-coupon", apply_coupon, methods=["POST"])
+legacy_router.add_api_route("/pause", pause_subscription, methods=["POST"])
+legacy_router.add_api_route("/resume", resume_subscription, methods=["POST"])
 
 @router.get("/billing-preview/{tier}")
 async def get_billing_preview(

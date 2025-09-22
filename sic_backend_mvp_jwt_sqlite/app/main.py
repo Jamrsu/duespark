@@ -282,7 +282,10 @@ from . import stripe_webhooks as webhook_handlers
 from .stripe_webhooks import router as webhook_router
 
 # Include subscription, webhook, referral, viral growth, client portal, and enterprise routers
-from .subscription_routes import router as subscription_router
+from .subscription_routes import (
+    legacy_router as legacy_subscription_router,
+    router as subscription_router,
+)
 from .viral_growth_routes import router as viral_growth_router
 
 # Temporarily disabled until database relationships are fixed
@@ -290,6 +293,7 @@ from .viral_growth_routes import router as viral_growth_router
 
 app.include_router(health_router)
 app.include_router(subscription_router)
+app.include_router(legacy_subscription_router)
 app.include_router(webhook_router)
 app.include_router(referral_router)
 app.include_router(viral_growth_router)

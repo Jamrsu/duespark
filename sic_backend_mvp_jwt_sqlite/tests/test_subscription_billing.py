@@ -418,6 +418,15 @@ class TestSubscriptionEndpoints:
         assert data["status"] == "active"
         assert "reminders_per_month" in data
 
+    def test_get_subscription_info_endpoint_legacy_path(
+        self, client: TestClient, db_session: Session, auth_headers
+    ):
+        response = client.get("/subscription/info", headers=auth_headers)
+
+        assert response.status_code == 200
+        response_data = response.json()
+        assert "data" in response_data
+
     @patch.dict(os.environ, {"STRIPE_SECRET_KEY": "sk_test_123"})
     def test_upgrade_subscription_endpoint(
         self, client: TestClient, db_session: Session, auth_headers, mock_stripe
