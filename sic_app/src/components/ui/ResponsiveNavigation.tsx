@@ -330,7 +330,6 @@ export function ResponsiveNavigation({
 
           {/* Mobile Menu Button */}
           <Button
-            ref={mobileMenuButtonRef}
             variant="ghost"
             size="md"
             onClick={toggleMobileMenu}
@@ -381,7 +380,9 @@ export function ResponsiveNavigation({
               onClick={() => setIsMobileMenuOpen(false)}
               ariaLabel="Close navigation menu"
               leftIcon={<X className="h-4 w-4" />}
-            />
+            >
+              Close
+            </Button>
           </div>
 
           {/* Navigation Items */}

@@ -129,7 +129,7 @@ export function DashboardView() {
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RevenueKPICard
-          earnedRevenue={analytics?.earned_revenue || 0}
+          earnedRevenue={0}
           outstandingRevenue={analytics?.expected_payments_next_30d || 0}
           onClick={() => navigate('/app/invoices?status=pending')}
         />

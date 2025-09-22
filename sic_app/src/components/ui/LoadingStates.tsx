@@ -189,14 +189,7 @@ export function LoadingDashboardCard() {
       title
       lines={2}
       className="p-6"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-md" />
-        <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded-md" />
-      </div>
-      <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded-md mb-2" />
-      <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
-    </LoadingCard>
+    />
   )
 }
 
