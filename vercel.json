@@ -1,6 +1,7 @@
 {
   "version": 2,
   "framework": "vite",
+  "rootDirectory": "sic_app",
   "buildCommand": "npm run build",
   "installCommand": "npm ci",
   "outputDirectory": "dist",
