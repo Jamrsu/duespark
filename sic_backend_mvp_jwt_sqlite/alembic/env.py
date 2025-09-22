@@ -20,7 +20,7 @@ if str(BASE_DIR) not in sys.path:
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set DB URL from env
+# Set DB URL from env and share with online runner
 db_url = os.getenv("DATABASE_URL")
 if db_url:
     config.set_main_option("sqlalchemy.url", db_url)
@@ -37,8 +37,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    section = config.get_section(config.config_ini_section, {}) or {}
+    if db_url:
+        section["sqlalchemy.url"] = db_url
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
