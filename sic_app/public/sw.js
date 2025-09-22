@@ -21,6 +21,7 @@ const ACTIVE_CACHES = new Set([STATIC_CACHE, DYNAMIC_CACHE, API_CACHE])
 
 // Files to cache for offline support
 const STATIC_ASSETS = [
+  '/index.html',
   '/manifest.json',
   '/offline.html',
   // Critical API data for offline functionality
@@ -211,55 +212,78 @@ async function handleApiRequest(request) {
 // Handle navigation requests (SPA routing)
 async function handleNavigationRequest(request) {
   try {
-    // Always prefer fresh navigation responses
-    return await fetch(request)
+    const response = await fetch(request)
+
+    if (response.ok) {
+      return response
+    }
+
+    if (response.status === 404) {
+      console.warn('[SW] Navigation returned 404, falling back to SPA index:', request.url)
+      return await serveSpaFallback()
+    }
+
+    return response
   } catch (error) {
-    console.log('[SW] Network failed for navigation, serving from cache')
-
-    // Fallback to cached version
-    const cachedResponse = await caches.match(request)
-    if (cachedResponse) {
-      return cachedResponse
-    }
-
-    // Fallback to index.html for SPA routing
-    const indexResponse = await caches.match('/index.html')
-    if (indexResponse) {
-      return indexResponse
-    }
-
-    // Last resort: offline page
-    return new Response(
-      `<!DOCTYPE html>
-      <html>
-        <head>
-          <title>Offline - SIC App</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { font-family: system-ui; text-align: center; padding: 2rem; }
-            .offline { color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="offline">
-            <h1>📱 DueSpark Offline</h1>
-            <p>Don't worry! You can still view your cached invoices and analytics.</p>
-            <div style="margin: 2rem 0;">
-              <a href="/dashboard" style="display: inline-block; background: #0ea5e9; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Dashboard</a>
-              <a href="/invoices" style="display: inline-block; background: #10b981; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Invoices</a>
-            </div>
-            <button onclick="window.location.reload()" style="background: #6b7280; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;">Try Reconnecting</button>
-          </div>
-        </body>
-      </html>`,
-      {
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      }
-    )
+    console.log('[SW] Network failed for navigation, serving fallback', error)
+    return await serveSpaFallback()
   }
+}
+
+async function serveSpaFallback() {
+  // Prefer cached index.html
+  const cache = await caches.open(STATIC_CACHE)
+  const cachedIndex = await cache.match('/index.html')
+  if (cachedIndex) {
+    return cachedIndex
+  }
+
+  const cachedGlobalIndex = await caches.match('/index.html')
+  if (cachedGlobalIndex) {
+    return cachedGlobalIndex
+  }
+
+  try {
+    const response = await fetch('/index.html')
+    if (response.ok) {
+      cache.put('/index.html', response.clone())
+      return response
+    }
+  } catch (error) {
+    console.warn('[SW] Failed to fetch SPA fallback index:', error)
+  }
+
+  // Last resort: offline page
+  return new Response(
+    `<!DOCTYPE html>
+    <html>
+      <head>
+        <title>Offline - DueSpark</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: system-ui; text-align: center; padding: 2rem; }
+          .offline { color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="offline">
+          <h1>📱 DueSpark Offline</h1>
+          <p>Don't worry! You can still view your cached invoices and analytics.</p>
+          <div style="margin: 2rem 0;">
+            <a href="/app/dashboard" style="display: inline-block; background: #0ea5e9; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Dashboard</a>
+            <a href="/app/invoices" style="display: inline-block; background: #10b981; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; margin: 0.5rem;">View Invoices</a>
+          </div>
+          <button onclick="window.location.reload()" style="background: #6b7280; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;">Try Reconnecting</button>
+        </div>
+      </body>
+    </html>`,
+    {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    }
+  )
 }
 
 // Handle static assets
