@@ -21,15 +21,8 @@ const ACTIVE_CACHES = new Set([STATIC_CACHE, DYNAMIC_CACHE, API_CACHE])
 
 // Files to cache for offline support
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/offline.html',
-  // Core app routes for SPA
-  '/dashboard',
-  '/invoices',
-  '/clients',
-  '/reminders',
   // Critical API data for offline functionality
 ]
 
@@ -218,16 +211,8 @@ async function handleApiRequest(request) {
 // Handle navigation requests (SPA routing)
 async function handleNavigationRequest(request) {
   try {
-    // Try network first
-    const response = await fetch(request)
-
-    // Cache successful responses
-    if (response.status === 200) {
-      const cache = await caches.open(DYNAMIC_CACHE)
-      cache.put(request, response.clone())
-    }
-
-    return response
+    // Always prefer fresh navigation responses
+    return await fetch(request)
   } catch (error) {
     console.log('[SW] Network failed for navigation, serving from cache')
 
