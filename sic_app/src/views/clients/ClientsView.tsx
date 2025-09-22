@@ -93,7 +93,7 @@ export function ClientsView() {
 
   return (
     <div className="space-y-6">
-      <section className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <section className="px-6 pt-2 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Clients

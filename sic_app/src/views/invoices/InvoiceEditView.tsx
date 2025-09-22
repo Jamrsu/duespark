@@ -117,6 +117,7 @@ export function InvoiceEditView() {
             defaultValues={defaultValues}
             submitButtonText="Save Invoice"
             loadingButtonText="Saving..."
+            isEditing={true}
           />
         </CardContent>
       </Card>

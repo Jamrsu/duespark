@@ -9,6 +9,7 @@ import App from './App'
 import { ThemeProvider } from './lib/theme'
 import { KeyboardShortcutsProvider } from './context/KeyboardShortcutsContext'
 import { ScreenReaderProvider } from './components/ui/ScreenReaderAnnouncer'
+import { AccessibilityProvider } from './components/ui/AccessibilityProvider'
 import { registerSW } from './lib/serviceWorker'
 import './lib/contrastAuditor' // Auto-starts in development
 import './index.css'
@@ -38,8 +39,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ScreenReaderProvider>
-            <KeyboardShortcutsProvider>
-              <App />
+            <AccessibilityProvider>
+              <KeyboardShortcutsProvider>
+                <App />
               <Toaster
                 position="top-center"
                 toastOptions={{
@@ -52,7 +54,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 }}
               />
               <ReactQueryDevtools initialIsOpen={false} />
-            </KeyboardShortcutsProvider>
+              </KeyboardShortcutsProvider>
+            </AccessibilityProvider>
           </ScreenReaderProvider>
         </BrowserRouter>
       </QueryClientProvider>

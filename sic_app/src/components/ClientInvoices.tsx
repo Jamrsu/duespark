@@ -53,9 +53,8 @@ export function ClientInvoices({ clientId, clientName }: ClientInvoicesProps) {
           <Button
             size="sm"
             onClick={() => navigate(`/app/invoices/new?client_id=${clientId}`)}
-            className="flex items-center gap-1"
+            leftIcon={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4" />
             New Invoice
           </Button>
         </div>
@@ -121,8 +120,8 @@ export function ClientInvoices({ clientId, clientName }: ClientInvoicesProps) {
             <Button
               size="sm"
               onClick={() => navigate(`/app/invoices/new?client_id=${clientId}`)}
+              leftIcon={<Plus className="h-4 w-4" />}
             >
-              <Plus className="h-4 w-4 mr-2" />
               Create First Invoice
             </Button>
           </div>

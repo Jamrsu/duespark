@@ -854,6 +854,8 @@ def update_invoice(
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
     data = payload.model_dump(exclude_unset=True)
+    # Filter out None values to prevent overriding existing values with None
+    data = {k: v for k, v in data.items() if v is not None}
     if "client_id" in data:
         client = (
             db.query(models.Client)
@@ -881,6 +883,17 @@ def update_invoice(
             raise HTTPException(status_code=400, detail="Invalid invoice source") from exc
     for k, v in data.items():
         setattr(inv, k, v)
+
+    # Handle paid_at timestamp when status changes
+    if "status" in data:
+        from datetime import datetime, timezone
+        if inv.status == models.InvoiceStatus.paid and inv.paid_at is None:
+            # Set paid_at to current time when marking as paid
+            inv.paid_at = datetime.now(timezone.utc)
+        elif inv.status != models.InvoiceStatus.paid and inv.paid_at is not None:
+            # Clear paid_at when status is no longer paid
+            inv.paid_at = None
+
     db.commit()
     db.refresh(inv)
     out = schemas.InvoiceOut.model_validate(inv)
@@ -1159,6 +1172,7 @@ def analytics_summary(
         "cancelled": 0,
     }
     expected_payments = 0
+    earned_revenue = 0
 
     for status, count, total_amount in status_counts:
         status_str = status.value if hasattr(status, "value") else str(status)
@@ -1169,13 +1183,16 @@ def analytics_summary(
         if status_str in ["pending", "overdue"]:
             expected_payments += total_amount or 0
 
-    # Calculate average days to pay for paid invoices
+        # Sum earned revenue for paid invoices
+        if status_str == "paid":
+            earned_revenue += total_amount or 0
+
+    # Calculate average days to pay for paid invoices (from due date to paid date)
     query_start = time.time()
     avg_days_query = (
         db.query(
             func.avg(
-                extract("epoch", models.Invoice.paid_at - models.Invoice.created_at)
-                / 86400
+                func.julianday(models.Invoice.paid_at) - func.julianday(models.Invoice.due_date)
             ).label("avg_days")
         )
         .filter(
@@ -1318,6 +1335,7 @@ def analytics_summary(
 
     result = schemas.AnalyticsSummaryOut(
         totals=schemas.AnalyticsStatusTotals(**totals),
+        earned_revenue=earned_revenue,
         expected_payments_next_30d=expected_payments,
         avg_days_to_pay=avg_days_to_pay,
         top_late_clients=top_late_clients,

@@ -18,13 +18,17 @@ import { useLogin } from '@/api/hooks'
 import { loginSchema, LoginFormData } from '@/lib/schemas'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
+import { EnhancedFormField } from '@/components/ui/EnhancedFormField'
+import { Button } from '@/components/ui/Button'
+import { SkipNavigation } from '@/components/ui/SkipNavigation'
+import { useAccessibility } from '@/components/ui/AccessibilityProvider'
 
 export function LoginView() {
-  const [showPassword, setShowPassword] = React.useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const loginMutation = useLogin()
   const { resolvedTheme } = useTheme()
+  const { announcePageChange, announceSuccess, announceFormError } = useAccessibility()
 
   const from = location.state?.from?.pathname || '/app/dashboard'
 
@@ -32,6 +36,7 @@ export function LoginView() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -40,6 +45,13 @@ export function LoginView() {
       password: '',
     },
   })
+
+  const watchedValues = watch()
+
+  // Announce page change for screen readers
+  React.useEffect(() => {
+    announcePageChange('Login')
+  }, [announcePageChange])
 
   const fillDemoCredentials = () => {
     setValue('email', 'demo@example.com')
@@ -52,17 +64,22 @@ export function LoginView() {
         username: data.email,
         password: data.password,
       })
+      announceSuccess('Successfully logged in. Redirecting to dashboard.')
       navigate(from, { replace: true })
     } catch (error) {
-      // Error is handled by the mutation
+      // Error handling is done by the mutation, but we can announce it
+      announceFormError('Login form', 'Invalid email or password. Please try again.')
     }
   }
 
   return (
     <div className={cn(
-      "min-h-screen relative overflow-hidden transition-colors duration-300",
+      "min-h-screen relative overflow-hidden transition-colors duration-300 mobile-full-height",
       resolvedTheme === 'dark' ? 'bg-gray-950' : 'bg-gray-50'
     )}>
+      {/* Skip Navigation */}
+      <SkipNavigation />
+
       {/* Animated Background */}
       <div className="absolute inset-0">
         <div className={cn(
@@ -190,95 +207,52 @@ export function LoginView() {
                 transition={{ delay: 0.6, duration: 0.5 }}
                 onSubmit={handleSubmit(onSubmit)}
                 className="space-y-6"
+                noValidate
+                id="main-content"
               >
                 {/* Email Field */}
-                <div>
-                  <label className={cn("block text-sm font-medium mb-2", resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className={cn("h-5 w-5 opacity-100", resolvedTheme === 'dark' ? 'text-gray-400' : 'text-gray-800')} />
-                    </div>
-                    <input
-                      {...register('email')}
-                      type="email"
-                      autoComplete="email"
-                      className={cn(
-                        'w-full pl-10 pr-4 py-3 backdrop-blur-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200',
-                        resolvedTheme === 'dark'
-                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-400'
-                          : 'bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500',
-                        errors.email && 'border-red-500 focus:ring-red-500'
-                      )}
-                      placeholder="Enter your email"
-                    />
-                  </div>
-                  {errors.email && (
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="mt-2 text-sm text-red-400 flex items-center gap-2"
-                    >
-                      ⚠ {errors.email.message}
-                    </motion.p>
+                <EnhancedFormField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={watchedValues.email}
+                  placeholder="Enter your email"
+                  error={errors.email?.message}
+                  validationState={errors.email ? 'invalid' : 'idle'}
+                  leftIcon={<Mail className="h-5 w-5" />}
+                  autoComplete="email"
+                  required
+                  validateOnBlur
+                  onChange={(value) => setValue('email', value)}
+                  inputClassName={cn(
+                    'backdrop-blur-sm transition-all duration-200',
+                    resolvedTheme === 'dark'
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-400'
+                      : 'bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500'
                   )}
-                </div>
+                />
 
                 {/* Password Field */}
-                <div>
-                  <label className={cn("block text-sm font-medium mb-2", resolvedTheme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className={cn("h-5 w-5 opacity-100", resolvedTheme === 'dark' ? 'text-gray-400' : 'text-gray-800')} />
-                    </div>
-                    <input
-                      {...register('password')}
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      className={cn(
-                        'w-full pl-10 pr-12 py-3 backdrop-blur-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200',
-                        resolvedTheme === 'dark'
-                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-400'
-                          : 'bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500',
-                        errors.password && 'border-red-500 focus:ring-red-500'
-                      )}
-                      placeholder="Enter your password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className={cn(
-                          "h-5 w-5 opacity-100 transition-colors",
-                          resolvedTheme === 'dark'
-                            ? 'text-gray-400 hover:text-gray-300'
-                            : 'text-gray-600 hover:text-gray-700'
-                        )} />
-                      ) : (
-                        <Eye className={cn(
-                          "h-5 w-5 opacity-100 transition-colors",
-                          resolvedTheme === 'dark'
-                            ? 'text-gray-400 hover:text-gray-300'
-                            : 'text-gray-600 hover:text-gray-700'
-                        )} />
-                      )}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="mt-2 text-sm text-red-400 flex items-center gap-2"
-                    >
-                      ⚠ {errors.password.message}
-                    </motion.p>
+                <EnhancedFormField
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={watchedValues.password}
+                  placeholder="Enter your password"
+                  error={errors.password?.message}
+                  validationState={errors.password ? 'invalid' : 'idle'}
+                  leftIcon={<Lock className="h-5 w-5" />}
+                  autoComplete="current-password"
+                  required
+                  validateOnBlur
+                  onChange={(value) => setValue('password', value)}
+                  inputClassName={cn(
+                    'backdrop-blur-sm transition-all duration-200',
+                    resolvedTheme === 'dark'
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-400'
+                      : 'bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500'
                   )}
-                </div>
+                />
 
                 {/* Remember & Forgot */}
                 <div className="flex items-center justify-between text-sm">
@@ -311,42 +285,42 @@ export function LoginView() {
                 </div>
 
                 {/* Submit Button */}
-                <motion.button
+                <Button
                   type="submit"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  isLoading={isSubmitting || loginMutation.isPending}
                   disabled={isSubmitting || loginMutation.isPending}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full relative bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting || loginMutation.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in
-                      <ArrowRight className="h-4 w-4" />
-                    </>
+                  leftIcon={!isSubmitting && !loginMutation.isPending ? undefined : undefined}
+                  rightIcon={!isSubmitting && !loginMutation.isPending ? <ArrowRight className="h-4 w-4" /> : undefined}
+                  ariaLabel="Sign in to your account"
+                  className={cn(
+                    "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700",
+                    "focus:ring-purple-500 shadow-lg hover:shadow-xl"
                   )}
-                </motion.button>
+                >
+                  {isSubmitting || loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+                </Button>
 
                 {/* Demo Credentials */}
-                <motion.button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="lg"
+                  fullWidth
                   onClick={fillDemoCredentials}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  leftIcon={<Github className="h-4 w-4" />}
+                  ariaLabel="Fill in demo account credentials"
                   className={cn(
-                    "w-full backdrop-blur-sm border py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2",
+                    "backdrop-blur-sm border transition-all duration-200",
                     resolvedTheme === 'dark'
                       ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
                       : 'bg-gray-200/80 border-gray-300 text-gray-900 hover:bg-gray-200'
                   )}
                 >
-                  <Github className="h-4 w-4" />
                   Try Demo Account
-                </motion.button>
+                </Button>
 
                 {/* Divider */}
                 <div className="relative">

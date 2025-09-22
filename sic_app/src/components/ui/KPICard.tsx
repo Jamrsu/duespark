@@ -4,7 +4,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 
 interface KPICardProps {
   title: string
-  value: number | string
+  value: number | string | React.ReactNode
   subtitle?: string
   trend?: {
     value: number
@@ -45,17 +45,20 @@ export function KPICard({
   quickActions = [],
 }: KPICardProps) {
   const [showActions, setShowActions] = useState(false)
-  const formatValue = (val: number | string) => {
+  const formatValue = (val: number | string | React.ReactNode) => {
     if (typeof val === 'string') return val
-    
-    switch (format) {
-      case 'currency':
-        return formatCurrency(val, currency)
-      case 'percentage':
-        return `${val}%`
-      default:
-        return val.toLocaleString()
+    if (typeof val === 'number') {
+      switch (format) {
+        case 'currency':
+          return formatCurrency(val, currency)
+        case 'percentage':
+          return `${val}%`
+        default:
+          return val.toLocaleString()
+      }
     }
+    // Return React node as-is
+    return val
   }
 
   const colorClasses = {
@@ -69,7 +72,7 @@ export function KPICard({
   if (loading) {
     return (
       <Card className={cn('transition-all duration-200 h-full', className)}>
-        <CardContent className="p-4 h-full flex flex-col justify-center min-h-[100px]">
+        <CardContent className="p-4 h-full flex flex-col justify-start min-h-[100px]">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="loading-shimmer h-4 w-20 mb-2" data-testid="loading-shimmer" />
@@ -111,17 +114,17 @@ export function KPICard({
         onTouchStart={() => showMobileActions && setShowActions(true)}
         onTouchEnd={() => showMobileActions && setTimeout(() => setShowActions(false), 3000)}
       >
-        <CardContent className="p-4 h-full flex flex-col justify-center min-h-[100px]">
+        <CardContent className="p-4 h-full flex flex-col justify-start min-h-[100px]">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-base font-medium text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-lg sm:text-xl font-medium text-gray-500 dark:text-gray-400 truncate">
                 {title}
               </p>
 
               <div className="mt-1 flex items-baseline">
                 <p className={cn(
                   'font-bold text-gray-900 dark:text-gray-100',
-                  'text-2xl sm:text-3xl lg:text-4xl'
+                  'text-xl sm:text-2xl lg:text-2xl'
                 )}>
                   {formatValue(value)}
                 </p>
@@ -200,16 +203,16 @@ export function KPICard({
 
 // Preset KPI cards for common use cases
 export function RevenueKPICard({
-  value,
-  trend,
+  earnedRevenue,
+  outstandingRevenue,
   currency = 'USD',
   className,
   onClick,
   showMobileActions,
   quickActions
 }: {
-  value: number
-  trend?: KPICardProps['trend']
+  earnedRevenue: number
+  outstandingRevenue: number
   currency?: string
   className?: string
   onClick?: () => void
@@ -221,24 +224,92 @@ export function RevenueKPICard({
     color?: string
   }>
 }) {
+  const totalRevenue = earnedRevenue + outstandingRevenue
+
   return (
-    <KPICard
-      title="Total Revenue"
-      value={value}
-      format="currency"
-      currency={currency}
-      color="green"
-      trend={trend}
-      className={className}
-      onClick={onClick}
-      showMobileActions={showMobileActions}
-      quickActions={quickActions}
-      icon={
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
-      }
-    />
+    <div className="relative group">
+      <Card
+        className={cn(
+          'transition-all duration-200 h-full',
+          onClick && 'cursor-pointer hover:shadow-md',
+          'touch-pan-y',
+          className
+        )}
+        onClick={onClick}
+      >
+        <CardContent className="p-4 h-full flex flex-col justify-start min-h-[100px]">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-lg sm:text-xl font-medium text-gray-500 dark:text-gray-400 truncate">
+                Total Revenue
+              </p>
+
+              <div className="mt-1 flex items-baseline">
+                <p className={cn(
+                  'font-bold text-gray-900 dark:text-gray-100',
+                  'text-xl sm:text-2xl lg:text-2xl'
+                )}>
+                  {formatCurrency(totalRevenue, currency)}
+                </p>
+              </div>
+
+              {/* Dual values breakdown */}
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-success-600 dark:text-success-400 font-medium">
+                    Earned
+                  </span>
+                  <span className="text-success-600 dark:text-success-400 font-medium">
+                    {formatCurrency(earnedRevenue, currency)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                    Outstanding
+                  </span>
+                  <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                    {formatCurrency(outstandingRevenue, currency)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 ml-3 text-green-600 dark:text-green-400">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mobile Quick Actions */}
+      {showMobileActions && quickActions && quickActions.length > 0 && (
+        <div className={cn(
+          'absolute top-2 right-2 flex gap-1 transition-opacity duration-200',
+          'md:opacity-0 md:group-hover:opacity-100',
+          'opacity-0 md:opacity-0'
+        )}>
+          {quickActions.map((action, index) => (
+            <button
+              key={index}
+              onClick={(e) => {
+                e.stopPropagation()
+                action.action()
+              }}
+              className={cn(
+                'p-2 rounded-full text-white shadow-md transition-all duration-200',
+                'hover:scale-110 active:scale-95',
+                action.color || 'bg-primary-700 hover:bg-primary-800'
+              )}
+              title={action.label}
+            >
+              {action.icon}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -94,7 +94,7 @@ function AppLayoutBase({ children }: AppLayoutProps): JSX.Element {
         resolvedTheme === 'dark' ? 'bg-gray-950' : 'bg-slate-100'
       )}
     >
-      <AmbientBackground theme={resolvedTheme} />
+      <AmbientBackground theme={resolvedTheme} animated={false} />
       <div className="relative z-10 min-h-screen">
         {/* Mobile sidebar */}
         <div className={cn(
@@ -314,7 +314,7 @@ function AppLayoutFallback(): JSX.Element {
         resolvedTheme === 'dark' ? 'bg-gray-950' : 'bg-slate-100'
       )}
     >
-      <AmbientBackground theme={resolvedTheme} variant="subtle" />
+      <AmbientBackground theme={resolvedTheme} variant="subtle" animated={false} />
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-12">
         <div className="glass-panel max-w-lg w-full p-6 sm:p-8 text-center space-y-4">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15 text-red-500">

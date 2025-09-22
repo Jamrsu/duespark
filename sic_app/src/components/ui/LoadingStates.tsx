@@ -127,17 +127,38 @@ interface LoadingCardProps {
   title?: boolean
   lines?: number
   className?: string
+  avatar?: boolean
+  actions?: boolean
 }
 
-export function LoadingCard({ title = true, lines = 3, className }: LoadingCardProps) {
+export function LoadingCard({
+  title = true,
+  lines = 3,
+  className,
+  avatar = false,
+  actions = false
+}: LoadingCardProps) {
   return (
     <div className={cn(
       'animate-pulse bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6',
       className
     )}>
-      {title && (
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md w-1/3 mb-4" />
+      {/* Header with avatar */}
+      {(title || avatar) && (
+        <div className="flex items-center gap-4 mb-4">
+          {avatar && (
+            <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0" />
+          )}
+          {title && (
+            <div className="flex-1">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-2/3 mb-2" />
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2" />
+            </div>
+          )}
+        </div>
       )}
+
+      {/* Content lines */}
       <div className="space-y-3">
         {Array.from({ length: lines }).map((_, i) => (
           <div
@@ -149,7 +170,63 @@ export function LoadingCard({ title = true, lines = 3, className }: LoadingCardP
           />
         ))}
       </div>
+
+      {/* Actions */}
+      {actions && (
+        <div className="flex gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
+          <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded-md" />
+        </div>
+      )}
     </div>
+  )
+}
+
+// Enhanced skeleton components for specific use cases
+export function LoadingDashboardCard() {
+  return (
+    <LoadingCard
+      title
+      lines={2}
+      className="p-6"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-md" />
+        <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded-md" />
+      </div>
+      <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded-md mb-2" />
+      <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
+    </LoadingCard>
+  )
+}
+
+export function LoadingInvoiceCard() {
+  return (
+    <div className="animate-pulse bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded-md mb-2" />
+          <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded-md" />
+        </div>
+        <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
+        <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-md" />
+      </div>
+    </div>
+  )
+}
+
+export function LoadingClientCard() {
+  return (
+    <LoadingCard
+      avatar
+      title={false}
+      lines={2}
+      actions
+      className="p-4"
+    />
   )
 }
 

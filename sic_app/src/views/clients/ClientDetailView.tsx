@@ -56,8 +56,11 @@ export function ClientDetailView() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           The client you're looking for doesn't exist.
         </p>
-        <Button variant="ghost" onClick={() => navigate('/app/clients')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/app/clients')}
+          leftIcon={<ArrowLeft className="h-4 w-4" />}
+        >
           Back to Clients
         </Button>
       </div>
@@ -67,7 +70,7 @@ export function ClientDetailView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <section className="glass-panel p-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <section className="glass-panel p-6 flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -86,7 +89,7 @@ export function ClientDetailView() {
             </p>
           </div>
         </div>
-        <div className="flex sm:ml-auto">
+        <div className="flex justify-end sm:ml-auto">
           <Button size="sm" onClick={() => navigate(`/app/clients/${client.id}/edit`)} className="shadow-lg shadow-primary-500/30">
             Edit Client
           </Button>
@@ -172,20 +175,20 @@ export function ClientDetailView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-left"
                   onClick={handleSendEmail}
+                  leftIcon={<Mail className="h-4 w-4" />}
                 >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Email
+                  <span className="text-left">Send Email</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-left"
                   onClick={() => navigate(`/app/invoices/new?client_id=${client.id}`)}
+                  leftIcon={<Plus className="h-4 w-4" />}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Invoice
+                  <span className="text-left">Create Invoice</span>
                 </Button>
               </div>
             </CardContent>

@@ -85,6 +85,12 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    hmr: {
+      overlay: false,
+    },
+    watch: {
+      ignored: ['**/node_modules/**', '**/dist/**'],
+    },
     // Disable CSP for development
     // headers: {
     //   'Content-Security-Policy': "..."

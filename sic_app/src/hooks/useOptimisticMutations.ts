@@ -98,9 +98,8 @@ export function useOptimisticUpdateInvoiceStatus() {
       status: 'paid' | 'cancelled' | 'pending'
       paidDate?: string
     }) => {
-      const response = await apiClient.patch(`/invoices/${invoiceId}`, {
-        status,
-        paid_date: paidDate
+      const response = await apiClient.put(`/invoices/${invoiceId}`, {
+        status
       })
       return response.data
     },
@@ -122,7 +121,7 @@ export function useOptimisticUpdateInvoiceStatus() {
               ? {
                   ...invoice,
                   status,
-                  paid_date: paidDate || invoice.paid_date,
+                  paid_at: status === 'paid' ? (paidDate || new Date().toISOString()) : (status === 'cancelled' || status === 'pending' ? null : invoice.paid_at),
                   updated_at: new Date().toISOString()
                 }
               : invoice

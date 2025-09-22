@@ -262,7 +262,7 @@ export function OnboardingView() {
         resolvedTheme === 'dark' ? 'bg-gray-950' : 'bg-slate-100'
       )}
     >
-      <AmbientBackground theme={resolvedTheme} variant="subtle" />
+      <AmbientBackground theme={resolvedTheme} variant="subtle" animated={false} />
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-12 space-y-8">
         {/* Header */}
         <div className="glass-panel text-center px-6 py-8 space-y-4">

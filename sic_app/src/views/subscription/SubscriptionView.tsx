@@ -137,7 +137,7 @@ export function SubscriptionView() {
 
   return (
     <div className="space-y-6">
-      <section className="glass-panel p-6">
+      <section className="px-6 pt-2 pb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Subscription</h1>
         <p className="text-gray-600 dark:text-gray-300">Manage your DueSpark subscription</p>
       </section>

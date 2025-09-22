@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Eye, Trash2, Edit, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,9 +34,30 @@ export function SwipeableCard({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartX, setDragStartX] = useState(0)
   const [actionTriggered, setActionTriggered] = useState<string | null>(null)
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [feedbackText, setFeedbackText] = useState('')
 
   const cardRef = useRef<HTMLDivElement>(null)
   const startTimeRef = useRef<number>(0)
+
+  // Haptic feedback (if available)
+  const triggerHapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy' = 'light') => {
+    if ('vibrate' in navigator) {
+      const patterns = {
+        light: [10],
+        medium: [20],
+        heavy: [30]
+      }
+      navigator.vibrate(patterns[type])
+    }
+  }, [])
+
+  // Show action feedback
+  const showActionFeedback = useCallback((text: string) => {
+    setFeedbackText(text)
+    setShowFeedback(true)
+    setTimeout(() => setShowFeedback(false), 1500)
+  }, [])
 
   // Reset position
   const resetPosition = () => {
@@ -78,11 +99,14 @@ export function SwipeableCard({
     // Determine which action would be triggered
     if (Math.abs(newTranslateX) > swipeThreshold) {
       const actions = newTranslateX > 0 ? leftActions : rightActions
-      if (actions.length > 0) {
+      if (actions.length > 0 && actionTriggered !== actions[0].id) {
         setActionTriggered(actions[0].id)
+        triggerHapticFeedback('light')
       }
     } else {
-      setActionTriggered(null)
+      if (actionTriggered) {
+        setActionTriggered(null)
+      }
     }
   }
 
@@ -99,6 +123,8 @@ export function SwipeableCard({
       const actions = direction === 'left' ? leftActions : rightActions
 
       if (actions.length > 0) {
+        triggerHapticFeedback('medium')
+        showActionFeedback(`${actions[0].label} action triggered`)
         actions[0].action()
         onSwipe?.(direction, actions[0].id)
       }
@@ -135,11 +161,14 @@ export function SwipeableCard({
 
     if (Math.abs(newTranslateX) > swipeThreshold) {
       const actions = newTranslateX > 0 ? leftActions : rightActions
-      if (actions.length > 0) {
+      if (actions.length > 0 && actionTriggered !== actions[0].id) {
         setActionTriggered(actions[0].id)
+        triggerHapticFeedback('light')
       }
     } else {
-      setActionTriggered(null)
+      if (actionTriggered) {
+        setActionTriggered(null)
+      }
     }
   }
 
@@ -204,10 +233,16 @@ export function SwipeableCard({
         document.removeEventListener('mouseup', handleGlobalMouseUp)
       }
     }
-  }, [isDragging, dragStartX, disabled, swipeThreshold, leftActions, rightActions, actionTriggered])
+  }, [isDragging, dragStartX, disabled, swipeThreshold, leftActions, rightActions, actionTriggered, triggerHapticFeedback])
 
   return (
     <div className="relative overflow-hidden rounded-lg">
+      {/* Action feedback toast */}
+      {showFeedback && (
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-1 rounded-full text-sm font-medium shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+          {feedbackText}
+        </div>
+      )}
       {/* Background actions - Left */}
       {leftActions.length > 0 && (
         <div
@@ -224,7 +259,9 @@ export function SwipeableCard({
           <div className="flex items-center justify-center w-full h-full">
             <div className={cn(
               'flex flex-col items-center gap-1 transition-all duration-200',
-              actionTriggered === leftActions[0].id ? 'scale-110' : 'scale-100'
+              actionTriggered === leftActions[0].id
+                ? 'scale-110 animate-pulse'
+                : 'scale-100'
             )}>
               <div className={leftActions[0].color}>
                 {leftActions[0].icon}
@@ -256,7 +293,9 @@ export function SwipeableCard({
           <div className="flex items-center justify-center w-full h-full">
             <div className={cn(
               'flex flex-col items-center gap-1 transition-all duration-200',
-              actionTriggered === rightActions[0].id ? 'scale-110' : 'scale-100'
+              actionTriggered === rightActions[0].id
+                ? 'scale-110 animate-pulse'
+                : 'scale-100'
             )}>
               <div className={rightActions[0].color}>
                 {rightActions[0].icon}

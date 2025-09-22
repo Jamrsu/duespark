@@ -1,10 +1,17 @@
 import React from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Filter, X, Save, Star, Trash2, Home, Check } from 'lucide-react'
+import { Plus, Filter, X, Save, Star, Trash2, Home, Check, Settings, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { useInvoices, useClients } from '@/api/hooks'
+import { FilterChips, getFilterIcon } from '@/components/ui/FilterChips'
+import { QuickFilters } from '@/components/ui/QuickFilters'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
+import { SortDropdown } from '@/components/ui/SortDropdown'
+import { MobileInvoiceList } from '@/components/invoices/MobileInvoiceList'
+import { useInvoices, useClients, useUpdateInvoiceStatus } from '@/api/hooks'
+import { useIsMobile } from '@/hooks/useMediaQuery'
+import { useKeyboardShortcuts, KeyboardShortcut } from '@/hooks/useKeyboardShortcuts'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 // Filter preset type
@@ -40,6 +47,14 @@ export function InvoicesView() {
   const [savedPresets, setSavedPresets] = React.useState<FilterPreset[]>([])
   const [defaultPresetId, setDefaultPresetId] = React.useState<string | null>(null)
   const [hasLoadedDefaults, setHasLoadedDefaults] = React.useState(false)
+
+  // Bulk selection states
+  const [selectedInvoices, setSelectedInvoices] = React.useState<Set<number>>(new Set())
+  const [isSelectMode, setIsSelectMode] = React.useState(false)
+
+  // Navigation states
+  const [focusedInvoiceIndex, setFocusedInvoiceIndex] = React.useState<number>(-1)
+  const [isNavigationActive, setIsNavigationActive] = React.useState(false)
   
   // Check URL parameters for client_id filter on mount
   React.useEffect(() => {
@@ -89,8 +104,9 @@ export function InvoicesView() {
     return params
   }, [filters.client_id, filters.status, filters.date_from, filters.date_to])
   
-  const { data: invoicesData, isLoading } = useInvoices(queryParams)
+  const { data: invoicesData, isLoading, refetch: refetchInvoices } = useInvoices(queryParams)
   const { data: clientsData } = useClients({ limit: 100, offset: 0 })
+  const updateInvoiceStatus = useUpdateInvoiceStatus()
   
   const rawInvoices = invoicesData?.data || []
   const clients = clientsData?.data || []
@@ -157,6 +173,207 @@ export function InvoicesView() {
   
   // Check if any filters are active (excluding sortBy)
   const hasActiveFilters = filters.client_id !== '' || filters.status !== '' || filters.date_from !== '' || filters.date_to !== ''
+
+  // Sort options for dropdown
+  const sortOptions = [
+    { value: 'date_newest', label: 'Date (Newest First)' },
+    { value: 'date_oldest', label: 'Date (Oldest First)' },
+    { value: 'amount_high_to_low', label: 'Amount (High to Low)' },
+    { value: 'amount_low_to_high', label: 'Amount (Low to High)' },
+    { value: 'invoice_high_to_low', label: 'Invoice # (High to Low)' },
+    { value: 'invoice_low_to_high', label: 'Invoice # (Low to High)' },
+    { value: 'company_a_to_z', label: 'Company (A-Z)' },
+    { value: 'company_z_to_a', label: 'Company (Z-A)' }
+  ]
+
+  // Get responsive state
+  const isMobile = useIsMobile()
+
+  // Build filter chips data
+  const filterChips = React.useMemo(() => {
+    const chips = []
+
+    if (filters.client_id) {
+      const client = clients.find(c => c.id.toString() === filters.client_id)
+      chips.push({
+        key: 'client_id',
+        label: 'Client',
+        value: client?.name || `Client #${filters.client_id}`,
+        icon: getFilterIcon('client_id'),
+        onRemove: () => setFilters(prev => ({ ...prev, client_id: '' }))
+      })
+    }
+
+    if (filters.status) {
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        value: filters.status.charAt(0).toUpperCase() + filters.status.slice(1),
+        icon: getFilterIcon('status'),
+        onRemove: () => setFilters(prev => ({ ...prev, status: '' }))
+      })
+    }
+
+    if (filters.date_from) {
+      chips.push({
+        key: 'date_from',
+        label: 'From',
+        value: new Date(filters.date_from).toLocaleDateString(),
+        icon: getFilterIcon('date_from'),
+        onRemove: () => setFilters(prev => ({ ...prev, date_from: '' }))
+      })
+    }
+
+    if (filters.date_to) {
+      chips.push({
+        key: 'date_to',
+        label: 'To',
+        value: new Date(filters.date_to).toLocaleDateString(),
+        icon: getFilterIcon('date_to'),
+        onRemove: () => setFilters(prev => ({ ...prev, date_to: '' }))
+      })
+    }
+
+    return chips
+  }, [filters, clients])
+
+  // Quick filter handler
+  const handleQuickFilter = (quickFilters: any) => {
+    setFilters(prev => ({
+      ...prev,
+      ...quickFilters
+    }))
+  }
+
+  // Bulk selection helper functions
+  const toggleSelectInvoice = (invoiceId: number) => {
+    setSelectedInvoices(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(invoiceId)) {
+        newSet.delete(invoiceId)
+      } else {
+        newSet.add(invoiceId)
+      }
+      return newSet
+    })
+  }
+
+  const selectAllInvoices = () => {
+    const unpaidInvoiceIds = invoices
+      .filter(invoice => invoice.status !== 'paid')
+      .map(invoice => invoice.id)
+    setSelectedInvoices(new Set(unpaidInvoiceIds))
+  }
+
+  const clearSelection = () => {
+    setSelectedInvoices(new Set())
+    setIsSelectMode(false)
+  }
+
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode)
+    if (isSelectMode) {
+      clearSelection()
+    }
+  }
+
+  // Get selected invoices that can be marked as paid (exclude already paid invoices)
+  const selectedUnpaidInvoices = invoices.filter(
+    invoice => selectedInvoices.has(invoice.id) && invoice.status !== 'paid'
+  )
+
+  const bulkMarkAsPaid = async () => {
+    if (selectedUnpaidInvoices.length === 0) return
+
+    const paidDate = new Date().toISOString()
+
+    try {
+      // Process all selected invoices in parallel
+      const results = await Promise.allSettled(
+        selectedUnpaidInvoices.map(invoice =>
+          updateInvoiceStatus.mutateAsync({
+            invoiceId: invoice.id,
+            status: 'paid',
+            paidDate
+          })
+        )
+      )
+
+      // Count successful and failed operations
+      const successful = results.filter(result => result.status === 'fulfilled').length
+      const failed = results.filter(result => result.status === 'rejected').length
+
+      // Show summary toast
+      if (successful > 0 && failed === 0) {
+        // All successful - success toast already shown by individual mutations
+      } else if (successful > 0 && failed > 0) {
+        console.warn(`Partial success: ${successful} invoices marked as paid, ${failed} failed`)
+      } else if (failed > 0) {
+        console.error(`All ${failed} invoices failed to be marked as paid`)
+      }
+
+      clearSelection()
+    } catch (error) {
+      console.error('Bulk mark as paid operation failed:', error)
+    }
+  }
+
+  // Navigation helper functions
+  const navigateUp = () => {
+    if (invoices.length === 0) return
+    setIsNavigationActive(true)
+    setFocusedInvoiceIndex(prev => {
+      const newIndex = prev <= 0 ? invoices.length - 1 : prev - 1
+      return newIndex
+    })
+  }
+
+  const navigateDown = () => {
+    if (invoices.length === 0) return
+    setIsNavigationActive(true)
+    setFocusedInvoiceIndex(prev => {
+      const newIndex = prev >= invoices.length - 1 ? 0 : prev + 1
+      return newIndex
+    })
+  }
+
+  const selectCurrentInvoice = () => {
+    if (focusedInvoiceIndex >= 0 && focusedInvoiceIndex < invoices.length) {
+      const invoice = invoices[focusedInvoiceIndex]
+      if (invoice.status !== 'paid') {
+        if (!isSelectMode) {
+          setIsSelectMode(true)
+        }
+        toggleSelectInvoice(invoice.id)
+      }
+    }
+  }
+
+  const openCurrentInvoice = () => {
+    if (focusedInvoiceIndex >= 0 && focusedInvoiceIndex < invoices.length) {
+      const invoice = invoices[focusedInvoiceIndex]
+      navigate(`/app/invoices/${invoice.id}`)
+    }
+  }
+
+  const markCurrentAsPaid = async () => {
+    if (focusedInvoiceIndex >= 0 && focusedInvoiceIndex < invoices.length) {
+      const invoice = invoices[focusedInvoiceIndex]
+      if (invoice.status !== 'paid') {
+        const paidDate = new Date().toISOString()
+        await updateInvoiceStatus.mutateAsync({
+          invoiceId: invoice.id,
+          status: 'paid',
+          paidDate
+        })
+      }
+    }
+  }
+
+  // Handle mobile refresh
+  const handleMobileRefresh = async () => {
+    await refetchInvoices()
+  }
   
   // Preset management functions
   const saveCurrentFiltersAsPreset = () => {
@@ -203,6 +420,83 @@ export function InvoicesView() {
     setDefaultPresetId(null)
     localStorage.removeItem('invoiceDefaultPresetId')
   }
+
+  // Define keyboard shortcuts for invoice navigation
+  const invoiceShortcuts: KeyboardShortcut[] = [
+    {
+      keys: ['j'],
+      description: 'Navigate down in invoice list',
+      action: navigateDown,
+      global: false
+    },
+    {
+      keys: ['k'],
+      description: 'Navigate up in invoice list',
+      action: navigateUp,
+      global: false
+    },
+    {
+      keys: ['space'],
+      description: 'Select/deselect current invoice',
+      action: selectCurrentInvoice,
+      global: false,
+      preventDefault: true
+    },
+    {
+      keys: ['enter'],
+      description: 'Open current invoice',
+      action: openCurrentInvoice,
+      global: false
+    },
+    {
+      keys: ['m'],
+      description: 'Mark current invoice as paid',
+      action: markCurrentAsPaid,
+      global: false
+    },
+    {
+      keys: ['r'],
+      description: 'Send reminder for current invoice',
+      action: () => {
+        // TODO: Implement reminder sending for current invoice
+        console.log('Send reminder for current invoice')
+      },
+      global: false
+    },
+    {
+      keys: ['escape'],
+      description: 'Clear navigation focus',
+      action: () => {
+        setIsNavigationActive(false)
+        setFocusedInvoiceIndex(-1)
+      },
+      global: false
+    }
+  ]
+
+  // Register keyboard shortcuts (only when not in mobile and not focused on input)
+  useKeyboardShortcuts({
+    shortcuts: invoiceShortcuts,
+    enabled: !isMobile && !isLoading
+  })
+
+  // Reset navigation when invoices change
+  React.useEffect(() => {
+    if (isNavigationActive && focusedInvoiceIndex >= invoices.length) {
+      setFocusedInvoiceIndex(-1)
+      setIsNavigationActive(false)
+    }
+  }, [invoices.length, focusedInvoiceIndex, isNavigationActive])
+
+  // Scroll focused invoice into view
+  React.useEffect(() => {
+    if (isNavigationActive && focusedInvoiceIndex >= 0) {
+      const invoiceElement = document.querySelector(`[data-invoice-index="${focusedInvoiceIndex}"]`)
+      if (invoiceElement) {
+        invoiceElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }
+  }, [focusedInvoiceIndex, isNavigationActive])
   
   const getPresetDisplayName = (preset: FilterPreset) => {
     const parts = []
@@ -238,7 +532,7 @@ export function InvoicesView() {
 
   return (
     <div className="space-y-6">
-      <section className="glass-panel p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="px-6 pt-2 pb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {filteredClientName ? `${filteredClientName} Invoices` : 'Invoices'}
@@ -251,26 +545,56 @@ export function InvoicesView() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {/* Sort Dropdown */}
+          <SortDropdown
+            value={filters.sortBy}
+            onChange={(value) => setFilters(prev => ({ ...prev, sortBy: value }))}
+            options={sortOptions}
+            className="w-full sm:w-auto"
+          />
+
           <Button
-            variant={showFilters ? 'secondary' : 'ghost'}
-            onClick={() => setShowFilters(!showFilters)}
-            className="w-full sm:w-auto backdrop-blur hover:bg-white/20 dark:hover:bg-white/10"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-            {hasActiveFilters && (
-              <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-primary-500"></span>
-            )}
-          </Button>
-          <Button 
             className="w-full sm:w-auto shadow-lg shadow-primary-500/30"
             onClick={() => navigate('/app/invoices/new')}
+            leftIcon={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4 mr-2" />
             New Invoice
           </Button>
         </div>
       </section>
+
+      {/* Quick Filters */}
+      <div className="px-6">
+        <QuickFilters
+          onFilterSelect={handleQuickFilter}
+          activeFilters={filters}
+        />
+      </div>
+
+      {/* Filters Button */}
+      <div className="px-6">
+        <Button
+          variant={showFilters ? 'secondary' : 'ghost'}
+          onClick={() => setShowFilters(!showFilters)}
+          className="backdrop-blur hover:bg-white/20 dark:hover:bg-white/10"
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          Filters
+          {hasActiveFilters && (
+            <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-primary-500"></span>
+          )}
+        </Button>
+      </div>
+
+      {/* Filter Chips */}
+      {filterChips.length > 0 && (
+        <div className="px-6">
+          <FilterChips
+            filters={filterChips}
+            onClearAll={clearFilters}
+          />
+        </div>
+      )}
 
       {/* Filters Panel */}
       {showFilters && (
@@ -308,91 +632,103 @@ export function InvoicesView() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Client Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Client
-                </label>
-                <select
-                  value={filters.client_id}
-                  onChange={(e) => setFilters(prev => ({ ...prev, client_id: e.target.value }))}
-                  className="input"
-                >
-                  <option value="">All Clients</option>
-                  {sortedClients.map((client) => (
-                    <option key={client.id} value={client.id.toString()}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="space-y-4">
+              {/* Basic Filters */}
+              <CollapsibleSection
+                title="Basic Filters"
+                icon={<Filter className="h-4 w-4" />}
+                defaultOpen={true}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Client Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Client
+                    </label>
+                    <select
+                      value={filters.client_id}
+                      onChange={(e) => setFilters(prev => ({ ...prev, client_id: e.target.value }))}
+                      className="input"
+                    >
+                      <option value="">All Clients</option>
+                      {sortedClients.map((client) => (
+                        <option key={client.id} value={client.id.toString()}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Status
-                </label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                  className="input"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="overdue">Overdue</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
+                  {/* Status Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={filters.status}
+                      onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                      className="input"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="draft">Draft</option>
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </CollapsibleSection>
 
-              {/* Date From Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.date_from}
-                  onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
-                  className="input"
-                />
-              </div>
+              {/* Advanced Filters */}
+              <CollapsibleSection
+                title="Advanced Filters"
+                icon={<Settings className="h-4 w-4" />}
+                defaultOpen={false}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Date From Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      From Date
+                    </label>
+                    <input
+                      type="date"
+                      value={filters.date_from}
+                      onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
+                      className="input"
+                    />
+                  </div>
 
-              {/* Date To Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.date_to}
-                  onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
-                  className="input"
-                />
-              </div>
+                  {/* Date To Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      To Date
+                    </label>
+                    <input
+                      type="date"
+                      value={filters.date_to}
+                      onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
+                      className="input"
+                    />
+                  </div>
+                </div>
 
-              {/* Sort By */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Sort By
-                </label>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-                  className="input"
-                >
-                  <option value="date_newest">Date (Newest to Oldest)</option>
-                  <option value="date_oldest">Date (Oldest to Newest)</option>
-                  <option value="amount_high_to_low">Amount (High to Low)</option>
-                  <option value="amount_low_to_high">Amount (Low to High)</option>
-                  <option value="invoice_high_to_low">Invoice # (High to Low)</option>
-                  <option value="invoice_low_to_high">Invoice # (Low to High)</option>
-                  <option value="company_a_to_z">Company (A-Z)</option>
-                  <option value="company_z_to_a">Company (Z-A)</option>
-                </select>
-              </div>
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                      <p className="font-medium mb-1">Date Range Tips:</p>
+                      <ul className="text-xs space-y-1 list-disc list-inside">
+                        <li>Leave both dates empty to see all invoices</li>
+                        <li>Set only "From Date" to see invoices from that date onwards</li>
+                        <li>Set only "To Date" to see invoices up to that date</li>
+                        <li>Set both dates to filter invoices within a specific range</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleSection>
             </div>
 
             {/* Saved Presets */}
@@ -522,51 +858,214 @@ export function InvoicesView() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {hasActiveFilters ? 'Filtered' : 'All'} Invoices ({invoices.length})
-            {hasActiveFilters && (
-              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-                - filters applied
-              </span>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>
+                {hasActiveFilters ? 'Filtered' : 'All'} Invoices ({invoices.length})
+                {hasActiveFilters && (
+                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                    - filters applied
+                  </span>
+                )}
+              </CardTitle>
+              {!isMobile && invoices.length > 0 && (
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">J</kbd>
+                    /
+                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">K</kbd>
+                    navigate
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">Space</kbd>
+                    select
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">Enter</kbd>
+                    open
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">M</kbd>
+                    mark paid
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Bulk Actions - Desktop Only */}
+            {!isMobile && (
+              <div className="flex items-center gap-3">
+                {!isSelectMode && invoices.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleSelectMode}
+                    className="text-sm"
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Select
+                  </Button>
+                )}
+
+                {isSelectMode && (
+                  <>
+                    {/* Select All Checkbox */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={
+                          invoices.filter(invoice => invoice.status !== 'paid').length > 0 &&
+                          invoices.filter(invoice => invoice.status !== 'paid').every(invoice =>
+                            selectedInvoices.has(invoice.id)
+                          )
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            selectAllInvoices()
+                          } else {
+                            clearSelection()
+                          }
+                        }}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Select All Unpaid
+                      </span>
+                    </div>
+
+                    {/* Selected Count */}
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {selectedInvoices.size} selected
+                    </span>
+
+                    {/* Mark as Paid Button */}
+                    {selectedUnpaidInvoices.length > 0 && (
+                      <Button
+                        onClick={bulkMarkAsPaid}
+                        disabled={updateInvoiceStatus.isPending}
+                        size="sm"
+                        className="bg-success-600 hover:bg-success-700 text-white"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Mark as Paid ({selectedUnpaidInvoices.length})
+                      </Button>
+                    )}
+
+                    {/* Cancel Selection */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearSelection}
+                      className="text-sm"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
             )}
-          </CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           {invoices.length > 0 ? (
-            <div className="space-y-4">
-              {invoices.map((invoice) => (
-                <div
-                  key={invoice.id}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
-                  onClick={() => navigate(`/app/invoices/${invoice.id}`)}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                        Invoice #{invoice.id}
-                      </h3>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        • {getClientName(invoice)}
-                      </span>
-                      <StatusBadge status={invoice.status} />
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Due: {formatDate(invoice.due_date)}
-                    </div>
+            isMobile ? (
+              // Mobile view using MobileInvoiceList
+              <MobileInvoiceList
+                invoices={invoices.map(invoice => ({
+                  id: invoice.id,
+                  client_name: getClientName(invoice),
+                  amount_cents: invoice.amount_cents,
+                  currency: invoice.currency,
+                  due_date: invoice.due_date,
+                  status: invoice.status as 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled',
+                  created_at: invoice.created_at || new Date().toISOString(),
+                  days_past_due: invoice.status === 'overdue' ? Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))) : undefined
+                }))}
+                onMarkPaid={async (invoiceId: number) => {
+                  const paidDate = new Date().toISOString()
+                  await updateInvoiceStatus.mutateAsync({
+                    invoiceId,
+                    status: 'paid',
+                    paidDate
+                  })
+                }}
+                onRefresh={handleMobileRefresh}
+                loading={isLoading}
+              />
+            ) : (
+              // Desktop view
+              <div className="space-y-4">
+                {invoices.length > 0 && !isMobile && (
+                  <div className="text-center py-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      💡 Use <kbd className="px-1 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border rounded">J</kbd> and <kbd className="px-1 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border rounded">K</kbd> to navigate, <kbd className="px-1 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border rounded">Space</kbd> to select
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(invoice.amount_cents, invoice.currency)}
-                    </div>
-                    {invoice.paid_at && (
-                      <div className="text-xs text-success-600 dark:text-success-400">
-                        Paid {formatDate(invoice.paid_at)}
+                )}
+                {invoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    data-invoice-index={invoices.indexOf(invoice)}
+                    className={`flex items-center gap-4 p-4 rounded-lg transition-all duration-200 ${
+                      isNavigationActive && focusedInvoiceIndex === invoices.indexOf(invoice)
+                        ? 'bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-200 dark:border-primary-800 shadow-lg'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
+                    }`}
+                    tabIndex={isNavigationActive && focusedInvoiceIndex === invoices.indexOf(invoice) ? 0 : -1}
+                  >
+                    {/* Checkbox */}
+                    {isSelectMode && (
+                      <div className="flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedInvoices.has(invoice.id)}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            toggleSelectInvoice(invoice.id)
+                          }}
+                          disabled={invoice.status === 'paid'}
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
                       </div>
                     )}
+
+                    {/* Invoice content */}
+                    <div
+                      className="flex-1 cursor-pointer"
+                      onClick={() => navigate(`/app/invoices/${invoice.id}`)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                              Invoice #{invoice.id}
+                            </h3>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              • {getClientName(invoice)}
+                            </span>
+                            <StatusBadge status={invoice.status} />
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Due: {formatDate(invoice.due_date)}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-gray-900 dark:text-gray-100">
+                            {formatCurrency(invoice.amount_cents, invoice.currency)}
+                          </div>
+                          {invoice.paid_at && (
+                            <div className="text-xs text-success-600 dark:text-success-400">
+                              Paid {formatDate(invoice.paid_at)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           ) : (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">

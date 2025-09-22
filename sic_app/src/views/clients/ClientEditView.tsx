@@ -49,8 +49,11 @@ export function ClientEditView() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           The client you're trying to edit doesn't exist.
         </p>
-        <Button variant="ghost" onClick={() => navigate('/app/clients')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/app/clients')}
+          leftIcon={<ArrowLeft className="h-4 w-4" />}
+        >
           Back to Clients
         </Button>
       </div>
@@ -104,33 +107,33 @@ export function ClientEditView() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left"
                   onClick={() => navigate(`/app/invoices/new?client_id=${clientId}`)}
                 >
-                  Create Invoice
+                  <span className="text-left">Create Invoice</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left"
                   onClick={() => navigate(`/app/invoices?client_id=${clientId}`)}
                 >
-                  View Invoices
+                  <span className="text-left">View Invoices</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left"
                   onClick={() => navigate(`/app/clients/${clientId}`)}
                 >
-                  View Client Details
+                  <span className="text-left">View Client Details</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left"
                   onClick={() => navigate('/app/clients')}
                 >
-                  Back to All Clients
+                  <span className="text-left">Back to All Clients</span>
                 </Button>
               </div>
             </CardContent>

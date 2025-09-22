@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SwipeableCard, swipeActions } from '@/components/ui/SwipeableCard'
+import { PullToRefresh } from '@/components/ui/PullToRefresh'
 import { QuickReminderButton } from '@/components/ui/QuickReminderButton'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -22,6 +23,7 @@ interface MobileInvoiceListProps {
   onSendReminder?: (invoiceId: number, tone: 'friendly' | 'neutral' | 'firm') => Promise<void>
   onMarkPaid?: (invoiceId: number) => Promise<void>
   onDelete?: (invoiceId: number) => Promise<void>
+  onRefresh?: () => Promise<void>
   loading?: boolean
   className?: string
 }
@@ -31,6 +33,7 @@ export function MobileInvoiceList({
   onSendReminder,
   onMarkPaid,
   onDelete,
+  onRefresh,
   loading = false,
   className
 }: MobileInvoiceListProps) {
@@ -117,7 +120,13 @@ export function MobileInvoiceList({
     )
   }
 
-  return (
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      await onRefresh()
+    }
+  }
+
+  const invoiceList = (
     <div className={cn('space-y-3', className)}>
       {invoices.map((invoice) => {
         const leftActions = []
@@ -233,4 +242,132 @@ export function MobileInvoiceList({
       })}
     </div>
   )
+
+  // Wrap in pull-to-refresh if refresh handler is provided
+  if (onRefresh) {
+    return (
+      <PullToRefresh
+        onRefresh={handleRefresh}
+        disabled={loading}
+        className={className}
+      >
+        <div className="space-y-3">
+          {invoices.map((invoice) => {
+            const leftActions = []
+            const rightActions = []
+
+            // Configure swipe actions based on invoice status
+            if (invoice.status === 'pending' || invoice.status === 'overdue') {
+              leftActions.push({
+                ...swipeActions.remind,
+                action: () => setExpandedReminder(expandedReminder === invoice.id ? null : invoice.id)
+              })
+
+              rightActions.push({
+                ...swipeActions.markPaid,
+                action: () => onMarkPaid?.(invoice.id)
+              })
+            }
+
+            if (invoice.status === 'draft') {
+              leftActions.push({
+                ...swipeActions.edit,
+                action: () => navigate(`/app/invoices/${invoice.id}/edit`)
+              })
+            }
+
+            // Always allow viewing
+            if (leftActions.length === 0) {
+              leftActions.push({
+                ...swipeActions.view,
+                action: () => navigate(`/app/invoices/${invoice.id}`)
+              })
+            }
+
+            // Allow deletion for draft invoices
+            if (invoice.status === 'draft') {
+              rightActions.push({
+                ...swipeActions.delete,
+                action: () => onDelete?.(invoice.id)
+              })
+            }
+
+            return (
+              <SwipeableCard
+                key={invoice.id}
+                leftActions={leftActions}
+                rightActions={rightActions}
+                onSwipe={(direction, actionId) => {
+                  console.log(`Swiped ${direction} on invoice ${invoice.id}, action: ${actionId}`)
+                }}
+              >
+                <div
+                  className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 transition-colors"
+                  onClick={() => navigate(`/app/invoices/${invoice.id}`)}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(invoice.status, invoice.days_past_due)}
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {invoice.client_name}
+                      </span>
+                    </div>
+                    <span className={cn(
+                      'px-2 py-1 text-xs font-medium rounded-full border capitalize',
+                      getStatusColor(invoice.status)
+                    )}>
+                      {invoice.status}
+                    </span>
+                  </div>
+
+                  {/* Amount and due date */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(invoice.amount_cents, invoice.currency)}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Due {new Date(invoice.due_date).toLocaleDateString()}
+                      </div>
+                      {invoice.days_past_due && invoice.days_past_due > 0 && (
+                        <div className="text-xs text-error-600 dark:text-error-400 font-medium">
+                          {getDaysPastDueText(invoice.days_past_due)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Invoice details */}
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>Invoice #{invoice.id}</span>
+                    <span>
+                      Created {new Date(invoice.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {/* Expanded reminder component */}
+                  {expandedReminder === invoice.id && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <QuickReminderButton
+                        invoiceId={invoice.id}
+                        invoiceAmount={invoice.amount_cents / 100}
+                        clientName={invoice.client_name}
+                        daysPastDue={invoice.days_past_due || 0}
+                        onSendReminder={onSendReminder}
+                        variant="expanded"
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              </SwipeableCard>
+            )
+          })}
+        </div>
+      </PullToRefresh>
+    )
+  }
+
+  return invoiceList
 }

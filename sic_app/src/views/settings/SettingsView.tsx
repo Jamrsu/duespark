@@ -274,7 +274,7 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6">
-      <section className="glass-panel p-6">
+      <section className="px-6 pt-2 pb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Settings
         </h1>

@@ -6,9 +6,10 @@ interface AmbientBackgroundProps {
   theme: 'light' | 'dark'
   className?: string
   variant?: 'default' | 'subtle'
+  animated?: boolean
 }
 
-export function AmbientBackground({ theme, className, variant = 'default' }: AmbientBackgroundProps) {
+export function AmbientBackground({ theme, className, variant = 'default', animated = false }: AmbientBackgroundProps) {
   const baseGradient = theme === 'dark'
     ? 'from-purple-950/60 via-blue-950/40 to-indigo-950/60'
     : 'from-purple-100/70 via-blue-100/70 to-indigo-100/70'
@@ -41,16 +42,16 @@ export function AmbientBackground({ theme, className, variant = 'default' }: Amb
             bubble.className
           )}
           style={{ opacity: bubbleOpacity }}
-          animate={{
+          animate={animated ? {
             y: [0, -25, 0],
             scale: [bubbleScale, bubbleScale + 0.05, bubbleScale],
-          }}
-          transition={{
+          } : {}}
+          transition={animated ? {
             duration: 12,
             repeat: Infinity,
             ease: 'easeInOut',
             delay: bubble.delay,
-          }}
+          } : {}}
         />
       ))}
     </div>

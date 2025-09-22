@@ -308,6 +308,7 @@ class AnalyticsTopLateClient(BaseModel):
 
 class AnalyticsSummaryOut(BaseModel):
     totals: AnalyticsStatusTotals
+    earned_revenue: int  # Total revenue from paid invoices (in cents)
     expected_payments_next_30d: int
     avg_days_to_pay: Optional[float] = None
     top_late_clients: list[AnalyticsTopLateClient]

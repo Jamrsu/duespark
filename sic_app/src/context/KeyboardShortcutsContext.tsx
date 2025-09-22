@@ -26,6 +26,9 @@ export function KeyboardShortcutsProvider({ children }: KeyboardShortcutsProvide
     commonShortcuts.goToClients(() => navigate('/app/clients')),
     commonShortcuts.goToSettings(() => navigate('/app/settings')),
 
+    // Creation shortcuts
+    commonShortcuts.createNew(() => navigate('/app/invoices/new')),
+
     // UI shortcuts
     commonShortcuts.refresh(() => window.location.reload()),
 
@@ -55,11 +58,30 @@ export function KeyboardShortcutsProvider({ children }: KeyboardShortcutsProvide
       ]
     },
     {
-      name: 'Actions',
+      name: 'Invoice List Navigation',
+      shortcuts: [
+        { keys: ['j'], description: 'Navigate down in invoice list', action: () => {} },
+        { keys: ['k'], description: 'Navigate up in invoice list', action: () => {} },
+        { keys: ['space'], description: 'Select/deselect current invoice', action: () => {} },
+        { keys: ['enter'], description: 'Open current invoice', action: () => {} },
+        { keys: ['escape'], description: 'Clear navigation focus', action: () => {} },
+      ]
+    },
+    {
+      name: 'Invoice Actions',
+      shortcuts: [
+        { keys: ['m'], description: 'Mark current invoice as paid', action: () => {} },
+        { keys: ['r'], description: 'Send reminder for current invoice', action: () => {} },
+        { keys: ['mod', 'a'], description: 'Select all unpaid invoices', action: () => {} },
+      ]
+    },
+    {
+      name: 'General Actions',
       shortcuts: [
         { keys: ['mod', 'k'], description: 'Focus search', action: () => {} },
         { keys: ['mod', 'r'], description: 'Refresh page', action: () => window.location.reload() },
         { keys: ['mod', '/'], description: 'Show keyboard shortcuts', action: openModal },
+        { keys: ['mod', 'n'], description: 'Create new invoice', action: () => navigate('/app/invoices/new') },
       ]
     },
     {

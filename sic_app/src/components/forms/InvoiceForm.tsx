@@ -24,6 +24,7 @@ interface InvoiceFormProps {
   defaultValues?: Partial<InvoiceFormData>
   submitButtonText?: string
   loadingButtonText?: string
+  isEditing?: boolean
 }
 
 export function InvoiceForm({
@@ -32,7 +33,8 @@ export function InvoiceForm({
   isLoading = false,
   defaultValues,
   submitButtonText = 'Create Invoice',
-  loadingButtonText = 'Creating...'
+  loadingButtonText = 'Creating...',
+  isEditing = false
 }: InvoiceFormProps) {
   const {
     register,
@@ -181,7 +183,7 @@ export function InvoiceForm({
               {...register('due_date')}
               type="date"
               id="due_date"
-              min={new Date().toISOString().split('T')[0]}
+              min={isEditing ? undefined : new Date().toISOString().split('T')[0]}
               className={`
                 block w-full px-3 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors tap-target
                 ${errors.due_date 
@@ -202,7 +204,7 @@ export function InvoiceForm({
           {/* Status */}
           <div className="space-y-2">
             <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Initial Status
+              {isEditing ? 'Status' : 'Initial Status'}
             </label>
             <select
               {...register('status')}
@@ -211,9 +213,19 @@ export function InvoiceForm({
             >
               <option value="draft">Draft</option>
               <option value="pending">Pending</option>
+              {isEditing && (
+                <>
+                  <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="cancelled">Cancelled</option>
+                </>
+              )}
             </select>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Draft invoices can be edited later. Pending invoices are ready to send.
+              {isEditing
+                ? 'Update the invoice status. Mark as paid when payment is received.'
+                : 'Draft invoices can be edited later. Pending invoices are ready to send.'
+              }
             </p>
           </div>
         </CardContent>

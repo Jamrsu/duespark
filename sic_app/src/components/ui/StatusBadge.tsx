@@ -4,18 +4,26 @@ import { cn, getStatusColor } from '@/lib/utils'
 interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   status: string
   size?: 'sm' | 'md' | 'lg'
+  showIcon?: boolean
 }
 
-export function StatusBadge({ 
-  status, 
+export function StatusBadge({
+  status,
   size = 'md',
-  className, 
-  ...props 
+  showIcon = true,
+  className,
+  ...props
 }: StatusBadgeProps) {
   const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-0.5 text-sm',
-    lg: 'px-3 py-1 text-sm',
+    sm: 'px-2 py-0.5 text-xs gap-1',
+    md: 'px-2.5 py-0.5 text-sm gap-1.5',
+    lg: 'px-3 py-1 text-sm gap-2',
+  }
+
+  const iconSizeClasses = {
+    sm: 'h-3 w-3',
+    md: 'h-3.5 w-3.5',
+    lg: 'h-4 w-4',
   }
 
   return (
@@ -28,6 +36,7 @@ export function StatusBadge({
       )}
       {...props}
     >
+      {showIcon && <StatusIcon status={status} className={iconSizeClasses[size]} />}
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   )
