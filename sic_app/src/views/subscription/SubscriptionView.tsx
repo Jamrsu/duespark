@@ -132,7 +132,7 @@ export function SubscriptionView() {
     )
   }
 
-  const currentTier = TIER_DETAILS[subscription.tier as keyof typeof TIER_DETAILS]
+  const currentTier = TIER_DETAILS[subscription.tier as keyof typeof TIER_DETAILS] || TIER_DETAILS.freemium
   const usagePercentage = (subscription.reminders_sent_this_period / subscription.reminders_per_month) * 100
 
   return (

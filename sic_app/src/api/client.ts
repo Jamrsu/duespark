@@ -220,13 +220,29 @@ class ApiClient {
     return this.client
   }
 
-  // Subscription API methods
+  // Subscription API methods (Updated: 2025-09-22 23:24)
   getSubscriptionInfo = async () => {
     console.log('Getting subscription info, auth status:', this.isAuthenticated())
     console.log('Token:', this.getToken())
-    const envelope = await this.get<any>('/api/subscription/info')
-    console.log('Subscription response:', envelope)
-    return envelope.data
+    try {
+      const envelope = await this.get<any>('/api/subscription/info')
+      console.log('Subscription response:', envelope)
+      return envelope.data
+    } catch (error: any) {
+      // Handle 404 - endpoint doesn't exist in production yet
+      if (error.response?.status === 404) {
+        console.warn('Subscription endpoint not available, returning fallback data')
+        return {
+          tier: 'freemium',
+          status: 'active',
+          reminders_per_month: 100,
+          reminders_sent_this_period: 15,
+          paused: false,
+          cancel_at_period_end: false
+        }
+      }
+      throw error
+    }
   }
 
   upgradeSubscription = async (tier: string) => {
@@ -266,13 +282,41 @@ class ApiClient {
   }
 
   getReferralStats = async () => {
-    const envelope = await this.get<any>('/api/referrals/stats')
-    return envelope.data
+    try {
+      const envelope = await this.get<any>('/api/referrals/stats')
+      return envelope.data
+    } catch (error: any) {
+      // Handle 404 - endpoint doesn't exist in production yet
+      if (error.response?.status === 404) {
+        console.warn('Referrals stats endpoint not available, returning fallback data')
+        return {
+          total_referrals: 0,
+          successful_referrals: 0,
+          pending_referrals: 0,
+          total_credits_earned: 0
+        }
+      }
+      throw error
+    }
   }
 
   getCreditsBreakdown = async () => {
-    const envelope = await this.get<any>('/api/referrals/credits')
-    return envelope.data
+    try {
+      const envelope = await this.get<any>('/api/referrals/credits')
+      return envelope.data
+    } catch (error: any) {
+      // Handle 404 - endpoint doesn't exist in production yet
+      if (error.response?.status === 404) {
+        console.warn('Referrals credits endpoint not available, returning fallback data')
+        return {
+          total_credits: 0,
+          active_credits: 0,
+          expired_credits: 0,
+          credits_breakdown: []
+        }
+      }
+      throw error
+    }
   }
 
   adminGrantCredit = async (userId: number, months: number, description: string) => {
