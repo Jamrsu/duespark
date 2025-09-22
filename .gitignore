@@ -522,8 +522,8 @@ dump.rdb
 
 # Development utilities
 .tool-versions
-.nvmrc
 
 # Pre-commit
 .pre-commit-config.yaml.bak
 backups/*.sql
+.vercel
