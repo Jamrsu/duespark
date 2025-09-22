@@ -1,0 +1,14 @@
+{
+  "name": "duespark-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install": "cd sic_app && npm ci --include=dev",
+    "build": "cd sic_app && npm run build",
+    "dev": "cd sic_app && npm run dev",
+    "start": "cd sic_app && npm start"
+  },
+  "workspaces": [
+    "sic_app"
+  ]
+}
