@@ -2,9 +2,15 @@
   "version": 2,
   "framework": "vite",
   "buildCommand": "npm run build",
+  "installCommand": "npm install",
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "public": true,
+  "functions": {
+    "app/**/*.{js,ts}": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "redirects": [
     {
       "source": "/login",
