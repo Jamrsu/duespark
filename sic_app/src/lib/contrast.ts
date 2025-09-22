@@ -232,10 +232,10 @@ export function validateColorPalette(palette: Record<string, string>): {
  * Development-only contrast checker
  * Logs contrast issues in the console
  */
+let lastAuditSignature = ''
+
 export function auditPageContrast(): void {
   if (process.env.NODE_ENV !== 'development') return
-
-  console.group('🎨 Contrast Audit')
 
   const elements = document.querySelectorAll('*')
   const issues: Array<{ element: Element; fg: string; bg: string; ratio: number }> = []
@@ -264,16 +264,31 @@ export function auditPageContrast(): void {
     }
   })
 
-  if (issues.length > 0) {
-    console.warn(`Found ${issues.length} contrast issues:`)
-    issues.forEach(({ element, fg, bg, ratio }) => {
-      console.warn(`${element.tagName}: ${fg} on ${bg} (${ratio.toFixed(2)}:1)`, element)
-    })
-  } else {
-    console.log('✅ No contrast issues found')
-  }
+  const signature = JSON.stringify(
+    issues.map(({ fg, bg, ratio, element }) => ({
+      fg,
+      bg,
+      ratio: Number(ratio.toFixed(2)),
+      tag: element.tagName,
+    }))
+  )
 
-  console.groupEnd()
+  if (signature !== lastAuditSignature) {
+    lastAuditSignature = signature
+
+    console.group('🎨 Contrast Audit')
+
+    if (issues.length > 0) {
+      console.warn(`Found ${issues.length} contrast issues:`)
+      issues.forEach(({ element, fg, bg, ratio }) => {
+        console.warn(`${element.tagName}: ${fg} on ${bg} (${ratio.toFixed(2)}:1)`, element)
+      })
+    } else {
+      console.log('✅ No contrast issues found')
+    }
+
+    console.groupEnd()
+  }
 }
 
 /**

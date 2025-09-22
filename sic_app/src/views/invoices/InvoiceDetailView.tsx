@@ -60,7 +60,7 @@ export function InvoiceDetailView() {
   }
 
   const handleEditInvoice = () => {
-    navigate(`/invoices/${invoiceId}/edit`)
+    navigate(`/app/invoices/${invoiceId}/edit`)
   }
 
   const handleEditReminder = async (reminder: any) => {
@@ -146,7 +146,7 @@ export function InvoiceDetailView() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           The invoice you're looking for doesn't exist.
         </p>
-        <Button variant="ghost" onClick={() => navigate('/invoices')}>
+        <Button variant="ghost" onClick={() => navigate('/app/invoices')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Invoices
         </Button>
@@ -157,12 +157,12 @@ export function InvoiceDetailView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <section className="glass-panel p-6 flex items-center gap-4">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/invoices')}
-          className="p-2"
+          onClick={() => navigate('/app/invoices')}
+          className="p-2 hover:bg-white/20 dark:hover:bg-white/10"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -170,12 +170,12 @@ export function InvoiceDetailView() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Invoice #{invoice.id}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
             Created {formatDate(invoice.created_at)}
           </p>
         </div>
         <StatusBadge status={invoice.status} size="lg" />
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Invoice Details */}
@@ -267,7 +267,7 @@ export function InvoiceDetailView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate(`/clients/${invoice.client_id}`)}
+                  onClick={() => navigate(`/app/clients/${invoice.client_id}`)}
                   className="w-full"
                 >
                   View Client Details

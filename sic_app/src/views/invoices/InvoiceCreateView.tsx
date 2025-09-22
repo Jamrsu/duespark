@@ -22,7 +22,7 @@ export function InvoiceCreateView() {
     try {
       const invoice = await createInvoice.mutateAsync(data)
       // Redirect to the newly created invoice
-      navigate(`/invoices/${invoice.id}`)
+      navigate(`/app/invoices/${invoice.id}`)
     } catch (error) {
       // Error is handled by the mutation's onError callback
       console.error('Failed to create invoice:', error)
@@ -48,12 +48,12 @@ export function InvoiceCreateView() {
   if (clients.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
+        <section className="glass-panel p-6 flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/invoices')}
-            className="p-2"
+            onClick={() => navigate('/app/invoices')}
+            className="p-2 hover:bg-white/20 dark:hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -61,11 +61,11 @@ export function InvoiceCreateView() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Create New Invoice
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
               Create a new invoice for your client
             </p>
           </div>
-        </div>
+        </section>
 
         <Card>
           <CardContent className="text-center py-12">
@@ -79,11 +79,11 @@ export function InvoiceCreateView() {
               You need to create at least one client before you can create an invoice.
             </p>
             <div className="space-y-3">
-              <Button onClick={() => navigate('/clients/new')}>
+              <Button onClick={() => navigate('/app/clients/new')}>
                 Create Your First Client
               </Button>
               <br />
-              <Button variant="ghost" onClick={() => navigate('/clients')}>
+              <Button variant="ghost" onClick={() => navigate('/app/clients')}>
                 View Clients
               </Button>
             </div>
@@ -96,12 +96,12 @@ export function InvoiceCreateView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <section className="glass-panel p-6 flex items-center gap-4">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/invoices')}
-          className="p-2"
+          onClick={() => navigate('/app/invoices')}
+          className="p-2 hover:bg-white/20 dark:hover:bg-white/10"
           aria-label="Back to invoices"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -110,19 +110,19 @@ export function InvoiceCreateView() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Create New Invoice
             {selectedClient && (
-              <span className="text-lg font-normal text-gray-500 dark:text-gray-400">
+              <span className="text-lg font-normal text-gray-500 dark:text-gray-300">
                 {' '}for {selectedClient.name}
               </span>
             )}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
             {selectedClient
               ? `Creating an invoice for ${selectedClient.name} (${selectedClient.email})`
               : 'Create a new invoice for your client'
             }
           </p>
         </div>
-      </div>
+      </section>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -145,28 +145,28 @@ export function InvoiceCreateView() {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/clients/new')}
+                  onClick={() => navigate('/app/clients/new')}
                 >
                   Add New Client
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/clients')}
+                  onClick={() => navigate('/app/clients')}
                 >
                   Manage Clients
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/invoices')}
+                  onClick={() => navigate('/app/invoices')}
                 >
                   View All Invoices
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/app/dashboard')}
                 >
                   Back to Dashboard
                 </Button>

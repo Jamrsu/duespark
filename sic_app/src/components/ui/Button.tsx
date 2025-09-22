@@ -20,7 +20,7 @@ export function Button({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-200 focus-ring disabled:opacity-50 disabled:cursor-not-allowed tap-target'
   
   const variants = {
-    primary: 'bg-primary-600 hover:bg-primary-700 text-white',
+    primary: 'bg-primary-700 hover:bg-primary-800 text-white',
     secondary: 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100',
     ghost: 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200',
     danger: 'bg-error-600 hover:bg-error-700 text-white',

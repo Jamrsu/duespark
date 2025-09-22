@@ -368,7 +368,7 @@ describe('OnboardingView', () => {
 
     // Step 1 should be active
     const step1 = screen.getByText('1').closest('div')
-    expect(step1).toHaveClass('bg-primary-600')
+    expect(step1).toHaveClass('bg-primary-700')
   })
 
   it('handles loading states properly', async () => {

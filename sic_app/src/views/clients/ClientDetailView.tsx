@@ -56,7 +56,7 @@ export function ClientDetailView() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           The client you're looking for doesn't exist.
         </p>
-        <Button variant="ghost" onClick={() => navigate('/clients')}>
+        <Button variant="ghost" onClick={() => navigate('/app/clients')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Clients
         </Button>
@@ -67,27 +67,31 @@ export function ClientDetailView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/clients')}
-          className="p-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {client.name}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Client #{client.id}
-          </p>
+      <section className="glass-panel p-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/app/clients')}
+            className="p-2 hover:bg-white/20 dark:hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {client.name}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Client #{client.id}
+            </p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => navigate(`/clients/${client.id}/edit`)}>
-          Edit Client
-        </Button>
-      </div>
+        <div className="flex sm:ml-auto">
+          <Button size="sm" onClick={() => navigate(`/app/clients/${client.id}/edit`)} className="shadow-lg shadow-primary-500/30">
+            Edit Client
+          </Button>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Client Details */}
@@ -178,7 +182,7 @@ export function ClientDetailView() {
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start"
-                  onClick={() => navigate(`/invoices/new?client_id=${client.id}`)}
+                  onClick={() => navigate(`/app/invoices/new?client_id=${client.id}`)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Invoice

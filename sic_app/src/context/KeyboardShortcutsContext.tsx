@@ -21,10 +21,10 @@ export function KeyboardShortcutsProvider({ children }: KeyboardShortcutsProvide
   // Define global shortcuts
   const globalShortcuts = [
     // Navigation shortcuts
-    commonShortcuts.goToDashboard(() => navigate('/dashboard')),
-    commonShortcuts.goToInvoices(() => navigate('/invoices')),
-    commonShortcuts.goToClients(() => navigate('/clients')),
-    commonShortcuts.goToSettings(() => navigate('/settings')),
+    commonShortcuts.goToDashboard(() => navigate('/app/dashboard')),
+    commonShortcuts.goToInvoices(() => navigate('/app/invoices')),
+    commonShortcuts.goToClients(() => navigate('/app/clients')),
+    commonShortcuts.goToSettings(() => navigate('/app/settings')),
 
     // UI shortcuts
     commonShortcuts.refresh(() => window.location.reload()),
@@ -48,10 +48,10 @@ export function KeyboardShortcutsProvider({ children }: KeyboardShortcutsProvide
     {
       name: 'Navigation',
       shortcuts: [
-        { keys: ['mod', 'd'], description: 'Go to dashboard', action: () => navigate('/dashboard') },
-        { keys: ['mod', 'i'], description: 'Go to invoices', action: () => navigate('/invoices') },
-        { keys: ['mod', 'c'], description: 'Go to clients', action: () => navigate('/clients') },
-        { keys: ['mod', ','], description: 'Go to settings', action: () => navigate('/settings') },
+        { keys: ['mod', 'd'], description: 'Go to dashboard', action: () => navigate('/app/dashboard') },
+        { keys: ['mod', 'i'], description: 'Go to invoices', action: () => navigate('/app/invoices') },
+        { keys: ['mod', 'c'], description: 'Go to clients', action: () => navigate('/app/clients') },
+        { keys: ['mod', ','], description: 'Go to settings', action: () => navigate('/app/settings') },
       ]
     },
     {

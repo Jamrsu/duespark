@@ -52,7 +52,7 @@ export function ClientInvoices({ clientId, clientName }: ClientInvoicesProps) {
           </CardTitle>
           <Button
             size="sm"
-            onClick={() => navigate(`/invoices/new?client_id=${clientId}`)}
+            onClick={() => navigate(`/app/invoices/new?client_id=${clientId}`)}
             className="flex items-center gap-1"
           >
             <Plus className="h-4 w-4" />
@@ -67,7 +67,7 @@ export function ClientInvoices({ clientId, clientName }: ClientInvoicesProps) {
               <div
                 key={invoice.id}
                 className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors border border-gray-200 dark:border-gray-700"
-                onClick={() => navigate(`/invoices/${invoice.id}`)}
+                onClick={() => navigate(`/app/invoices/${invoice.id}`)}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -99,7 +99,7 @@ export function ClientInvoices({ clientId, clientName }: ClientInvoicesProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate(`/invoices?client_id=${clientId}`)}
+                  onClick={() => navigate(`/app/invoices?client_id=${clientId}`)}
                   className="w-full"
                 >
                   View All {clientName} Invoices
@@ -120,7 +120,7 @@ export function ClientInvoices({ clientId, clientName }: ClientInvoicesProps) {
             </p>
             <Button
               size="sm"
-              onClick={() => navigate(`/invoices/new?client_id=${clientId}`)}
+              onClick={() => navigate(`/app/invoices/new?client_id=${clientId}`)}
             >
               <Plus className="h-4 w-4 mr-2" />
               Create First Invoice

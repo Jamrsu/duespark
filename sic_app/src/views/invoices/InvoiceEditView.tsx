@@ -30,7 +30,7 @@ export function InvoiceEditView() {
 
       await updateInvoice.mutateAsync({ id: invoiceId, data: updateData })
       // Redirect back to the invoice detail view
-      navigate(`/invoices/${invoiceId}`)
+      navigate(`/app/invoices/${invoiceId}`)
     } catch (error) {
       // Error is handled by the mutation's onError callback
       console.error('Failed to update invoice:', error)
@@ -61,7 +61,7 @@ export function InvoiceEditView() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           The invoice you're trying to edit doesn't exist.
         </p>
-        <Button variant="ghost" onClick={() => navigate('/invoices')}>
+        <Button variant="ghost" onClick={() => navigate('/app/invoices')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Invoices
         </Button>
@@ -81,12 +81,12 @@ export function InvoiceEditView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <section className="glass-panel p-6 flex items-center gap-4">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/invoices/${invoiceId}`)}
-          className="p-2"
+          onClick={() => navigate(`/app/invoices/${invoiceId}`)}
+          className="p-2 hover:bg-white/20 dark:hover:bg-white/10"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -94,11 +94,11 @@ export function InvoiceEditView() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Edit Invoice #{invoice.id}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
             Update invoice details and status
           </p>
         </div>
-      </div>
+      </section>
 
 
       {/* Edit Form */}

@@ -79,7 +79,7 @@ interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
 export function CardContent({ children, className, ...props }: CardContentProps) {
   return (
     <div
-      className={cn('text-gray-600 dark:text-gray-400', className)}
+      className={cn('text-gray-600 dark:text-gray-200', className)}
       {...props}
     >
       {children}

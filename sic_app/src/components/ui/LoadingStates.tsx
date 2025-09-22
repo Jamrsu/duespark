@@ -82,7 +82,7 @@ export function LoadingButton({
   const baseClasses = "inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-200 focus-ring disabled:opacity-50 disabled:cursor-not-allowed tap-target"
 
   const variantClasses = {
-    primary: "bg-primary-600 hover:bg-primary-700 text-white",
+    primary: "bg-primary-700 hover:bg-primary-800 text-white",
     secondary: "bg-gray-600 hover:bg-gray-700 text-white",
     outline: "border border-gray-300 dark:border-gray-600 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200",
     ghost: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
@@ -176,7 +176,7 @@ export function StepProgress({ currentStep, totalSteps, stepLabels, className }:
               <div
                 className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                  isActive && 'bg-primary-600 text-white',
+                  isActive && 'bg-primary-700 text-white',
                   isCompleted && 'bg-green-500 text-white',
                   isUpcoming && 'bg-gray-200 dark:bg-gray-700 text-gray-500'
                 )}

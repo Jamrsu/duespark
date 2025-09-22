@@ -5,6 +5,8 @@
 **Version**: 1.0.0
 **Assessor**: Security & Operations Team
 
+> NOTE: Draft and review the deployment runbook covering backups and migrations before go-live.
+
 ## 🔒 Security Readiness
 
 ### Environment Security

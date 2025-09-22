@@ -76,7 +76,7 @@ export function QuickReminderButton({
         onClick={() => setIsExpanded(true)}
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-full',
-          'bg-primary-500 hover:bg-primary-600 text-white',
+          'bg-primary-700 hover:bg-primary-800 text-white',
           'transition-all duration-200 hover:scale-105 active:scale-95',
           'shadow-md hover:shadow-lg',
           className

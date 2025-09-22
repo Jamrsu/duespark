@@ -68,8 +68,8 @@ export function KPICard({
 
   if (loading) {
     return (
-      <Card className={cn('transition-all duration-200', className)}>
-        <CardContent className="p-4">
+      <Card className={cn('transition-all duration-200 h-full', className)}>
+        <CardContent className="p-4 h-full flex flex-col justify-center min-h-[100px]">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="loading-shimmer h-4 w-20 mb-2" data-testid="loading-shimmer" />
@@ -101,7 +101,7 @@ export function KPICard({
     <div className="relative group">
       <Card
         className={cn(
-          'transition-all duration-200',
+          'transition-all duration-200 h-full',
           onClick && 'cursor-pointer hover:shadow-md',
           'touch-pan-y',
           showMobileActions && 'md:hover:scale-[1.02]',
@@ -111,17 +111,17 @@ export function KPICard({
         onTouchStart={() => showMobileActions && setShowActions(true)}
         onTouchEnd={() => showMobileActions && setTimeout(() => setShowActions(false), 3000)}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-4 h-full flex flex-col justify-center min-h-[100px]">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-base font-medium text-gray-500 dark:text-gray-400 truncate">
                 {title}
               </p>
 
               <div className="mt-1 flex items-baseline">
                 <p className={cn(
                   'font-bold text-gray-900 dark:text-gray-100',
-                  'text-xl sm:text-2xl lg:text-3xl'
+                  'text-2xl sm:text-3xl lg:text-4xl'
                 )}>
                   {formatValue(value)}
                 </p>
@@ -130,7 +130,7 @@ export function KPICard({
                   <div className="ml-2 flex items-center">
                     <span
                       className={cn(
-                        'text-xs sm:text-sm font-medium',
+                        'text-sm sm:text-base font-medium',
                         (trend?.direction === 'up' || (change !== undefined && change > 0))
                           ? 'text-success-600 dark:text-success-400'
                           : 'text-red-600 dark:text-red-400'
@@ -147,13 +147,13 @@ export function KPICard({
               </div>
 
               {subtitle && (
-                <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+                <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400 truncate">
                   {subtitle}
                 </p>
               )}
 
               {trend?.period && (
-                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
                   vs {trend.period}
                 </p>
               )}
@@ -185,7 +185,7 @@ export function KPICard({
               className={cn(
                 'p-2 rounded-full text-white shadow-md transition-all duration-200',
                 'hover:scale-110 active:scale-95',
-                action.color || 'bg-primary-500 hover:bg-primary-600'
+                action.color || 'bg-primary-700 hover:bg-primary-800'
               )}
               title={action.label}
             >

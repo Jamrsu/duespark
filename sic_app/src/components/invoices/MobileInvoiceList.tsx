@@ -108,8 +108,8 @@ export function MobileInvoiceList({
           Get started by creating your first invoice
         </p>
         <button
-          onClick={() => navigate('/invoices/new')}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors"
+          onClick={() => navigate('/app/invoices/new')}
+          className="px-4 py-2 bg-primary-700 text-white rounded-lg font-medium hover:bg-primary-800 transition-colors"
         >
           Create Invoice
         </button>
@@ -139,7 +139,7 @@ export function MobileInvoiceList({
         if (invoice.status === 'draft') {
           leftActions.push({
             ...swipeActions.edit,
-            action: () => navigate(`/invoices/${invoice.id}/edit`)
+            action: () => navigate(`/app/invoices/${invoice.id}/edit`)
           })
         }
 
@@ -147,7 +147,7 @@ export function MobileInvoiceList({
         if (leftActions.length === 0) {
           leftActions.push({
             ...swipeActions.view,
-            action: () => navigate(`/invoices/${invoice.id}`)
+            action: () => navigate(`/app/invoices/${invoice.id}`)
           })
         }
 
@@ -170,7 +170,7 @@ export function MobileInvoiceList({
           >
             <div
               className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 transition-colors"
-              onClick={() => navigate(`/invoices/${invoice.id}`)}
+              onClick={() => navigate(`/app/invoices/${invoice.id}`)}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-3">

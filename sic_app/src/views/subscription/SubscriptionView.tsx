@@ -137,12 +137,10 @@ export function SubscriptionView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Subscription</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage your DueSpark subscription</p>
-        </div>
-      </div>
+      <section className="glass-panel p-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Subscription</h1>
+        <p className="text-gray-600 dark:text-gray-300">Manage your DueSpark subscription</p>
+      </section>
 
       {/* Current Plan */}
       <Card className="p-6">

@@ -18,6 +18,17 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Improve dark-mode text contrast */
+  .dark .text-gray-500,
+  .dark .text-gray-400 {
+    color: theme('colors.gray.200') !important;
+  }
+
+  .dark .text-gray-300,
+  .dark .text-gray-200 {
+    color: theme('colors.gray.100') !important;
+  }
   
   /* Improved focus indicators for accessibility */
   .focus-ring {
@@ -50,12 +61,39 @@
 @layer components {
   /* Card component */
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm;
+    @apply relative overflow-hidden rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-gray-900/40 backdrop-blur-xl shadow-lg shadow-primary-500/10 dark:shadow-black/40 transition-transform duration-200;
   }
-  
+
+  .card:hover {
+    @apply -translate-y-0.5;
+  }
+
+  .card > * {
+    @apply relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.18) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .dark .card::before {
+    background: linear-gradient(135deg, rgba(148,163,184,0.3) 0%, rgba(30,41,59,0.4) 100%);
+    opacity: 0.5;
+  }
+
+  .glass-panel {
+    @apply relative overflow-hidden rounded-2xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl shadow-lg shadow-primary-500/10 dark:shadow-black/40;
+  }
+
   /* Button variants */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg focus-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200;
+    @apply bg-primary-700 hover:bg-primary-800 text-white font-medium py-2 px-4 rounded-lg focus-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200;
   }
   
   .btn-secondary {

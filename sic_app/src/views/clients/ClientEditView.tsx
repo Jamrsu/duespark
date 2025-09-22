@@ -18,7 +18,7 @@ export function ClientEditView() {
     try {
       await updateClient.mutateAsync({ id: clientId, data })
       // Redirect back to the client detail view
-      navigate(`/clients/${clientId}`)
+      navigate(`/app/clients/${clientId}`)
     } catch (error) {
       // Error is handled by the mutation's onError callback
       console.error('Failed to update client:', error)
@@ -49,7 +49,7 @@ export function ClientEditView() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           The client you're trying to edit doesn't exist.
         </p>
-        <Button variant="ghost" onClick={() => navigate('/clients')}>
+        <Button variant="ghost" onClick={() => navigate('/app/clients')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Clients
         </Button>
@@ -60,12 +60,12 @@ export function ClientEditView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <section className="glass-panel p-6 flex items-center gap-4">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/clients/${clientId}`)}
-          className="p-2"
+          onClick={() => navigate(`/app/clients/${clientId}`)}
+          className="p-2 hover:bg-white/20 dark:hover:bg-white/10"
           aria-label="Back to client details"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -74,11 +74,11 @@ export function ClientEditView() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Edit {client.name}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
             Update client information
           </p>
         </div>
-      </div>
+      </section>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -107,28 +107,28 @@ export function ClientEditView() {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate(`/invoices/new?client_id=${clientId}`)}
+                  onClick={() => navigate(`/app/invoices/new?client_id=${clientId}`)}
                 >
                   Create Invoice
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate(`/invoices?client_id=${clientId}`)}
+                  onClick={() => navigate(`/app/invoices?client_id=${clientId}`)}
                 >
                   View Invoices
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate(`/clients/${clientId}`)}
+                  onClick={() => navigate(`/app/clients/${clientId}`)}
                 >
                   View Client Details
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => navigate('/clients')}
+                  onClick={() => navigate('/app/clients')}
                 >
                   Back to All Clients
                 </Button>

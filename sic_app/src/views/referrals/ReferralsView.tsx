@@ -90,19 +90,19 @@ export function ReferralsView() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="mb-6">
+      <section className="glass-panel p-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           Referral Program
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-gray-300">
           Invite friends and earn free subscription time. Get 1 month for each successful referral!
         </p>
-      </div>
+      </section>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>

@@ -11,6 +11,9 @@ import { InvoiceImportStep } from './steps/InvoiceImportStep'
 import { apiClient } from '@/api/client'
 import { toast } from 'react-hot-toast'
 import type { User } from '@/types/api'
+import { useTheme } from '@/lib/theme'
+import { cn } from '@/lib/utils'
+import { AmbientBackground } from '@/components/layout/AmbientBackground'
 
 export type OnboardingStatus =
   | 'not_started'
@@ -32,6 +35,7 @@ export function OnboardingView() {
   const queryClient = useQueryClient()
   const [currentStep, setCurrentStep] = useState(0)
   const [isSkipping, setIsSkipping] = useState(false)
+  const { resolvedTheme } = useTheme()
 
   // Get current user and onboarding status
   const { data: user, isLoading } = useQuery({
@@ -174,7 +178,7 @@ export function OnboardingView() {
         toast.success('Welcome to DueSpark! Your account is ready to use.')
 
         // Navigate to dashboard
-        navigate('/dashboard')
+        navigate('/app/dashboard')
 
         // Update status on server in background
         updateStatusMutation.mutate('completed')
@@ -182,7 +186,7 @@ export function OnboardingView() {
         console.error('Complete setup error:', error)
         // Even if anything fails, still try to navigate
         toast.success('Welcome to DueSpark! Your account is ready to use.')
-        navigate('/dashboard')
+        navigate('/app/dashboard')
       }
     }
   }
@@ -218,7 +222,7 @@ export function OnboardingView() {
 
       // Navigate to dashboard
       console.log('Navigating to dashboard...')
-      navigate('/dashboard', { replace: true })
+      navigate('/app/dashboard', { replace: true })
 
       // Update status on server in background
       console.log('Starting server update...')
@@ -227,7 +231,7 @@ export function OnboardingView() {
       console.error('Skip error:', error)
       // Even if anything fails, still try to navigate
       toast.success('Onboarding skipped. You can complete setup later from settings.')
-      navigate('/dashboard', { replace: true })
+      navigate('/app/dashboard', { replace: true })
     } finally {
       setIsSkipping(false)
     }
@@ -236,7 +240,7 @@ export function OnboardingView() {
   // Redirect to dashboard if already completed (must be before any early returns)
   useEffect(() => {
     if (user?.onboarding_status === 'completed') {
-      navigate('/dashboard')
+      navigate('/app/dashboard')
     }
   }, [user?.onboarding_status, navigate])
 
@@ -252,26 +256,36 @@ export function OnboardingView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div
+      className={cn(
+        'relative min-h-screen overflow-hidden transition-colors duration-300',
+        resolvedTheme === 'dark' ? 'bg-gray-950' : 'bg-slate-100'
+      )}
+    >
+      <AmbientBackground theme={resolvedTheme} variant="subtle" />
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-12 space-y-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="glass-panel text-center px-6 py-8 space-y-4">
+          <div className="inline-flex items-center justify-center gap-2 rounded-full bg-white/45 dark:bg-white/10 px-4 py-2 text-sm font-medium text-primary-700 dark:text-primary-300">
+            <CheckCircle className="h-4 w-4" />
+            Guided setup
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Welcome to DueSpark
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Let's get your invoice management system set up in just a few steps
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-balance">
+            Let's get your invoice management system set up in just a few steps.
           </p>
           {isLoading && (
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-300">
               <LoadingSpinner size="sm" />
-              <span className="text-sm text-gray-500 dark:text-gray-400">Loading your account...</span>
+              <span>Loading your account...</span>
             </div>
           )}
         </div>
 
         {/* Progress Steps */}
-        <Card className="mb-8">
+        <Card>
           <CardContent className="pt-6">
             <StepProgress
               currentStep={currentStep + 1}

@@ -32,42 +32,41 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <section className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+        <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300">
             Overview of your invoice management
           </p>
         </div>
         <Button
-          onClick={() => navigate('/invoices/new')}
-          className="w-full sm:w-auto"
+          onClick={() => navigate('/app/invoices/new')}
+          className="w-full sm:w-auto shadow-lg shadow-primary-500/30"
         >
           <Plus className="h-4 w-4 mr-2" />
           New Invoice
         </Button>
-      </div>
+      </section>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <InvoiceCountKPICard
           value={totals.all}
-          subtitle="Total invoices"
-          onClick={() => navigate('/invoices')}
+          onClick={() => navigate('/app/invoices')}
           showMobileActions={true}
           quickActions={[
             {
               label: "View All",
               icon: <Eye className="h-4 w-4" />,
-              action: () => navigate('/invoices'),
+              action: () => navigate('/app/invoices'),
               color: 'bg-blue-500 hover:bg-blue-600'
             },
             {
               label: "Create New",
               icon: <Plus className="h-4 w-4" />,
-              action: () => navigate('/invoices/new'),
+              action: () => navigate('/app/invoices/new'),
               color: 'bg-green-500 hover:bg-green-600'
             }
           ]}
@@ -75,13 +74,13 @@ export function DashboardView() {
 
         <RevenueKPICard
           value={analytics?.expected_payments_next_30d || 0}
-          onClick={() => navigate('/invoices?status=pending')}
+          onClick={() => navigate('/app/invoices?status=pending')}
           showMobileActions={true}
           quickActions={[
             {
               label: "View Pending",
               icon: <Clock className="h-4 w-4" />,
-              action: () => navigate('/invoices?status=pending'),
+              action: () => navigate('/app/invoices?status=pending'),
               color: 'bg-yellow-500 hover:bg-yellow-600'
             }
           ]}
@@ -89,19 +88,19 @@ export function DashboardView() {
 
         <OverdueKPICard
           value={totals.overdue}
-          onClick={() => navigate('/invoices?status=overdue')}
+          onClick={() => navigate('/app/invoices?status=overdue')}
           showMobileActions={true}
           quickActions={[
             {
               label: "Send Reminders",
               icon: <Send className="h-4 w-4" />,
-              action: () => navigate('/reminders?bulk=overdue'),
+              action: () => navigate('/app/reminders?bulk=overdue'),
               color: 'bg-red-500 hover:bg-red-600'
             },
             {
               label: "View Overdue",
               icon: <AlertCircle className="h-4 w-4" />,
-              action: () => navigate('/invoices?status=overdue'),
+              action: () => navigate('/app/invoices?status=overdue'),
               color: 'bg-orange-500 hover:bg-orange-600'
             }
           ]}
@@ -117,7 +116,7 @@ export function DashboardView() {
             {
               label: "View Trends",
               icon: <TrendingUp className="h-4 w-4" />,
-              action: () => navigate('/analytics'),
+              action: () => navigate('/app/analytics'),
               color: 'bg-purple-500 hover:bg-purple-600'
             }
           ]}
@@ -125,11 +124,11 @@ export function DashboardView() {
       </div>
 
       {/* Status Breakdown - Mobile-First Design */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden h-full">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg sm:text-xl">Invoice Status Breakdown</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 h-full flex flex-col justify-center min-h-[100px]">
           {/* Mobile: Horizontal Scrollable */}
           <div className="flex sm:hidden gap-4 px-4 pb-4 overflow-x-auto scrollbar-hide">
             {[
@@ -141,13 +140,13 @@ export function DashboardView() {
             ].map((item) => (
               <div
                 key={item.label}
-                className={`flex-shrink-0 w-24 text-center cursor-pointer rounded-lg p-3 transition-all duration-200 active:scale-95 ${item.bg}`}
-                onClick={() => navigate(`/invoices?status=${item.label.toLowerCase()}`)}
+                className={`flex-shrink-0 w-24 text-center cursor-pointer rounded-lg p-3 transition-all duration-200 active:scale-95 min-h-[100px] flex flex-col justify-center ${item.bg}`}
+                onClick={() => navigate(`/app/invoices?status=${item.label.toLowerCase()}`)}
               >
-                <div className={`text-2xl font-bold ${item.color} dark:opacity-90`}>
+                <div className={`text-3xl font-bold ${item.color} dark:opacity-90`}>
                   {item.value}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 capitalize mt-1">
+                <div className="text-sm text-gray-500 dark:text-gray-400 capitalize mt-1">
                   {item.label}
                 </div>
               </div>
@@ -165,13 +164,13 @@ export function DashboardView() {
             ].map((item) => (
               <div
                 key={item.label}
-                className={`text-center cursor-pointer rounded-lg p-4 transition-colors ${item.bg}`}
-                onClick={() => navigate(`/invoices?status=${item.label.toLowerCase()}`)}
+                className={`text-center cursor-pointer rounded-lg p-4 transition-colors min-h-[100px] flex flex-col justify-center ${item.bg}`}
+                onClick={() => navigate(`/app/invoices?status=${item.label.toLowerCase()}`)}
               >
-                <div className={`text-2xl font-bold ${item.color} dark:opacity-90`}>
+                <div className={`text-3xl font-bold ${item.color} dark:opacity-90`}>
                   {item.value}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                <div className="text-base text-gray-500 dark:text-gray-400 capitalize">
                   {item.label}
                 </div>
               </div>
@@ -189,7 +188,7 @@ export function DashboardView() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/invoices')}
+              onClick={() => navigate('/app/invoices')}
             >
               View All
             </Button>
@@ -207,7 +206,7 @@ export function DashboardView() {
                   <div
                     key={invoice.id}
                     className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
-                    onClick={() => navigate(`/invoices/${invoice.id}`)}
+                    onClick={() => navigate(`/app/invoices/${invoice.id}`)}
                   >
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-100">
@@ -243,7 +242,7 @@ export function DashboardView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate('/invoices/new')}
+                  onClick={() => navigate('/app/invoices/new')}
                   className="mt-2"
                 >
                   Create your first invoice
@@ -268,7 +267,7 @@ export function DashboardView() {
                   <div
                     key={client.client_id}
                     className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
-                    onClick={() => navigate(`/clients/${client.client_id}`)}
+                    onClick={() => navigate(`/app/clients/${client.client_id}`)}
                   >
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-100">

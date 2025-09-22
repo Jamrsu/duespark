@@ -238,39 +238,39 @@ export function InvoicesView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <section className="glass-panel p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {filteredClientName ? `${filteredClientName} Invoices` : 'Invoices'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300">
             {filteredClientName
               ? `Showing invoices for ${filteredClientName}`
               : 'Manage your invoices and track payments'
             }
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
-            variant={showFilters ? "secondary" : "ghost"}
+            variant={showFilters ? 'secondary' : 'ghost'}
             onClick={() => setShowFilters(!showFilters)}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto backdrop-blur hover:bg-white/20 dark:hover:bg-white/10"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
             {hasActiveFilters && (
-              <span className="ml-2 bg-primary-500 text-white rounded-full w-2 h-2"></span>
+              <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-primary-500"></span>
             )}
           </Button>
           <Button 
-            className="w-full sm:w-auto"
-            onClick={() => navigate('/invoices/new')}
+            className="w-full sm:w-auto shadow-lg shadow-primary-500/30"
+            onClick={() => navigate('/app/invoices/new')}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Invoice
           </Button>
         </div>
-      </div>
+      </section>
 
       {/* Filters Panel */}
       {showFilters && (
@@ -538,7 +538,7 @@ export function InvoicesView() {
                 <div
                   key={invoice.id}
                   className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
-                  onClick={() => navigate(`/invoices/${invoice.id}`)}
+                  onClick={() => navigate(`/app/invoices/${invoice.id}`)}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -580,7 +580,7 @@ export function InvoicesView() {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Get started by creating your first invoice.
               </p>
-              <Button onClick={() => navigate('/invoices/new')}>
+              <Button onClick={() => navigate('/app/invoices/new')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Invoice
               </Button>

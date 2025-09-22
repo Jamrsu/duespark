@@ -171,7 +171,7 @@ function MobilePreviewToggle({
             {/* Mobile email header */}
             <div className="p-3 border-b border-gray-200 dark:border-gray-600">
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-primary-700 rounded-full flex items-center justify-center">
                   <Mail className="h-3 w-3 text-white" />
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">

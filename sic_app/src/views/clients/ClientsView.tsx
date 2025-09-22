@@ -93,23 +93,23 @@ export function ClientsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <section className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Clients
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-300">
             Manage your client relationships
           </p>
         </div>
         <Button 
-          className="w-full sm:w-auto"
-          onClick={() => navigate('/clients/new')}
+          className="w-full sm:w-auto shadow-lg shadow-primary-500/30"
+          onClick={() => navigate('/app/clients/new')}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Client
         </Button>
-      </div>
+      </section>
 
       <Card>
         <CardHeader>
@@ -156,7 +156,7 @@ export function ClientsView() {
                 <div
                   key={client.id}
                   className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
-                  onClick={() => navigate(`/clients/${client.id}`)}
+                  onClick={() => navigate(`/app/clients/${client.id}`)}
                   data-testid="client-card"
                 >
                   <div className="flex items-center gap-4 flex-1">
@@ -216,7 +216,7 @@ export function ClientsView() {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Add your first client to start managing invoices.
               </p>
-              <Button onClick={() => navigate('/clients/new')}>
+              <Button onClick={() => navigate('/app/clients/new')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Client
               </Button>
