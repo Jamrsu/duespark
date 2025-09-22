@@ -160,6 +160,13 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  const requestUrl = new URL(request.url)
+
+  // Ignore cross-origin requests (let browser handle CORS/fetch errors)
+  if (requestUrl.origin !== self.location.origin) {
+    return
+  }
+
   // Handle different types of requests
   if (request.url.includes('/api/')) {
     // API requests
