@@ -1,7 +1,7 @@
 {
   "version": 2,
   "framework": "vite",
-  "installCommand": "cd sic_app && npm ci --include=dev",
+  "installCommand": "cd sic_app && npm ci",
   "buildCommand": "cd sic_app && npm run build",
   "devCommand": "cd sic_app && npm run dev",
   "outputDirectory": "sic_app/dist",
@@ -20,7 +20,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-.*).*)",
+      "source": "/((?!api|_next|static|assets|favicon.ico|manifest.json|sw.js|workbox-|icon-|vite\\.svg).*)",
       "destination": "/index.html"
     }
   ],
