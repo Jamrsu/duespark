@@ -76,10 +76,5 @@
     }
   ],
   "cleanUrls": true,
-  "trailingSlash": false,
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  }
+  "trailingSlash": false
 }
