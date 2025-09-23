@@ -10,13 +10,13 @@ class ApiClient {
   private tokenKey = 'auth_token'
 
   getLoginUrl() {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin.replace(/\/$/, '')}/auth/login`
+    }
+
     const envUrl = import.meta.env.VITE_APP_URL?.trim()
     if (envUrl) {
       return `${envUrl.replace(/\/$/, '')}/auth/login`
-    }
-
-    if (typeof window !== 'undefined' && window.location?.origin) {
-      return `${window.location.origin.replace(/\/$/, '')}/auth/login`
     }
 
     return '/auth/login'
