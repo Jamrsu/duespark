@@ -172,9 +172,6 @@ self.addEventListener('fetch', (event) => {
     // API requests
     event.respondWith(handleApiRequest(request))
   } else if (request.destination === 'document') {
-    if (shouldBypassNavigation(requestUrl)) {
-      return
-    }
     // Navigation requests
     event.respondWith(handleNavigationRequest(request))
   } else {
@@ -219,18 +216,15 @@ async function handleApiRequest(request) {
   }
 }
 
-function shouldBypassNavigation(url) {
-  const bypassPatterns = [
-    /^\/auth\//,
-  ]
-
-  return bypassPatterns.some((pattern) => pattern.test(url.pathname))
-}
-
 // Handle navigation requests (SPA routing)
 async function handleNavigationRequest(request) {
   try {
     const response = await fetch(request)
+
+    if (response.type === 'opaqueredirect') {
+      console.warn('[SW] Navigation resulted in opaque redirect, serving SPA index:', request.url)
+      return await serveSpaFallback()
+    }
 
     if (response.ok) {
       return response
