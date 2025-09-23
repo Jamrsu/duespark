@@ -172,6 +172,9 @@ self.addEventListener('fetch', (event) => {
     // API requests
     event.respondWith(handleApiRequest(request))
   } else if (request.destination === 'document') {
+    if (shouldBypassNavigation(requestUrl)) {
+      return
+    }
     // Navigation requests
     event.respondWith(handleNavigationRequest(request))
   } else {
@@ -214,6 +217,14 @@ async function handleApiRequest(request) {
       }
     )
   }
+}
+
+function shouldBypassNavigation(url) {
+  const bypassPatterns = [
+    /^\/auth\//,
+  ]
+
+  return bypassPatterns.some((pattern) => pattern.test(url.pathname))
 }
 
 // Handle navigation requests (SPA routing)
