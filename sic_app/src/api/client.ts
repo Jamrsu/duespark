@@ -9,7 +9,7 @@ class ApiClient {
   private client: AxiosInstance
   private tokenKey = 'auth_token'
 
-  private getLoginUrl() {
+  getLoginUrl() {
     const envUrl = import.meta.env.VITE_APP_URL?.trim()
     if (envUrl) {
       return `${envUrl.replace(/\/$/, '')}/auth/login`
