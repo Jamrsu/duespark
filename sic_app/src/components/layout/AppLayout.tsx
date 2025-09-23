@@ -50,6 +50,11 @@ function AppLayoutBase({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation()
   const navigate = useNavigate()
 
+  const handleLogout = () => {
+    logout({ redirect: false })
+    navigate('/auth/login', { replace: true })
+  }
+
   // Navigation swipe gestures (only on touch devices)
   const swipeRef = useNavigationSwipes({
     onNavigateBack: () => {
@@ -220,7 +225,7 @@ function AppLayoutBase({ children }: AppLayoutProps): JSX.Element {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={logout}
+                onClick={handleLogout}
                 className="p-2 text-gray-600 hover:bg-white/20 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
                 aria-label="Logout"
               >

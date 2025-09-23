@@ -364,14 +364,28 @@ class ApiClient {
 export const apiClient = new ApiClient()
 
 // Auth helper hook
+interface LogoutOptions {
+  redirect?: boolean
+  destination?: string
+}
+
 export function useAuth() {
   return {
     isAuthenticated: () => apiClient.isAuthenticated(),
-    logout: () => {
+    logout: (options: LogoutOptions = {}) => {
       sessionStorage.removeItem('postLoginRedirect')
       apiClient.clearAllAuthData()
-      // Force reload to clear any cached components
-      window.location.replace(apiClient.getLoginUrl())
+      const shouldRedirect = options.redirect ?? true
+
+      if (!shouldRedirect) {
+        return
+      }
+
+      if (typeof window !== 'undefined') {
+        const target = options.destination ?? apiClient.getLoginUrl()
+        // Force reload to clear any cached components
+        window.location.replace(target)
+      }
     },
     getToken: () => apiClient.getToken(),
     clearAllAuthData: () => apiClient.clearAllAuthData(),
