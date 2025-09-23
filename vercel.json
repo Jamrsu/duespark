@@ -20,6 +20,10 @@
   ],
   "rewrites": [
     {
+      "source": "/auth/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/((?!api|_next|static|assets|favicon.ico|manifest.json|sw.js|workbox-|icon-|vite\\.svg).*)",
       "destination": "/index.html"
     }

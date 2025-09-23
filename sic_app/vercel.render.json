@@ -13,6 +13,10 @@
     {
       "source": "/api/(.*)",
       "destination": "https://duespark-backend.onrender.com/$1"
+    },
+    {
+      "source": "/auth/(.*)",
+      "destination": "/index.html"
     }
   ],
   "redirects": [
