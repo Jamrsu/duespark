@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, type Location } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
@@ -30,7 +30,12 @@ export function LoginView() {
   const { resolvedTheme } = useTheme()
   const { announcePageChange, announceSuccess, announceFormError } = useAccessibility()
 
-  const from = location.state?.from?.pathname || '/app/dashboard'
+  const locationState = location.state as { from?: Location } | undefined
+  const storedRedirect = React.useMemo(() => sessionStorage.getItem('postLoginRedirect'), [])
+  const fromStatePath = locationState?.from
+    ? `${locationState.from.pathname}${locationState.from.search ?? ''}${locationState.from.hash ?? ''}`
+    : undefined
+  const from = fromStatePath || storedRedirect || '/app/dashboard'
 
   const {
     register,
@@ -65,6 +70,7 @@ export function LoginView() {
         password: data.password,
       })
       announceSuccess('Successfully logged in. Redirecting to dashboard.')
+      sessionStorage.removeItem('postLoginRedirect')
       navigate(from, { replace: true })
     } catch (error) {
       // Error handling is done by the mutation, but we can announce it

@@ -76,11 +76,16 @@ class ApiClient {
 
         // Handle 401 - token expired or unauthorized
         if (statusCode === 401) {
+          const isAuthRoute = window.location.pathname.startsWith('/auth')
+          const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+          const redirectTarget = !isAuthRoute && currentPath ? currentPath : '/app/dashboard'
+
           this.clearToken()
-          // Only redirect to login if we're not already on the auth page
-          if (!window.location.pathname.startsWith('/auth')) {
+
+          if (!isAuthRoute) {
+            sessionStorage.setItem('postLoginRedirect', redirectTarget)
             displayError(error, context)
-            window.location.href = '/auth/login'
+            window.location.replace('/auth/login')
           }
           return Promise.reject(error)
         }
@@ -343,9 +348,10 @@ export function useAuth() {
   return {
     isAuthenticated: () => apiClient.isAuthenticated(),
     logout: () => {
+      sessionStorage.removeItem('postLoginRedirect')
       apiClient.clearAllAuthData()
       // Force reload to clear any cached components
-      window.location.href = '/auth/login'
+      window.location.replace('/auth/login')
     },
     getToken: () => apiClient.getToken(),
     clearAllAuthData: () => apiClient.clearAllAuthData(),

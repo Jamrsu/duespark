@@ -41,6 +41,10 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   const location = useLocation()
 
   if (!isAuthenticated()) {
+    if (!location.pathname.startsWith('/auth')) {
+      const redirectTarget = `${location.pathname}${location.search}${location.hash}` || '/app/dashboard'
+      sessionStorage.setItem('postLoginRedirect', redirectTarget)
+    }
     return <Navigate to="/auth/login" state={{ from: location }} replace />
   }
 
@@ -80,6 +84,10 @@ function RequireOnboardingComplete({ children }: { children: React.ReactNode }) 
 
   // Check authentication first
   if (!isAuthenticated()) {
+    if (!location.pathname.startsWith('/auth')) {
+      const redirectTarget = `${location.pathname}${location.search}${location.hash}` || '/app/dashboard'
+      sessionStorage.setItem('postLoginRedirect', redirectTarget)
+    }
     return <Navigate to="/auth/login" state={{ from: location }} replace />
   }
 
@@ -87,7 +95,12 @@ function RequireOnboardingComplete({ children }: { children: React.ReactNode }) 
   if (error) {
     // If we get a 401, clear all auth data and redirect
     if (error instanceof AxiosError && error.response?.status === 401) {
+      const isAuthRoute = location.pathname.startsWith('/auth')
+      const redirectTarget = `${location.pathname}${location.search}${location.hash}` || '/app/dashboard'
       clearAllAuthData()
+      if (!isAuthRoute) {
+        sessionStorage.setItem('postLoginRedirect', redirectTarget)
+      }
       return <Navigate to="/auth/login" state={{ from: location }} replace />
     }
 
