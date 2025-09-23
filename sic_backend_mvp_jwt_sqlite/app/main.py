@@ -212,6 +212,7 @@ def get_cors_origins():
     prod_origins = [
         "https://www.duespark.com",
         "https://duespark.com",
+        "https://app.duespark.com",
         "https://duespark.vercel.app",
     ]
 
