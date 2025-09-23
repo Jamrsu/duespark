@@ -16,10 +16,17 @@ class ApiClient {
     }
 
     if (typeof window !== 'undefined' && window.location?.origin) {
-      return `${window.location.origin.replace(/\/$/, '')}/auth/login`
+      try {
+        const current = new URL(window.location.origin)
+        if (current.hostname === 'localhost' || current.hostname === '127.0.0.1') {
+          return `${current.origin.replace(/\/$/, '')}/auth/login`
+        }
+      } catch (err) {
+        // ignore URL parsing issues and fall through to default
+      }
     }
 
-    return '/auth/login'
+    return 'https://app.duespark.com/auth/login'
   }
 
   constructor() {
