@@ -9,6 +9,19 @@ class ApiClient {
   private client: AxiosInstance
   private tokenKey = 'auth_token'
 
+  private getLoginUrl() {
+    const envUrl = import.meta.env.VITE_APP_URL?.trim()
+    if (envUrl) {
+      return `${envUrl.replace(/\/$/, '')}/auth/login`
+    }
+
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin.replace(/\/$/, '')}/auth/login`
+    }
+
+    return '/auth/login'
+  }
+
   constructor() {
     this.client = axios.create({
       baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
@@ -85,7 +98,7 @@ class ApiClient {
           if (!isAuthRoute) {
             sessionStorage.setItem('postLoginRedirect', redirectTarget)
             displayError(error, context)
-            window.location.replace('/auth/login')
+            window.location.replace(this.getLoginUrl())
           }
           return Promise.reject(error)
         }
@@ -351,7 +364,7 @@ export function useAuth() {
       sessionStorage.removeItem('postLoginRedirect')
       apiClient.clearAllAuthData()
       // Force reload to clear any cached components
-      window.location.replace('/auth/login')
+      window.location.replace(apiClient.getLoginUrl())
     },
     getToken: () => apiClient.getToken(),
     clearAllAuthData: () => apiClient.clearAllAuthData(),
