@@ -132,7 +132,7 @@ jobs:
           retention-days: 7
 
       - name: Upload test report as Pages artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v4
         if: always() && matrix.browser == 'chromium' && matrix.test-suite == 'happy-path'
         with:
           path: sic_app/playwright-report/
